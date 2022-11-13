@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import { Counter } from './features/counter/Counter';
 import './App.scss';
 import { FaBeer } from 'react-icons/fa';
+import DropDown from "./components/VdDropDown/DropDown";
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
             React Redux
           </a>
         </span>
+        <DropDown />
       </header>
     </div>
   );
