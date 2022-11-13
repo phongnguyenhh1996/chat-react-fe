@@ -2,12 +2,15 @@ import React from 'react';
 import logo from './logo.svg';
 import { Counter } from './features/counter/Counter';
 import './App.scss';
+import { FaBeer } from 'react-icons/fa';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
+
+        <FaBeer/>
         <Counter />
         <p>
           Edit <code>src/App.js</code> and save to reload.
