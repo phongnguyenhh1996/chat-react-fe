@@ -1,0 +1,54 @@
+.chats__all_list {
+  padding: 0 8px;
+  .text__name {
+    font-size: 16px;
+    padding: 0 18px;
+    margin-bottom: 10px;
+    color: #495057;
+    font-weight: 600;
+  }
+  .chat__list {
+    padding: 0;
+    &_item {
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.4s;
+      margin-bottom: 1px;
+      &:hover {
+        background-color: #e6ebf5;
+      }
+    }
+  }
+  .child {
+    padding: 15px 18px;
+    transition: all 0.4s;
+    display: flex;
+  }
+  .message__content {
+    margin-left: 10px;
+    flex-grow: 1;
+    margin-top: -4px;
+    .user__name {
+      padding: 0;
+      margin: 0;
+      margin-bottom: 3px;
+      color: #495057;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .message {
+      padding: 0;
+      margin: 0;
+      font-size: 14px;
+      color: #7a7f9a;
+    }
+  }
+  .time__message {
+    display: flex;
+    flex-direction: column;
+    .time {
+      font-size: 11px;
+      color: #7a7f9a;
+    }
+  }
+}
