@@ -14,6 +14,7 @@ import { AiOutlineUser } from "react-icons/ai";
 import { MdAttachFile } from "react-icons/md";
 import CardBody from "../CardBody";
 import CardFile from "../CardFile";
+import motionUtil from "./motionUtil";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 
@@ -62,7 +63,7 @@ export const Profile = () => {
           If several languages coalesce, the grammar of the resulting language
           is more simple and regular than that of the individual.
         </p>
-        <Collapse accordion={true}>
+        <Collapse openMotion={motionUtil} accordion={true}>
           <Panel
             header={
               <div className="profile__header-text">
