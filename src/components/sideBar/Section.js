@@ -1,11 +1,12 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { selectSection } from "../../features/ui/uiSlice";
-import { Profile } from "./../profile/Profile";
+
 import { Chats } from "./../chats/Chats";
 import { Groups } from "./../groups/Groups";
 import Contacts from "./../contacts/Contacts";
 import { Setting } from "./../settings/Setting";
+import { Profile } from "../Profile";
 
 export const Section = () => {
   const section = useSelector(selectSection);
@@ -25,5 +26,9 @@ export const Section = () => {
         break;
     }
   };
-  return <>{sections()}</>;
+  return (
+    <>
+      <div className="section">{sections()}</div>
+    </>
+  );
 };

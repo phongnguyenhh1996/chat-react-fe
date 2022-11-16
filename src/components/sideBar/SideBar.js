@@ -67,11 +67,13 @@ const SideBar = () => {
                 overlayClassName={"over"}
                 mouseLeaveDelay={0.1}
               >
-                <data.icon
-                  onClick={() => dispatch(changeSection(data.title))}
-                  className="icon"
-                  key={idx}
-                />
+                <div className="sidebar__icon">
+                  <data.icon
+                    onClick={() => dispatch(changeSection(data.title))}
+                    className="icon"
+                    key={idx}
+                  />
+                </div>
               </Tooltip>
             ))}
           </div>
@@ -88,7 +90,9 @@ const SideBar = () => {
                   key={idx}
                   overlayClassName={"dropdown"}
                 >
-                  <data.icon className="icon" key={idx} />
+                  <div className="sidebar__icon">
+                    <data.icon className="icon" key={idx} />
+                  </div>
                 </Dropdown>
               ) : (
                 <Tooltip
@@ -98,7 +102,9 @@ const SideBar = () => {
                   transitionName={"rc-tooltip-zoom"}
                   key={idx}
                 >
-                  <data.icon className="icon" key={idx} />
+                  <div className="sidebar__icon">
+                    <data.icon className="icon" key={idx} />
+                  </div>
                 </Tooltip>
               )
             )}
