@@ -2,6 +2,7 @@ import React from "react";
 import { RiEditFill } from "react-icons/ri";
 import { dataAbout } from "./dataAbout";
 import "./style.scss";
+import { Scrollbars } from "react-custom-scrollbars-2";
 
 const CardItem = ({ data }) => {
   return (
@@ -14,21 +15,23 @@ const CardItem = ({ data }) => {
 
 const CardBody = (props) => {
   return (
-    <div className="card__body">
-      {props.isEdit ? (
-        <div>
-          <button>
-            <RiEditFill />
-            Edit
-          </button>
-        </div>
-      ) : (
-        <div></div>
-      )}
-      {dataAbout.map((data, idx) => (
-        <CardItem key={idx} data={data} />
-      ))}
-    </div>
+    <Scrollbars autoHeight autoHeightMax={200} autoHide autoHideDuration={200}>
+      <div className="card__body">
+        {props.isEdit ? (
+          <div>
+            <button>
+              <RiEditFill />
+              Edit
+            </button>
+          </div>
+        ) : (
+          <div></div>
+        )}
+        {dataAbout.map((data, idx) => (
+          <CardItem key={idx} data={data} />
+        ))}
+      </div>
+    </Scrollbars>
   );
 };
 
