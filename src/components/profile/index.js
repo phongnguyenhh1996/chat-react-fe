@@ -2,35 +2,19 @@ import React from "react";
 import { FiMoreVertical } from "react-icons/fi";
 import { BiChevronRight } from "react-icons/bi";
 import User from "../User";
-import Avatar from "../../asset/img/avatar.jpg";
+import avatar from "../../asset/img/avatar.jpg";
 import Dropdown from "rc-dropdown";
-import Menu, { Item as MenuItem, Divider } from "rc-menu";
-import "rc-dropdown/assets/index.css";
-import "rc-menu/assets/index.css";
 import "./style.scss";
-import "rc-collapse/assets/index.css";
 import Collapse, { Panel } from "rc-collapse";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdAttachFile } from "react-icons/md";
 import CardBody from "../CardBody";
 import CardFile from "../CardFile";
 import motionUtil from "./motionUtil";
+import DropDown from "./../DropDown/index";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 
-const dropDownMenu = (
-  <Menu>
-    {menu.map((item, idx) =>
-      item === "Divider" ? (
-        <Divider key={idx} />
-      ) : (
-        <MenuItem key={idx}>
-          <div className="dropdown__item">{item}</div>
-        </MenuItem>
-      )
-    )}
-  </Menu>
-);
 const expandIcon = (props) => (
   <BiChevronRight
     style={{
@@ -49,7 +33,7 @@ export const Profile = () => {
         <h4 className="profile__title-text">My Profile</h4>
         <Dropdown
           trigger={["click"]}
-          overlay={dropDownMenu}
+          overlay={<DropDown options={menu} />}
           animation="slide-up"
           onVisibleChange={"onVisibleChange"}
           overlayClassName={"dropdown"}
@@ -57,7 +41,7 @@ export const Profile = () => {
           <FiMoreVertical className="profile__title-icon" />
         </Dropdown>
       </div>
-      <User avatar={Avatar} name={"Patricia Smith"} isActive={true} />
+      <User avatar={avatar} name={"Patricia Smith"} isActive={true} />
       <div className="profile__desc">
         <p className="profile__desc-text">
           If several languages coalesce, the grammar of the resulting language

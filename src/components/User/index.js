@@ -5,22 +5,10 @@ import {
   BsChevronDown,
 } from "react-icons/bs";
 import Dropdown from "rc-dropdown";
-import "rc-dropdown/assets/index.css";
-import "rc-menu/assets/index.css";
-import Menu, { Item as MenuItem } from "rc-menu";
 import "./style.scss";
+import DropDown from "../DropDown";
 
 const act = ["Available", "Busy"];
-
-const dropDownAct = (
-  <Menu>
-    {act.map((item, idx) => (
-      <MenuItem key={idx}>
-        <div className="dropdown__item">{item}</div>
-      </MenuItem>
-    ))}
-  </Menu>
-);
 
 const User = (props) => {
   const { avatar, name, className, isActive, isAct, isEdit } = props;
@@ -48,7 +36,7 @@ const User = (props) => {
       {isAct ? (
         <Dropdown
           trigger={["click"]}
-          overlay={dropDownAct}
+          overlay={<DropDown options={act} />}
           animation="slide-up"
           onVisibleChange={"onVisibleChange"}
           overlayClassName={"dropdown"}
