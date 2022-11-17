@@ -72,9 +72,7 @@ export const SideBarsUser = [
     title: "Setting",
     icon: AiOutlineSetting,
   },
-  {
-    title: "divider",
-  },
+  "Divider",
   {
     title: "Log out",
     icon: AiOutlineLogout,
