@@ -11,7 +11,7 @@ import { MdAttachFile } from "react-icons/md";
 import CardBody from "../CardBody";
 import CardFile from "../CardFile";
 import motionUtil from "./motionUtil";
-import DropDown from "./../DropDown/index";
+import DropDown from "../DropDown/index";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 
@@ -47,7 +47,7 @@ export const Profile = () => {
           If several languages coalesce, the grammar of the resulting language
           is more simple and regular than that of the individual.
         </p>
-        <Collapse openMotion={motionUtil} accordion={true}>
+        <Collapse openMotion={motionUtil} accordion={true} defaultActiveKey={1}>
           <Panel
             header={
               <div className="profile__header-text">
