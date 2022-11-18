@@ -1,10 +1,10 @@
-import DropDown from "../DropDown";
 import { dataPrivacy } from "./dataPrivacy";
 import Dropdown from "rc-dropdown";
 import { BiChevronDown } from "react-icons/bi";
 import Switch from "react-switch";
 import "./style.scss";
 import { useState } from "react";
+import DropDown from "./../../../DropDown";
 
 const everyone = ["Everyone", "selected", "Nobody"];
 
@@ -34,7 +34,7 @@ const Privacy = () => {
           ) : (
             <Switch
               height={15}
-              width={35}
+              width={30}
               onColor="#7269ef"
               offColor="#f7f7ff"
               onHandleColor="#fff"

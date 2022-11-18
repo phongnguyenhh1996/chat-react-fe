@@ -3,12 +3,15 @@ import User from "../User";
 import avatar from "../../asset/img/avatar.jpg";
 import "./style.scss";
 import Collapse, { Panel } from "rc-collapse";
-import CardBody from "../CardBody";
+
 import { BiChevronRight } from "react-icons/bi";
-import Privacy from "../Privacy";
+
 import Scrollbars from "react-custom-scrollbars-2";
-import Security from "../Security";
-import Help from "../Help";
+
+import Help from "./components/Help";
+import Privacy from "./components/Privacy";
+import Security from "./components/Security";
+import CardBody from "../CardBody";
 
 const expandIcon = (props) => (
   <BiChevronRight
@@ -20,7 +23,7 @@ const expandIcon = (props) => (
     }}
   />
 );
-export const Setting = () => {
+const Setting = () => {
   return (
     <div className="settings">
       <h4 className="settings__title">Setting</h4>
@@ -69,3 +72,5 @@ export const Setting = () => {
     </div>
   );
 };
+
+export default Setting;

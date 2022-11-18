@@ -2,7 +2,7 @@ import React from "react";
 import { CiSearch } from "react-icons/ci";
 import ScrollContainer from "react-indiana-drag-scroll";
 import Avatar from "../Avatar";
-import ChatList from "./chatLists/ChatList";
+import ChatList from "./ChatLists";
 import { dataChat } from "./dataChat";
 import "./style.scss";
 

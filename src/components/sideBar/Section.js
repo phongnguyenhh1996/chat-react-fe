@@ -4,10 +4,10 @@ import { selectSection } from "../../features/ui/uiSlice";
 
 import { Chats } from "../chats";
 
-import { Setting } from "../Settings/index";
-import { Profile } from "./../Profile/index";
-import Contacts from "./../Contacts/index";
-import { Groups } from "./../Groups/index";
+import Setting from "../Settings";
+import Profile from "../Profile";
+import Contacts from "../Contacts";
+import Groups from "../Groups";
 
 export const Section = () => {
   const section = useSelector(selectSection);

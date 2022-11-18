@@ -9,7 +9,7 @@ import Collapse, { Panel } from "rc-collapse";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdAttachFile } from "react-icons/md";
 import CardBody from "../CardBody";
-import CardFile from "../CardFile";
+import CardFile from "./components/CardFile";
 import motionUtil from "./motionUtil";
 import DropDown from "../DropDown/index";
 
@@ -26,7 +26,7 @@ const expandIcon = (props) => (
   />
 );
 
-export const Profile = () => {
+const Profile = () => {
   return (
     <div className="profile">
       <div className="profile__title">
@@ -77,3 +77,4 @@ export const Profile = () => {
     </div>
   );
 };
+export default Profile;

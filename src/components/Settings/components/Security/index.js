@@ -13,7 +13,7 @@ const Security = () => {
         <div className="security__item-name">Show security notification</div>
         <Switch
           height={15}
-          width={35}
+          width={30}
           onColor="#7269ef"
           offColor="#f7f7ff"
           onHandleColor="#fff"
