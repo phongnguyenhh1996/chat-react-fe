@@ -6,8 +6,8 @@ import { FiMoreVertical } from "react-icons/fi";
 import { RiDownload2Line } from "react-icons/ri";
 import { dataFile } from "./dataFile";
 import "./style.scss";
-import DropDown from "../DropDown";
 import { Scrollbars } from "react-custom-scrollbars-2";
+import DropDown from "../../../DropDown";
 
 const imgExt = ["jpg", "svg", "png", "webp"];
 

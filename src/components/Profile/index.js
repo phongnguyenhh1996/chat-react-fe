@@ -9,9 +9,9 @@ import Collapse, { Panel } from "rc-collapse";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdAttachFile } from "react-icons/md";
 import CardBody from "../CardBody";
-import CardFile from "../CardFile";
+import CardFile from "./components/CardFile";
 import motionUtil from "./motionUtil";
-import DropDown from "./../DropDown/index";
+import DropDown from "../DropDown/index";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 
@@ -26,7 +26,7 @@ const expandIcon = (props) => (
   />
 );
 
-export const Profile = () => {
+const Profile = () => {
   return (
     <div className="profile">
       <div className="profile__title">
@@ -47,7 +47,7 @@ export const Profile = () => {
           If several languages coalesce, the grammar of the resulting language
           is more simple and regular than that of the individual.
         </p>
-        <Collapse openMotion={motionUtil} accordion={true}>
+        <Collapse openMotion={motionUtil} accordion={true} defaultActiveKey={1}>
           <Panel
             header={
               <div className="profile__header-text">
@@ -77,3 +77,4 @@ export const Profile = () => {
     </div>
   );
 };
+export default Profile;

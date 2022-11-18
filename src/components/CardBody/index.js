@@ -18,9 +18,9 @@ const CardBody = (props) => {
     <Scrollbars autoHeight autoHeightMax={200} autoHide autoHideDuration={200}>
       <div className="card__body">
         {props.isEdit ? (
-          <div>
-            <button>
-              <RiEditFill />
+          <div className="card__body-edit">
+            <button className="btn-edit">
+              <RiEditFill className="icon-edit" />
               Edit
             </button>
           </div>

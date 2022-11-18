@@ -41,20 +41,6 @@ const user = (
       )
     )}
   />
-  // <Menu>
-  //   {SideBarsUser.map((item, idx) =>
-  //     item.title === "Divider" ? (
-  //       <Divider key={idx} />
-  //     ) : (
-  //       <MenuItem key={idx}>
-  //         <div className="dropdown__user-item">
-  //           <p>{item.title}</p>
-  //           <item.icon />
-  //         </div>
-  //       </MenuItem>
-  //     )
-  //   )}
-  // </Menu>
 );
 
 const SideBar = () => {

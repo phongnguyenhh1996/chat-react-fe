@@ -15,4 +15,25 @@
     font-size: 12px;
     margin-bottom: 5px;
   }
+  &-edit {
+    float: right;
+
+    .btn-edit {
+      border: 1px solid transparent;
+      background-color: #e6ebf5;
+      border-color: #e6ebf5;
+      color: #474a4e;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: "Public Sans", sans-serif;
+      font-weight: 600;
+      .icon-edit {
+        margin-right: 5px;
+      }
+    }
+  }
 }

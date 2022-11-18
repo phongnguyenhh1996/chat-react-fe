@@ -1,5 +1,6 @@
 import React from "react";
 
-export const Groups = () => {
+const Groups = () => {
   return <div>Groups</div>;
 };
+export default Groups;

@@ -1,7 +1,8 @@
 import React from "react";
 import Scrollbars from "react-custom-scrollbars-2";
 import Avatar from "../../Avatar";
-import { dataChat } from "./../dataChat";
+import { dataChat } from "../dataChat";
+
 import "./style.scss";
 const ChatList = () => {
   return (
