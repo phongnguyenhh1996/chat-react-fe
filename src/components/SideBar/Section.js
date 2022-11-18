@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { selectSection } from "../../features/ui/uiSlice";
 
-import { Chats } from "../chats";
+import { Chats } from "../Chats";
 
 import Setting from "../Settings";
 import Profile from "../Profile";
