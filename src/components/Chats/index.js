@@ -1,12 +1,19 @@
 import React from "react";
 import { CiSearch } from "react-icons/ci";
 import ScrollContainer from "react-indiana-drag-scroll";
+import { onSearch, selectChatList } from "../../features/chats/chat";
 import Avatar from "../Avatar";
 import ChatList from "./ChatLists";
-import { dataChat } from "./dataChat";
+
 import "./style.scss";
+import { useSelector, useDispatch } from "react-redux";
 
 export const Chats = () => {
+  const dispatch = useDispatch();
+  const chatList = useSelector(selectChatList);
+  const handleSearch = (e) => {
+    dispatch(onSearch(e.target.value));
+  };
   return (
     <div className="chats__all">
       <h4 className="chats__all_section">Chats</h4>
@@ -14,7 +21,11 @@ export const Chats = () => {
         <span>
           <CiSearch />
         </span>
-        <input type="text" placeholder="Search messages or users" />
+        <input
+          onChange={handleSearch}
+          type="text"
+          placeholder="Search messages or users"
+        />
       </div>
       <div className="chats__all_online">
         <ul className="list__online">
@@ -23,7 +34,7 @@ export const Chats = () => {
             horizontal={true}
             hideScrollbars={true}
           >
-            {dataChat.map((data, index) => (
+            {chatList.map((data, index) => (
               <li className="user__online" key={index}>
                 <div className="user__online-lider">
                   <Avatar

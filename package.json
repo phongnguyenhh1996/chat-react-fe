@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^14.4.3",
     "prettier": "^2.7.1",
     "rc-collapse": "^3.4.2",
+    "rc-dialog": "^9.0.2",
     "rc-dropdown": "^4.0.1",
     "rc-menu": "^9.7.2",
     "rc-tooltip": "^5.2.2",
