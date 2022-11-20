@@ -1,12 +1,14 @@
 import React from "react";
+import Dropdown from "rc-dropdown";
 import {
   BsPencilFill,
   BsFillRecordCircleFill,
   BsChevronDown,
 } from "react-icons/bs";
-import Dropdown from "rc-dropdown";
-import "./style.scss";
+
 import DropDown from "../DropDown";
+
+import "./style.scss";
 
 const act = ["Available", "Busy"];
 

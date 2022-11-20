@@ -1,13 +1,15 @@
-import Dropdown from "rc-dropdown";
 import React from "react";
+import Dropdown from "rc-dropdown";
+import { Scrollbars } from "react-custom-scrollbars-2";
 import { AiTwotoneFileZip } from "react-icons/ai";
 import { BsCardImage } from "react-icons/bs";
 import { FiMoreVertical } from "react-icons/fi";
 import { RiDownload2Line } from "react-icons/ri";
+
 import { dataFile } from "./dataFile";
-import "./style.scss";
-import { Scrollbars } from "react-custom-scrollbars-2";
 import DropDown from "../../../DropDown";
+
+import "./style.scss";
 
 const imgExt = ["jpg", "svg", "png", "webp"];
 

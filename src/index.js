@@ -4,11 +4,13 @@ import { Provider } from "react-redux";
 import { store } from "./app/store";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+
 import "rc-dropdown/assets/index.css";
 import "rc-menu/assets/index.css";
 import "rc-collapse/assets/index.css";
-import App from "./App";
-import reportWebVitals from "./reportWebVitals";
+import "rc-tooltip/assets/bootstrap.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
