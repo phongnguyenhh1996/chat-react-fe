@@ -2,11 +2,13 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { store } from "./app/store";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+
 import "rc-dropdown/assets/index.css";
 import "rc-menu/assets/index.css";
 import "rc-collapse/assets/index.css";
-import App from "./App";
-import reportWebVitals from "./reportWebVitals";
+import "rc-tooltip/assets/bootstrap.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container);

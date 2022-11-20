@@ -1,17 +1,16 @@
 import React from "react";
-import User from "../User";
-import avatar from "../../asset/img/avatar.jpg";
-import "./style.scss";
+import Scrollbars from "react-custom-scrollbars-2";
+import { BiChevronRight } from "react-icons/bi";
 import Collapse, { Panel } from "rc-collapse";
 
-import { BiChevronRight } from "react-icons/bi";
-
-import Scrollbars from "react-custom-scrollbars-2";
-
+import User from "../User";
+import avatar from "../../asset/img/avatar.jpg";
 import Help from "./components/Help";
 import Privacy from "./components/Privacy";
 import Security from "./components/Security";
 import CardBody from "../CardBody";
+
+import "./style.scss";
 
 const expandIcon = (props) => (
   <BiChevronRight
