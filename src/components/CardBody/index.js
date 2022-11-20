@@ -1,8 +1,11 @@
 import React from "react";
+
 import { RiEditFill } from "react-icons/ri";
-import { dataAbout } from "./dataAbout";
-import "./style.scss";
 import { Scrollbars } from "react-custom-scrollbars-2";
+
+import { dataAbout } from "./dataAbout";
+
+import "./style.scss";
 
 const CardItem = ({ data }) => {
   return (

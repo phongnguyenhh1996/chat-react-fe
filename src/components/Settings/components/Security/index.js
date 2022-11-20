@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Switch from "react-switch";
+
 import "./style.scss";
 
 const Security = () => {

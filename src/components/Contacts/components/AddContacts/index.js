@@ -1,16 +1,49 @@
 import React, { useState } from "react";
-import "./style.scss";
-import Dialog from "rc-dialog";
 import { useDispatch } from "react-redux";
+import Dialog from "rc-dialog";
+
 import { addContact } from "../../../../features/contacts/contact";
+
+import "./style.scss";
 
 const AddContacts = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const [contactData, setContactData] = useState({ email: "", name: "" });
-  const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    setContactData({ ...contactData, [name]: value });
+  const [error, setError] = useState({});
+
+  const handleClick = () => {
+    if (Object.values(error).join("") !== "") return;
+
+    dispatch(addContact(contactData));
+    setContactData({ email: "", name: "" });
+    setError({});
+    onClose();
   };
+  const handleOnChange = (e) => {
+    const newContactData = contactData;
+    const { name, value } = e.target;
+    newContactData[name] = value;
+    setContactData(newContactData);
+    checkValid(newContactData);
+  };
+
+  const checkValid = (data) => {
+    const regEmail = /\S+@\S+\.\S+/;
+    const newError = error;
+    if (!regEmail.test(data.email)) {
+      newError.email = "Email is not correct";
+    } else {
+      newError.email = "";
+    }
+    if (data.name.length < 1) {
+      newError.name = "Please enter your name";
+    } else {
+      newError.name = "";
+    }
+
+    setError((error) => ({ ...error, ...newError }));
+  };
+
   return (
     <Dialog
       maskAnimation="fade"
@@ -22,25 +55,29 @@ const AddContacts = ({ isOpen, onClose }) => {
     >
       <form className="add__contacts-form" action="">
         <label className="add__contacts-form-title" htmlFor="">
+          Name
+        </label>
+        <input
+          name="name"
+          onChange={handleOnChange}
+          value={contactData.name}
+          className="add__contacts-form-input"
+          type="email"
+          placeholder="Enter Name"
+        />
+        <span className="error">{error.name}</span>
+        <label className="add__contacts-form-title" htmlFor="">
           Email
         </label>
         <input
+          value={contactData.email}
           name="email"
           onChange={handleOnChange}
           className="add__contacts-form-input"
           type="text"
           placeholder="Enter Email"
         />
-        <label className="add__contacts-form-title" htmlFor="">
-          Name
-        </label>
-        <input
-          name="name"
-          onChange={handleOnChange}
-          className="add__contacts-form-input"
-          type="text"
-          placeholder="Enter Name"
-        />
+        <span className="error">{error.email}</span>
         <label className="add__contacts-form-title" htmlFor="">
           Invatation Message
         </label>
@@ -52,13 +89,7 @@ const AddContacts = ({ isOpen, onClose }) => {
       </form>
       <div className="add__contacts-footer">
         <button className="footer-btn btn-close">Close</button>
-        <button
-          onClick={() => {
-            dispatch(addContact(contactData));
-            onClose();
-          }}
-          className="footer-btn btn-invite"
-        >
+        <button onClick={handleClick} className="footer-btn btn-invite">
           Add Contact
         </button>
       </div>

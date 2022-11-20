@@ -1,15 +1,17 @@
 import React from "react";
 import { FiMoreVertical } from "react-icons/fi";
-import "./style.scss";
 import { useSelector, useDispatch } from "react-redux";
+import Dropdown from "rc-dropdown";
+
 import {
   selectContact,
   removeContact,
   selectSearch,
 } from "../../../../features/contacts/contact";
-import Dropdown from "rc-dropdown";
 import DropDown from "../../../DropDown";
 import { dataCheck } from "./dataCheck";
+
+import "./style.scss";
 
 const ListBook = () => {
   const dispatch = useDispatch();
@@ -67,6 +69,7 @@ const ListBook = () => {
                               item
                             ) : (
                               <div
+                                className="name__contacts-item"
                                 onClick={() => onSelect(item.title, data.email)}
                                 key={idx}
                               >

@@ -1,10 +1,12 @@
 import { dataPrivacy } from "./dataPrivacy";
 import Dropdown from "rc-dropdown";
+import { useState } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import Switch from "react-switch";
-import "./style.scss";
-import { useState } from "react";
+
 import DropDown from "./../../../DropDown";
+
+import "./style.scss";
 
 const everyone = ["Everyone", "selected", "Nobody"];
 

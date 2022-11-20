@@ -1,15 +1,16 @@
-import { useState } from "react";
-
-import Tooltip from "rc-tooltip";
 import React from "react";
+import Tooltip from "rc-tooltip";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import { CiSearch } from "react-icons/ci";
 import { RiUserAddLine } from "react-icons/ri";
+
 import ListBook from "./components/ListBook";
-import "./style.scss";
-import "rc-dialog/assets/index.css";
 import AddContacts from "./components/AddContacts";
 import { onSearch } from "./../../features/contacts/contact";
-import { useDispatch } from "react-redux";
+
+import "./style.scss";
+import "rc-dialog/assets/index.css";
 
 const Contacts = () => {
   const [isOpen, setOpen] = useState(false);

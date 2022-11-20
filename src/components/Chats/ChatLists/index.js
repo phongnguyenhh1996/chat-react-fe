@@ -1,13 +1,11 @@
 import React from "react";
 import Scrollbars from "react-custom-scrollbars-2";
+import { useSelector } from "react-redux";
+
 import Avatar from "../../Avatar";
+import { selectChatList, selectSearch } from "./../../../features/chats/chat";
 
 import "./style.scss";
-import { useSelector } from "react-redux";
-import {
-  selectChatList,
-  selectSearch,
-} from "./../../../features/chats/chat";
 
 const ChatList = () => {
   const chatList = useSelector(selectChatList);

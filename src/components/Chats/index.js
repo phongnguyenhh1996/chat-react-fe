@@ -1,9 +1,11 @@
 import React from "react";
+
 import { CiSearch } from "react-icons/ci";
 import ScrollContainer from "react-indiana-drag-scroll";
+
 import { onSearch, selectChatList } from "../../features/chats/chat";
-import Avatar from "../Avatar";
 import ChatList from "./ChatLists";
+import Avatar from "../Avatar";
 
 import "./style.scss";
 import { useSelector, useDispatch } from "react-redux";

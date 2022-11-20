@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 import AvtChart from "../../asset/img/avatar_chat.jpg";
 
 const initialState = {
