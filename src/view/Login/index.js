@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import * as jose from "jose";
 import { useNavigate, Navigate } from "react-router-dom";
