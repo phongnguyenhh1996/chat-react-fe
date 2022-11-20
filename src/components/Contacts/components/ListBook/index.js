@@ -92,42 +92,6 @@ const ListBook = () => {
             </ul>
           </React.Fragment>
         ))}
-        {/* <div className="list__book-title">A</div>
-        <ul className="list__book-name">
-          {Object.keys(filteredContact).map((data, idx) => (
-            <li className="name__contacts" key={idx}>
-              <h4 className="name__contacts-text">{data.name}</h4>
-              <div>
-                <Dropdown
-                  trigger={["click"]}
-                  overlay={
-                    <DropDown
-                      className="dropdown__user-item"
-                      options={dataCheck.map((item, idx) =>
-                        item === "Divider" ? (
-                          item
-                        ) : (
-                          <div
-                            onClick={() => onSelect(item.title, data.email)}
-                            key={idx}
-                          >
-                            <p>{item.title}</p>
-                            {item.icon && <item.icon />}
-                          </div>
-                        )
-                      )}
-                    />
-                  }
-                  animation="slide-up"
-                  onVisibleChange={"onVisibleChange"}
-                  overlayClassName={"dropdown__user"}
-                >
-                  <FiMoreVertical className="name__contacts-icon" />
-                </Dropdown>
-              </div>
-            </li>
-          ))}
-        </ul> */}
       </div>
     </div>
   );
