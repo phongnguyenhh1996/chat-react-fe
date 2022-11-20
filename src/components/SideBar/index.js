@@ -1,21 +1,22 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import Dropdown from "rc-dropdown";
+import Tooltip from "rc-tooltip";
 
-import LogoImg from "../../asset/img/logo.svg";
-import avatar from "../../asset/img/avatar.jpg";
 import {
   SideBars,
   SideBarsBtn,
   SideBarsDropDown,
   SideBarsUser,
 } from "./dataSideBar";
-import "./style.scss";
-import Tooltip from "rc-tooltip";
-import "rc-tooltip/assets/bootstrap.css";
-import Dropdown from "rc-dropdown";
-import { changeSection } from "../../features/ui/uiSlice";
+import LogoImg from "../../asset/img/logo.svg";
+import avatar from "../../asset/img/avatar.jpg";
+import { changeSection, selectSection } from "../../features/ui/uiSlice";
 import { Section } from "./Section";
 import DropDown from "../DropDown";
+
+import "rc-tooltip/assets/bootstrap.css";
+import "./style.scss";
 
 const dropDown = (
   <DropDown
@@ -45,7 +46,7 @@ const user = (
 
 const SideBar = () => {
   const dispatch = useDispatch();
-
+  const section = useSelector(selectSection);
   return (
     <div className="all">
       <div className="sidebar">
@@ -63,7 +64,11 @@ const SideBar = () => {
                 overlayClassName={"over"}
                 mouseLeaveDelay={0.1}
               >
-                <div className="sidebar__icon">
+                <div
+                  className={`sidebar__icon ${
+                    section === data.title && "sidebar__icon--active"
+                  }`}
+                >
                   <data.icon
                     onClick={() => dispatch(changeSection(data.title))}
                     className="icon"

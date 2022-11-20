@@ -1,17 +1,19 @@
 import React from "react";
+import Collapse, { Panel } from "rc-collapse";
+import Dropdown from "rc-dropdown";
 import { FiMoreVertical } from "react-icons/fi";
 import { BiChevronRight } from "react-icons/bi";
-import User from "../User";
-import avatar from "../../asset/img/avatar.jpg";
-import Dropdown from "rc-dropdown";
-import "./style.scss";
-import Collapse, { Panel } from "rc-collapse";
 import { AiOutlineUser } from "react-icons/ai";
 import { MdAttachFile } from "react-icons/md";
+
+import User from "../User";
+import avatar from "../../asset/img/avatar.jpg";
 import CardBody from "../CardBody";
 import CardFile from "./components/CardFile";
 import motionUtil from "./motionUtil";
 import DropDown from "../DropDown/index";
+
+import "./style.scss";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 

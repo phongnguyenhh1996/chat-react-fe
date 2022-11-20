@@ -1,4 +1,5 @@
 import React from "react";
+
 import "./style.scss";
 
 const dataHelp = ["FAQs", "Contact", "Terms & Privacy policy"];
