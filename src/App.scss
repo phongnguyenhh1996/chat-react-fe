@@ -49,3 +49,11 @@ img {
     transform: translateY(0px);
   }
 }
+
+.container-page {
+  display: flex;
+
+  .container-message {
+    flex: 1;
+  }
+}
