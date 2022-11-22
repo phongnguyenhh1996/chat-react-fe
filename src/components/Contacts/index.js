@@ -12,7 +12,7 @@ import { onSearch } from "./../../features/contacts/contact";
 import "./style.scss";
 import "rc-dialog/assets/index.css";
 
-const Contacts = () => {
+const Contacts = (isMenu) => {
   const [isOpen, setOpen] = useState(false);
   const dispatch = useDispatch();
   const handleSearch = (e) => {
@@ -49,7 +49,7 @@ const Contacts = () => {
           placeholder="Search users.."
         />
       </div>
-      <ListBook />
+      <ListBook isMenu={true} />
     </div>
   );
 };

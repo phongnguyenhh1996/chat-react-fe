@@ -13,10 +13,19 @@ import { dataCheck } from "./dataCheck";
 
 import "./style.scss";
 
-const ListBook = () => {
+const ListBook = (props) => {
   const dispatch = useDispatch();
   const contact = useSelector(selectContact);
   const search = useSelector(selectSearch);
+
+  const handleOnChangeCheck = (e) => {
+    if (e.target.checked) {
+      props.addEmail(e.target.name);
+    } else {
+      props.removeEmail(e.target.name);
+    }
+  };
+
   const onSelect = (type, email) => {
     if (type !== "Remove") return;
 
@@ -50,44 +59,100 @@ const ListBook = () => {
 
   return (
     <div className="list__book">
-      <div className="list__book-item">
+      <div className={`list__book-item ${props.className}`}>
         {Object.keys(contactByAlphabet).map((alphabet) => (
           <React.Fragment key={alphabet}>
             <div className="list__book-title">{alphabet}</div>
             <ul className="list__book-name">
               {contactByAlphabet[alphabet].map((data, idx) => (
-                <li className="name__contacts" key={idx}>
-                  <h4 className="name__contacts-text">{data.name}</h4>
-                  <div>
-                    <Dropdown
-                      trigger={["click"]}
-                      overlay={
-                        <DropDown
-                          className="dropdown__user-item"
-                          options={dataCheck.map((item, idx) =>
-                            item === "Divider" ? (
-                              item
-                            ) : (
-                              <div
-                                className="name__contacts-item"
-                                onClick={() => onSelect(item.title, data.email)}
-                                key={idx}
-                              >
-                                <p>{item.title}</p>
-                                {item.icon && <item.icon />}
-                              </div>
-                            )
-                          )}
-                        />
-                      }
-                      animation="slide-up"
-                      onVisibleChange={"onVisibleChange"}
-                      overlayClassName={"dropdown__user"}
-                    >
-                      <FiMoreVertical className="name__contacts-icon" />
-                    </Dropdown>
-                  </div>
-                </li>
+                <React.Fragment key={idx}>
+                  {props.isCheckBox ? (
+                    <li className="name__contacts">
+                      <input
+                        name={data.email}
+                        onChange={handleOnChangeCheck}
+                        type="checkbox"
+                        checked={props.emails.includes(data.email)}
+                      />
+
+                      <h4 className="name__contacts-text">{data.name}</h4>
+                      <div>
+                        {props.isMenu ? (
+                          <Dropdown
+                            trigger={["click"]}
+                            overlay={
+                              <DropDown
+                                className="dropdown__user-item"
+                                options={dataCheck.map((item, idx) =>
+                                  item === "Divider" ? (
+                                    item
+                                  ) : (
+                                    <div
+                                      className="name__contacts-item"
+                                      onClick={() =>
+                                        onSelect(item.title, data.email)
+                                      }
+                                      key={idx}
+                                    >
+                                      <p>{item.title}</p>
+                                      {item.icon && <item.icon />}
+                                    </div>
+                                  )
+                                )}
+                              />
+                            }
+                            animation="slide-up"
+                            onVisibleChange={"onVisibleChange"}
+                            overlayClassName={"dropdown__user"}
+                          >
+                            <FiMoreVertical className="name__contacts-icon" />
+                          </Dropdown>
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                    </li>
+                  ) : (
+                    <li className="name__contacts" key={idx}>
+                      <h4 className="name__contacts-text">{data.name}</h4>
+                      <div>
+                        {props.isMenu ? (
+                          <Dropdown
+                            trigger={["click"]}
+                            overlay={
+                              <DropDown
+                                className="dropdown__user-item"
+                                options={dataCheck.map((item, idx) =>
+                                  item === "Divider" ? (
+                                    item
+                                  ) : (
+                                    <div
+                                      className="name__contacts-item"
+                                      onClick={() =>
+                                        onSelect(item.title, data.email)
+                                      }
+                                      key={idx}
+                                    >
+                                      <p>{item.title}</p>
+                                      {item.icon && <item.icon />}
+                                    </div>
+                                  )
+                                )}
+                              />
+                            }
+                            animation="slide-up"
+                            onVisibleChange={"onVisibleChange"}
+                            overlayClassName={"dropdown__user"}
+                          >
+                            <FiMoreVertical className="name__contacts-icon" />
+                          </Dropdown>
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                    </li>
+                  )}
+                </React.Fragment>
               ))}
             </ul>
           </React.Fragment>

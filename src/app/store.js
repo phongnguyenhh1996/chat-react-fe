@@ -4,6 +4,8 @@ import counterReducer from "../features/counter/counterSlice";
 import uiReducer from "./../features/ui/uiSlice";
 import contact from "./../features/contacts/contact";
 import chat from "./../features/chats/chat";
+import groups from "./../features/groups/group";
+import profile from "./../features/profile/profile";
 
 export const store = configureStore({
   reducer: {
@@ -11,5 +13,7 @@ export const store = configureStore({
     ui: uiReducer,
     contact,
     chat,
+    groups,
+    profile,
   },
 });

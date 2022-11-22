@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
 }
-.add__contacts {
+.add__groups {
   .rc-dialog-content {
     border: 1px solid #f0eff5;
   }
@@ -20,6 +20,19 @@
     align-items: center;
     font-family: Public Sans, sans-serif;
     font-weight: 600;
+  }
+  .select-members {
+    font-size: 14px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    width: 125px;
+    margin-bottom: 20px;
+    background-color: #e6ebf5;
+    border-color: #e6ebf5;
+    color: #212529;
+    border-radius: 3px;
   }
   &-form {
     display: flex;
@@ -42,7 +55,7 @@
       line-height: 1.5;
       padding: 10px 15px;
       font-family: "Public Sans", sans-serif;
-      margin-bottom: 5px;
+      margin-bottom: 20px;
     }
     .error {
       font-style: italic;
@@ -50,6 +63,27 @@
       color: rgb(248, 61, 47);
       margin-bottom: 20px;
       font-weight: 600;
+    }
+  }
+  &-contact {
+    margin-bottom: 24px;
+
+    &-title {
+      border: 1px solid #f0eff5;
+      border-radius: 5px 5px 0 0;
+      margin: 0;
+      padding: 15px 15px;
+      font-size: 14px;
+      color: #495057;
+      border-bottom: 0;
+    }
+    &-list {
+      border: 1px solid #f0eff5;
+      border-top: 0;
+      height: 200px;
+      overflow: auto;
+      border-radius: 0 0 5px 5px;
+      padding: 5px 24px;
     }
   }
 }

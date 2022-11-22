@@ -14,6 +14,8 @@ import motionUtil from "./motionUtil";
 import DropDown from "../DropDown/index";
 
 import "./style.scss";
+import { useSelector } from "react-redux";
+import { selectProfile } from "./../../features/profile/profile";
 
 const menu = ["Edit", "Action", "Divider", "Another action"];
 
@@ -29,6 +31,7 @@ const expandIcon = (props) => (
 );
 
 const Profile = () => {
+  const dataAbout = useSelector(selectProfile);
   return (
     <div className="profile">
       <div className="profile__title">
@@ -43,7 +46,7 @@ const Profile = () => {
           <FiMoreVertical className="profile__title-icon" />
         </Dropdown>
       </div>
-      <User avatar={avatar} name={"Patricia Smith"} isActive={true} />
+      <User avatar={avatar} name={dataAbout.name} isActive={true} />
       <div className="profile__desc">
         <p className="profile__desc-text">
           If several languages coalesce, the grammar of the resulting language

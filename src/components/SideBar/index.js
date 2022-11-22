@@ -15,7 +15,6 @@ import { changeSection, selectSection } from "../../features/ui/uiSlice";
 import { Section } from "./Section";
 import DropDown from "../DropDown";
 
-import "rc-tooltip/assets/bootstrap.css";
 import "./style.scss";
 
 const dropDown = (
