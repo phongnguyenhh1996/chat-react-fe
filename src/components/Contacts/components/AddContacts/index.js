@@ -52,6 +52,24 @@ const AddContacts = ({ isOpen, onClose }) => {
       title={"Add Contacts"}
       visible={isOpen}
       wrapClassName="add__contacts center"
+      footer={[
+        <button
+          type="button"
+          className="btn btn-default footer-btn btn-close"
+          key="close"
+          onClick={onClose}
+        >
+          Close
+        </button>,
+        <button
+          type="button"
+          className="btn btn-primary footer-btn btn-invite"
+          key="save"
+          onClick={handleClick}
+        >
+          Add Contact
+        </button>,
+      ]}
     >
       <form className="add__contacts-form" action="">
         <label className="add__contacts-form-title" htmlFor="">
@@ -87,12 +105,6 @@ const AddContacts = ({ isOpen, onClose }) => {
           placeholder="Enter Message"
         />
       </form>
-      <div className="add__contacts-footer">
-        <button className="footer-btn btn-close">Close</button>
-        <button onClick={handleClick} className="footer-btn btn-invite">
-          Add Contact
-        </button>
-      </div>
     </Dialog>
   );
 };

@@ -11,6 +11,8 @@ import Security from "./components/Security";
 import CardBody from "../CardBody";
 
 import "./style.scss";
+import { useSelector } from "react-redux";
+import { selectProfile } from "./../../features/profile/profile";
 
 const expandIcon = (props) => (
   <BiChevronRight
@@ -23,10 +25,11 @@ const expandIcon = (props) => (
   />
 );
 const Setting = () => {
+  const dataAbout = useSelector(selectProfile);
   return (
     <div className="settings">
       <h4 className="settings__title">Setting</h4>
-      <User avatar={avatar} name={"Patricia Smith"} isEdit={true} />
+      <User avatar={avatar} name={dataAbout.name} isEdit={true} />
       <Scrollbars
         autoHeight
         autoHeightMax={500}
