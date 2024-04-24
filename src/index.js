@@ -1,16 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux";
-import { store } from "./app/store";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-
-import "rc-dropdown/assets/index.css";
-import "rc-menu/assets/index.css";
-import "rc-collapse/assets/index.css";
-import "rc-tooltip/assets/bootstrap.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container);
@@ -19,9 +12,7 @@ root.render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId="157056526184-nkmp1njr7venoa2dc9mh3ifdefjl5i0l.apps.googleusercontent.com">
       <BrowserRouter>
-        <Provider store={store}>
-          <App />
-        </Provider>
+        <App />
       </BrowserRouter>
     </GoogleOAuthProvider>
   </React.StrictMode>

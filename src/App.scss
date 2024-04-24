@@ -51,9 +51,30 @@ img {
 }
 
 .container-page {
-  display: flex;
+  position: relative;
+  height: 100vh; /* Adjust according to your preference */
 
-  .container-message {
-    flex: 1;
+  .block {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    outline: 1px solid black;
+    text-align: center;
+    width: 8.3%;
+    height: 12.5%;
+    background: white;
+    font-size: 15px;
+  }
+
+  .center-space {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    grid-column: 2 / span 10; /* Center space spanning 4 columns */
+    grid-row: 2 / span 6; /* Center space spanning 4 rows */
+    background-color: #e0e0e0; /* Light Gray */
   }
 }
