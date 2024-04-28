@@ -1,16 +1,20 @@
 import React from "react";
-import { Routes, Route, Navigate, redirect } from "react-router-dom";
+import { Routes, Route} from "react-router-dom";
 
 import "./App.scss";
 
 // import SideBar from "./components/SideBar";
 import Dashboard from "./view/Dashboard";
+import {ReactComponent} from './asset/img/icons.svg'
 
 function App() {
   return (
+    <>
+    <ReactComponent/>
     <Routes>
       <Route path="/" element={<Dashboard />} />
     </Routes>
+    </>
   );
 }
 
