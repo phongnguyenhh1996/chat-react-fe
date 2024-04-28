@@ -64,7 +64,7 @@ const Block = ({ block, idx }) => {
         {(block.type === "jail" || block.type === "jail-visit" || block.type === "start") && <span
             style={{
               position: "absolute",
-              bottom: window.innerWidth > 950 ? 5 : 2,
+              bottom: window.screen.width > 950 ? 5 : 2,
               fontSize: price ? 13 : 11,
               width: "100%",
               animationDelay: "0.5s",
@@ -78,7 +78,7 @@ const Block = ({ block, idx }) => {
             key={price}
             style={{
               position: "absolute",
-              bottom: window.innerWidth > 950 ? 5 : 2,
+              bottom: window.screen.width > 950 ? 5 : 2,
               fontSize: price ? 13 : 11,
               width: "100%",
               animationDelay: "0.5s",
@@ -100,7 +100,7 @@ const Block = ({ block, idx }) => {
             key={BLOCKS[MainStore.flightDestination]?.name}
             style={{
               position: "absolute",
-              bottom: window.innerWidth > 950 ? 5 : 2,
+              bottom: window.screen.width > 950 ? 5 : 2,
               fontSize: price ? 13 : 11,
               width: "100%",
               animationDelay: "1s",
