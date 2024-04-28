@@ -310,8 +310,6 @@ const Dashboard = () => {
     nextPlayerTurn();
   };
 
-  console.log(MainStore.gameState);
-
   return (
     <div className="container-page">
       {BLOCKS.map((block, index) => (
@@ -331,7 +329,7 @@ const Dashboard = () => {
               left: index === 0 || index === 2 ? -30 : undefined,
               top:
                 (index === 0 || index === 1)
-                  ? -20
+                  ? (window.innerWidth > 950 ? -20 : -10)
                   : undefined,
               right: index === 1 || index === 3 ? -30 : undefined,
               bottom:
