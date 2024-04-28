@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/chat-react-fe/static/css/main.fa65b8d2.css",
+    "main.js": "/chat-react-fe/static/js/main.a06b8a5d.js",
+    "static/js/787.0e8ea75c.chunk.js": "/chat-react-fe/static/js/787.0e8ea75c.chunk.js",
+    "static/media/icons.svg": "/chat-react-fe/static/media/icons.719a87841b8daffbfd9b4a0b828d974d.svg",
+    "static/media/avatar4.svg": "/chat-react-fe/static/media/avatar4.1a08efc3c859e4bd8f418eadcb61d407.svg",
+    "static/media/avatar1.svg": "/chat-react-fe/static/media/avatar1.690ea1a1f4203e3af5d4ab50d433612c.svg",
+    "static/media/avatar2.svg": "/chat-react-fe/static/media/avatar2.d4e78093d66dece3a716ae8afcbd01c7.svg",
+    "static/media/money.svg": "/chat-react-fe/static/media/money.46fab7a471d919cd8b1a36fe36918509.svg",
+    "static/media/avatar3.svg": "/chat-react-fe/static/media/avatar3.6d497afd97497d93ac3b9b7f7d532a81.svg",
+    "static/media/bank.svg": "/chat-react-fe/static/media/bank.226f6a32056debba675706254fd46338.svg",
+    "index.html": "/chat-react-fe/index.html",
+    "main.fa65b8d2.css.map": "/chat-react-fe/static/css/main.fa65b8d2.css.map",
+    "main.a06b8a5d.js.map": "/chat-react-fe/static/js/main.a06b8a5d.js.map",
+    "787.0e8ea75c.chunk.js.map": "/chat-react-fe/static/js/787.0e8ea75c.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.fa65b8d2.css",
+    "static/js/main.a06b8a5d.js"
+  ]
+}
