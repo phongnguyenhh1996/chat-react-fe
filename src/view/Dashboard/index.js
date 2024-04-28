@@ -328,12 +328,12 @@ const Dashboard = () => {
               flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
               height: window.innerWidth > 950 ? 25 : 15,
               position: "relative",
-              left: index === 0 || index === 2 ? -40 : undefined,
+              left: index === 0 || index === 2 ? -30 : undefined,
               top:
-                (index === 0 || index === 1) && MainStore.totalPlayers > 2
-                  ? -25
+                (index === 0 || index === 1)
+                  ? -20
                   : undefined,
-              right: index === 1 || index === 3 ? -40 : undefined,
+              right: index === 1 || index === 3 ? -30 : undefined,
               bottom:
                 (index === 2 || index === 3) && MainStore.totalPlayers > 2
                   ? -25

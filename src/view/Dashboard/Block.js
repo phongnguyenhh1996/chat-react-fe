@@ -67,7 +67,7 @@ const Block = ({ block, idx }) => {
               bottom: window.innerWidth > 950 ? 5 : 2,
               fontSize: price ? 13 : 11,
               width: "100%",
-              animationDelay: "1s",
+              animationDelay: "0.5s",
             }}
           >
             {block.name}
@@ -81,7 +81,7 @@ const Block = ({ block, idx }) => {
               bottom: window.innerWidth > 950 ? 5 : 2,
               fontSize: price ? 13 : 11,
               width: "100%",
-              animationDelay: "1s",
+              animationDelay: "0.5s",
               color:
                 COLORS[
                   MainStore.getPlayerIndexById(
