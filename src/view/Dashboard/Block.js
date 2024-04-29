@@ -55,6 +55,7 @@ const Block = ({ block, idx }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              fontSize: 8
             }}
           >
             {block?.name}
@@ -79,7 +80,7 @@ const Block = ({ block, idx }) => {
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,
-              fontSize: price ? 13 : 11,
+              fontSize: price ? (window.innerWidth > 950 ? 13 : 10) : 11,
               width: "100%",
               animationDelay: "0.5s",
               color:
@@ -136,13 +137,13 @@ const Block = ({ block, idx }) => {
                     )
                   ]
                 : block?.row,
-            borderTop: block.position === "top" ? "2px solid black" : undefined,
+            borderTop: block.position === "top" ? "1px solid black" : undefined,
             borderBottom:
-              block.position === "bottom" ? "2px solid black" : undefined,
+              block.position === "bottom" ? "1px solid black" : undefined,
             borderLeft:
-              block.position === "left" ? "2px solid black" : undefined,
+              block.position === "left" ? "1px solid black" : undefined,
             borderRight:
-              block.position === "right" ? "2px solid black" : undefined,
+              block.position === "right" ? "1px solid black" : undefined,
             position: "relative",
             order: block.position === "bottom" ? "-1" : "initial",
           }}

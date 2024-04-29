@@ -1,4 +1,7 @@
 export const getBlockPositionStyle = (idx) => {
+    if (idx > 35) {
+    idx = idx % 36;
+  }
   const rect = document.getElementById(`block-${idx}`)?.getBoundingClientRect() || {}
   
   const style = {
@@ -7,9 +10,7 @@ export const getBlockPositionStyle = (idx) => {
     top: rect.top,
     left: rect.left
   };
-  // if (idx > 35) {
-  //   idx = idx % 36;
-  // }
+
   // if (idx >= 0 && idx < 12) {
   //   style.top = style.height * 7;
   //   style.left = offset.width - style.width*(idx+1)
