@@ -323,13 +323,13 @@ const Dashboard = () => {
         >
           <img
             style={{
-              flex: window.screen.width > 950 ? "0 0 25px" : "0 0 15px",
-              height: window.screen.width > 950 ? 25 : 15,
+              flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
+              height: window.innerWidth > 950 ? 25 : 15,
               position: "relative",
               left: index === 0 || index === 2 ? -30 : undefined,
               top:
                 (index === 0 || index === 1)
-                  ? (window.screen.width > 950 ? -20 : -10)
+                  ? (window.innerWidth > 950 ? -20 : -10)
                   : undefined,
               right: index === 1 || index === 3 ? -30 : undefined,
               bottom:
