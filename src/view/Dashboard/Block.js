@@ -8,8 +8,7 @@ import MainStore from "./MainStore";
 const Block = ({ block, idx }) => {
   console.log(MainStore.flightDestination);
   const price = MainStore.getPrice(
-    block.price,
-    MainStore.ownedBlocks[block.name]?.level
+    block
   );
   return (
     <div
@@ -22,6 +21,7 @@ const Block = ({ block, idx }) => {
           : "row-reverse",
       }}
       className="block"
+      id={`block-${idx}`}
     >
       <div
         style={{
@@ -47,7 +47,7 @@ const Block = ({ block, idx }) => {
         }}
       >
         {block.type === "plane" || block.type === "jail" || block.type === "jail-visit" || block.type === "start"? (
-          <Icon style={{margin: "auto"}} symbol={block.type} width="40px" height="40px" />
+          <Icon style={{margin: "auto"}} symbol={block.type} width={window.innerWidth > 950 ? "40px" : "30px"} height={window.innerWidth > 950 ? "40px" : "30px"}  />
         ) : (
           <span
             style={{
@@ -101,7 +101,7 @@ const Block = ({ block, idx }) => {
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,
-              fontSize: price ? 13 : 11,
+              fontSize: window.innerWidth > 950 ? 11 : 9,
               width: "100%",
               animationDelay: "1s",
             }}

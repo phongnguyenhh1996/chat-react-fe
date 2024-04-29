@@ -117,7 +117,7 @@ const Dashboard = () => {
               MainStore.getPlayerIndexById(ownedBlock.playerId)
             ];
           if (!receivePlayer.onJail) {
-            const price = MainStore.getPrice(block.price, ownedBlock.level);
+            const price = MainStore.getPrice(block);
             MainStore.updatePlayerData(
               currentPlayer,
               "money",
@@ -326,15 +326,15 @@ const Dashboard = () => {
               flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
               height: window.innerWidth > 950 ? 25 : 15,
               position: "relative",
-              left: index === 0 || index === 2 ? -30 : undefined,
+              left: index === 0 || index === 2 ? -15 : undefined,
               top:
                 (index === 0 || index === 1)
                   ? (window.innerWidth > 950 ? -20 : -10)
                   : undefined,
-              right: index === 1 || index === 3 ? -30 : undefined,
+              right: index === 1 || index === 3 ? -15 : undefined,
               bottom:
                 (index === 2 || index === 3) && MainStore.totalPlayers > 2
-                  ? -25
+                  ? -15
                   : undefined,
             }}
             alt=""

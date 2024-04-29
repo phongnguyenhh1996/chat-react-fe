@@ -1,6 +1,7 @@
 import { random } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
+import { BLOCKS } from "./constants";
 import { delay } from "./utils";
 
 class MainStore {
@@ -120,11 +121,39 @@ class MainStore {
     ][random(0, 7)];
   }
 
-  getPrice(prices, level) {
-    if (!level || !prices || !prices.length) return
+  getPrice(block = {}) {
+    if (!["public", "property"].includes(block.type)) return
+    const prices = block?.price;
+    const level = this.ownedBlocks[block.name]?.level;
+    if (!this.ownedBlocks[block.name]) return;
+    console.log(this.ownedBlocks[block.name]);
+
     const rate = [0.2, 1, 2, 3, 4, 1];
-    return prices[level - 1] * rate[level - 1];
-  };
+    let totalPrice = prices[level - 1] * rate[level - 1];
+
+    if (block.type === "public") {
+      const allOwnedPublicBlock = BLOCKS.filter(
+        (b) =>
+          b.type === "public" &&
+          this.ownedBlocks[b.name]?.playerId ===
+            this.ownedBlocks[block.name].playerId
+      );
+      return totalPrice*allOwnedPublicBlock.length
+    }
+
+    if (block.type === "property") {
+      const allPropertySameRow = BLOCKS.filter(b => b.row === block.row)
+      const isOwnedAllPropertySameRow = allPropertySameRow.every(
+        (b) =>
+          b.row === block.row &&
+          this.ownedBlocks[b.name]?.playerId ===
+            this.ownedBlocks[block.name].playerId
+      );
+      if (isOwnedAllPropertySameRow) return totalPrice*2
+    }
+    console.log(totalPrice);
+    return totalPrice
+  }
 }
 
 export default new MainStore();
