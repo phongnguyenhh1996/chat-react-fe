@@ -106,15 +106,20 @@ class MainStore {
     }
   }
 
-  updateOwnedBlockLevel(name, level) {
-    if (level === 0) {
+  updateOwnedBlockLevel(name) {
+    const level = this.ownedBlocks[name]?.level
+    if (level === 1) {
       delete this.ownedBlocks[name];
       if (name === this.sellingProperty) {
         this.sellingProperty = "";
       }
     } else {
-      this.ownedBlocks[name].level = level;
+      this.ownedBlocks[name].level -= 1;
     }
+  }
+
+  updateOwnedBlockElectricity(name, turn) {
+    this.ownedBlocks[name].lostElectricity = turn
   }
 
   getPlayerIndexById(id) {
@@ -175,11 +180,11 @@ class MainStore {
   checkMoney(playerId, price) {
     const player = this.players[this.getPlayerIndexById(playerId)];
     if (player.money >= price) return true;
-    console.log(player.money, price, Object.values(this.ownedBlocks).findIndex((b) => b.playerId === player.id));
     if (
       player.money < price &&
-      Object.values(this.ownedBlocks).findIndex((b) => b.playerId === player.id) ===
-        -1
+      Object.values(this.ownedBlocks).findIndex(
+        (b) => b.playerId === player.id
+      ) === -1
     )
       return false;
   }
@@ -197,10 +202,15 @@ class MainStore {
 
   handleChooseBlock(block) {
     if (
-      this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-      this.gameState.split("--")[2] !== this.ownedBlocks[block.name]?.playerId
-    )
+      !this.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
+      (this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+        this.gameState.split("--")[2] !==
+          this.ownedBlocks[block.name]?.playerId)
+    ) {
+      this.updateBuyingProperty(block.name);
+      this.updateGameState(this.ownedBlocks[block.name] ? GAME_STATES.UPDATING : GAME_STATES.BUYING);
       return;
+    }
 
     this.sellingProperty = block.name;
   }

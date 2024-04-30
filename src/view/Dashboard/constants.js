@@ -261,5 +261,13 @@ export const GAME_STATES = {
   FLIGHT: "flight",
   NOT_ENOUGH_MONEY_UPDATING_PROPERTY: "not_enough_money_updating_property",
   NOT_ENOUGH_MONEY_BUYING_PROPERTY: "not_enough_money_buying_property",
-  NEED_MONEY: 'need_money'
+  NEED_MONEY: 'need_money',
+  GOING_BACK: "going_back",
+  DOWN_GRADE_BUILDING: 'down_grade_building',
+  LOST_ELECTRIC_BUILDING: 'lost_lectric_building',
+  CURRENT_LOST_ELECTRIC: 'current_lost_electric',
+  FREE_OUT_FAIL_CARD: 'free_out_fail_card',
+  USE_FREE_CARD: 'use_free_card',
+  FIXING_ELECTRIC_BUILDING: 'fixing_electric_building',
+  RANDOM_TRAVELING: 'random_traveling'
 };

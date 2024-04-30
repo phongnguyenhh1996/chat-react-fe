@@ -49,7 +49,24 @@ const Dashboard = () => {
   const nextPlayerTurn = async (forceSwitch) => {
     MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
     await delay(1000);
-    if (MainStore.dice[0] === MainStore.dice[1] && !forceSwitch) {
+    if (forceSwitch) {
+      MainStore.setSamePlayerRolling(1);
+      let nextPlayerIndex = currentPlayerIndex + 1;
+      if (nextPlayerIndex >= MainStore.players.length) {
+        nextPlayerIndex = 0;
+      }
+      while (
+        MainStore.players[nextPlayerIndex] &&
+        MainStore.players[nextPlayerIndex].broke
+      ) {
+        nextPlayerIndex += 1;
+        if (nextPlayerIndex >= MainStore.players.length) {
+          nextPlayerIndex = 0;
+        }
+      }
+      MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
+      MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+    } else if (MainStore.dice[0] === MainStore.dice[1] && !forceSwitch) {
       MainStore.setSamePlayerRolling(MainStore.samePlayerRolling + 1);
       if (MainStore.samePlayerRolling > 3) {
         goToJail();
@@ -61,6 +78,15 @@ const Dashboard = () => {
       let nextPlayerIndex = currentPlayerIndex + 1;
       if (nextPlayerIndex >= MainStore.players.length) {
         nextPlayerIndex = 0;
+      }
+      while (
+        MainStore.players[nextPlayerIndex] &&
+        MainStore.players[nextPlayerIndex].broke
+      ) {
+        nextPlayerIndex += 1;
+        if (nextPlayerIndex >= MainStore.players.length) {
+          nextPlayerIndex = 0;
+        }
       }
       MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
@@ -104,25 +130,30 @@ const Dashboard = () => {
               MainStore.getPlayerIndexById(ownedBlock.playerId)
             ];
           if (!receivePlayer.onJail) {
-            const price = MainStore.getPrice(block);
-            if (currentPlayer.money - price < 0) {
-              await handleNotEnoughMoney(currentPlayer, price);
+            if (ownedBlock.lostElectricity > 0) {
+              MainStore.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
+              MainStore.updateOwnedBlockElectricity(block.name);
+            } else {
+              const price = MainStore.getPrice(block);
+              if (currentPlayer.money - price < 0) {
+                await handleNotEnoughMoney(currentPlayer, price);
+              }
+              MainStore.updatePlayerData(
+                currentPlayer,
+                "money",
+                currentPlayer.money - price
+              );
+
+              MainStore.updatePlayerData(
+                receivePlayer,
+                "money",
+                receivePlayer.money + price
+              );
+
+              MainStore.updateGameState(
+                GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+              );
             }
-            MainStore.updatePlayerData(
-              currentPlayer,
-              "money",
-              currentPlayer.money - price
-            );
-
-            MainStore.updatePlayerData(
-              receivePlayer,
-              "money",
-              receivePlayer.money + price
-            );
-
-            MainStore.updateGameState(
-              GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
-            );
           } else {
             MainStore.updateGameState(GAME_STATES.RECEIVER_ON_JAIL);
           }
@@ -154,39 +185,159 @@ const Dashboard = () => {
     }
 
     if (block.type === "badluck") {
-      const tax = parseInt(currentPlayer.money * 0.05) * 2;
-      if (currentPlayer.money - tax < 0) {
-        await handleNotEnoughMoney(currentPlayer, tax);
-      }
-      MainStore.updatePlayerData(
-        currentPlayer,
-        "money",
-        currentPlayer.money - tax
-      );
-      MainStore.updateGameState(
-        GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
-      );
-      await delay(2000);
-      nextPlayerTurn();
+      await [
+        async () => {
+          const tax = [500, 1000][random(0, 1)];
+          if (currentPlayer.money - tax < 0) {
+            await handleNotEnoughMoney(currentPlayer, tax);
+          }
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            currentPlayer.money - tax
+          );
+          MainStore.updateGameState(
+            GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
+          );
+          await delay(2000);
+          nextPlayerTurn();
+        },
+        goToJail,
+        async () => {
+          const round = currentPlayer.round || 0;
+          const position = random(currentPlayer.position - 1, round * 36 + 2);
+          MainStore.updateGameState(
+            GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
+          );
+          await delay(2000);
+          movingPlayer(() => {}, position);
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) =>
+              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
+              MainStore.ownedBlocks[key].level > 1 &&
+              MainStore.ownedBlocks[key].level < 6
+          );
+          if (allOwnedBlockKeys.length === 0 || currentPlayer.money <= 5000) {
+            MainStore.updateGameState(
+              GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
+            );
+            await delay(2000);
+            nextPlayerTurn();
+            return;
+          }
+          const randomKey =
+            allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+          MainStore.updateGameState(
+            GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
+          );
+          await delay(2000);
+          const price = getSellingPrice(randomKey);
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            parseInt(currentPlayer.money + price)
+          );
+          MainStore.updateOwnedBlockLevel(randomKey);
+          MainStore.updateGameState(
+            GAME_STATES.INC_MONEY + "--" + price + "--bank"
+          );
+          await delay(2000);
+          nextPlayerTurn();
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+          );
+          MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
+          await delay(2000);
+          if (allOwnedBlockKeys.length > 0) {
+            const randomKey =
+              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+            MainStore.updateOwnedBlockElectricity(randomKey, 1);
+          }
+          nextPlayerTurn();
+          return;
+        },
+      ][random(0, 4)]();
       return;
     }
 
     if (block.type === "chance") {
-      MainStore.updatePlayerData(
-        currentPlayer,
-        "money",
-        currentPlayer.money + 500
-      );
-      MainStore.updateGameState(
-        GAME_STATES.INC_MONEY + "--" + 500 + "--bank--gift"
-      );
-      await delay(2000);
-      nextPlayerTurn();
+      await [
+        async () => {
+          const gift = [500, 1000][random(0, 1)];
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            currentPlayer.money + gift
+          );
+          MainStore.updateGameState(
+            GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift"
+          );
+          await delay(2000);
+          nextPlayerTurn();
+        },
+        async () => {
+          MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
+          await delay(2000);
+          MainStore.updatePlayerData(currentPlayer, "havefreeCard", true);
+          nextPlayerTurn();
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) =>
+              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
+              MainStore.ownedBlocks[key].lostElectricity
+          );
+          if (allOwnedBlockKeys.length > 0) {
+            const randomKey =
+              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+            MainStore.updateOwnedBlockElectricity(randomKey, 0);
+            MainStore.updateGameState(
+              GAME_STATES.FIXING_ELECTRIC_BUILDING + "--" + randomKey
+            );
+            await delay(2000);
+          }
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            currentPlayer.money - 200
+          );
+          MainStore.updateGameState(
+            GAME_STATES.DEC_MONEY + "--" + 200 + "--bank--fix-electric"
+          );
+          await delay(2000);
+          nextPlayerTurn();
+          return;
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+          );
+          MainStore.updateGameState(GAME_STATES.RANDOM_TRAVELING);
+          await delay(2000);
+          if (allOwnedBlockKeys.length > 0) {
+            const randomKey =
+              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+            const idx = BLOCKS.findIndex((b) => b.name === randomKey);
+            const round = Math.floor((currentPlayer.position - 1) / 36);
+            const currentRoundDestination = round * 36 + (idx + 1);
+            let position = currentRoundDestination;
+            if (position <= currentPlayer.position) {
+              position += 36;
+            }
+            movingPlayer(() => {}, position);
+          }
+          return;
+        },
+      ][random(0, 3)]();
       return;
     }
 
     if (block.type === "plane") {
-      const round = Math.floor(currentPlayer.position / 37);
+      const round = Math.floor((currentPlayer.position - 1) / 36);
       const currentRoundDestination =
         round * 36 + (MainStore.flightDestination + 1);
       let position = currentRoundDestination;
@@ -207,12 +358,12 @@ const Dashboard = () => {
 
   const checkEndGame = () => {
     if (MainStore.players.filter((p) => !p.broke).length < 2) {
-      const playerNotBroke = MainStore.players.find(p => !p.broke)
+      const playerNotBroke = MainStore.players.find((p) => !p.broke);
       console.log(playerNotBroke);
-      MainStore.updatePlayerData(playerNotBroke, 'winner', true)
-      MainStore.updatePlayerData(playerNotBroke, 'winReason', 'not-broke')
+      MainStore.updatePlayerData(playerNotBroke, "winner", true);
+      MainStore.updatePlayerData(playerNotBroke, "winReason", "not-broke");
       MainStore.setEndGame(true);
-      return
+      return;
     }
 
     let isFourPublic = false;
@@ -234,11 +385,15 @@ const Dashboard = () => {
       isFourPublic = Object.values(rows).some((value) => value === 4);
       isThreeMonopoly =
         Object.values(rows).filter((value) => value === 3).length === 3;
-        if (isFourPublic || isThreeMonopoly) {
-        MainStore.updatePlayerData(p, 'winner', true)
-        MainStore.updatePlayerData(p, 'winReason', isFourPublic ? 'four-public' : 'three-monopoly')
+      if (isFourPublic || isThreeMonopoly) {
+        MainStore.updatePlayerData(p, "winner", true);
+        MainStore.updatePlayerData(
+          p,
+          "winReason",
+          isFourPublic ? "four-public" : "three-monopoly"
+        );
         MainStore.setEndGame(true);
-        return
+        return;
       }
     });
   };
@@ -258,7 +413,16 @@ const Dashboard = () => {
         );
         MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
         await delay(2000);
-        if (currentPlayer.onJail === 4) {
+        if (currentPlayer.haveFreeCard) {
+          MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
+          MainStore.updatePlayerData(currentPlayer, "onJail", 0);
+          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
+          await delay(2000);
+          nextPlayerTurn(true);
+        } else if (currentPlayer.onJail === 4) {
+          if (currentPlayer.money - 500 < 0) {
+            await handleNotEnoughMoney(currentPlayer, 500);
+          }
           MainStore.updatePlayerData(
             currentPlayer,
             "money",
@@ -295,7 +459,8 @@ const Dashboard = () => {
           MainStore.updatePlayerData(
             currentPlayer,
             "position",
-            currentPlayer.position + 1
+            currentPlayer.position +
+              (newPosition > currentPlayer.position ? 1 : -1)
           );
         }
       },
@@ -348,6 +513,7 @@ const Dashboard = () => {
     MainStore.updateOwnedBlocks(buyingProperty.name, price);
     MainStore.updateGameState(GAME_STATES.DEC_MONEY + "--" + price + "--bank");
     await delay(2000);
+    checkEndGame();
     nextPlayerTurn();
   };
 
@@ -356,9 +522,17 @@ const Dashboard = () => {
   );
   const sellingPropertyInfor = MainStore.ownedBlocks[MainStore.sellingProperty];
 
-  const getSellingPrice = () => {
-    if (sellingProperty.type === "public") return sellingProperty.price[0];
-    const price = sellingProperty.price[sellingPropertyInfor?.level - 1];
+  const getSellingPrice = (key) => {
+    const currentSellingProperty = key
+      ? BLOCKS.find((block) => block.name === key)
+      : sellingProperty;
+    const currentSellingPropertyInfor = key
+      ? MainStore.ownedBlocks[key]
+      : sellingPropertyInfor;
+    if (currentSellingProperty.type === "public")
+      return currentSellingProperty.price[0];
+    const price =
+      currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
     return parseInt(price / 2);
   };
 
@@ -369,10 +543,7 @@ const Dashboard = () => {
       "money",
       parseInt(currentPlayer.money + price)
     );
-    MainStore.updateOwnedBlockLevel(
-      MainStore.sellingProperty,
-      sellingPropertyInfor.level - 1
-    );
+    MainStore.updateOwnedBlockLevel(MainStore.sellingProperty);
     MainStore.updateGameState(
       GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + currentPlayer.id
     );
@@ -446,12 +617,13 @@ const Dashboard = () => {
                     src={moneySVG}
                     alt=""
                   />
-                  {MainStore.gameState.split("--")[2] !== "bank" && (
-                    <PlayerInfor
-                      playerId={MainStore.gameState.split("--")[2]}
-                      rightSide
-                    />
-                  )}
+                  {MainStore.gameState.split("--")[2] &&
+                    MainStore.gameState.split("--")[2] !== "bank" && (
+                      <PlayerInfor
+                        playerId={MainStore.gameState.split("--")[2]}
+                        rightSide
+                      />
+                    )}
                   {MainStore.gameState.split("--")[2] === "bank" && (
                     <div
                       style={{
@@ -595,12 +767,11 @@ const Dashboard = () => {
                     {MainStore.gameState === GAME_STATES.UPDATING && (
                       <div>
                         Bạn có muốn nâng cấp {buyingProperty.name} lên{" "}
-                        {updatingPropertyInfo.level === 6
+                        {updatingPropertyInfo.level === 5
                           ? "biệt thự"
                           : `nhà cấp ${updatingPropertyInfo.level}`}{" "}
                         với giá là{" "}
-                        {buyingProperty.price[updatingPropertyInfo.level + 1]}$
-                        ?
+                        {buyingProperty.price[updatingPropertyInfo.level]}$ ?
                       </div>
                     )}
 
@@ -676,6 +847,9 @@ const Dashboard = () => {
                 MainStore.gameState.split("--")[3] === "pay-out-jail" &&
                 "Bạn phải trả 500$ để ra tù"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+                MainStore.gameState.split("--")[3] === "fix-electric" &&
+                "Bạn mất 200$ phí sửa điện"}
+              {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "tax" &&
                 `Bạn phải nộp thuế ${MainStore.gameState.split("--")[1]}$`}
               {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
@@ -714,6 +888,44 @@ const Dashboard = () => {
               {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
                 !MainStore.sellingProperty &&
                 "Chọn ô đất bạn muốn bán"}
+              {MainStore.gameState.startsWith(GAME_STATES.GOING_BACK) &&
+                `Bạn bị đi lùi ${MainStore.gameState.split("--")[1]} bước`}
+              {MainStore.gameState.startsWith(
+                GAME_STATES.DOWN_GRADE_BUILDING
+              ) &&
+                MainStore.gameState.split("--")[1] !== "no-property" && (
+                  <div>
+                    Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
+                    <br />
+                    {`Bạn bị buộc bán 1 căn nhà ở ${
+                      MainStore.gameState.split("--")[1]
+                    }`}
+                  </div>
+                )}
+              {MainStore.gameState.startsWith(
+                GAME_STATES.DOWN_GRADE_BUILDING
+              ) &&
+                MainStore.gameState.split("--")[1] === "no-property" && (
+                  <div>
+                    Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
+                    <br />
+                    Bạn chưa thỏa mãn điều kiện
+                  </div>
+                )}
+              {MainStore.gameState.startsWith(
+                GAME_STATES.LOST_ELECTRIC_BUILDING
+              ) && "Một ô ngẫu nhiên của bạn sẽ bị cắt điện"}
+              {MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC &&
+                "Bạn không mất tiền vì ô hiện tại đang mất điện"}
+              {MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD &&
+                "Bạn được tặng thẻ ra tù miễn phí"}
+              {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
+                "Đã sử dụng thẻ ra tù"}
+              {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
+                "Đi tới 1 ô của bạn ngẫu nhiên"}
+              {MainStore.gameState.startsWith(
+                GAME_STATES.FIXING_ELECTRIC_BUILDING
+              ) && `Ô ${MainStore.gameState.split("--")[1]} đang được sửa điện`}
             </div>
           </div>
         )}
@@ -721,7 +933,7 @@ const Dashboard = () => {
       <Modal
         centered
         closable={false}
-        open={MainStore.gameState === 'init'}
+        open={MainStore.gameState === "init"}
         footer={[
           <Button key="submit" onClick={handleOk}>
             Bắt đầu
@@ -794,17 +1006,28 @@ const Dashboard = () => {
         ]}
         maskClosable={false}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-            Người chiến thắng là :
-          </p>
-        </div>
-        <PlayerInfor playerId={MainStore.players.find((p) => p.winner)?.id} />
-        <div>
-          {MainStore.players.find((p) => p.winner)?.name} đã thắng vì {" "}
-          {MainStore.players.find((p) => p.winner)?.winReason === "not-broke" && "là người chơi tồn tại cuối cùng"}
-          {MainStore.players.find((p) => p.winner)?.winReason === "four-public" && "sỡ hữu 4 ô công cộng"}
-          {MainStore.players.find((p) => p.winner)?.winReason === "three-monopoly" && "sỡ hữu 3 monopoly"}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+              Người chiến thắng là :
+            </p>
+          </div>
+          <PlayerInfor playerId={MainStore.players.find((p) => p.winner)?.id} />
+          <div>
+            {MainStore.players.find((p) => p.winner)?.name} đã thắng vì{" "}
+            {MainStore.players.find((p) => p.winner)?.winReason ===
+              "not-broke" && "là người chơi tồn tại cuối cùng"}
+            {MainStore.players.find((p) => p.winner)?.winReason ===
+              "four-public" && "sỡ hữu 4 ô công cộng"}
+            {MainStore.players.find((p) => p.winner)?.winReason ===
+              "three-monopoly" && "sỡ hữu 3 monopoly"}
+          </div>
         </div>
       </Modal>
     </div>

@@ -19,9 +19,14 @@ const Block = ({ block, idx }) => {
         opacity:
           MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
           MainStore.gameState.split("--")[2] !==
-            MainStore.ownedBlocks[block.name]?.playerId ? 0.5 : 1 ,
-        outline: MainStore.sellingProperty === block.name ? '4px solid red' : undefined,
-        zIndex: MainStore.sellingProperty === block.name ? 999 : undefined
+            MainStore.ownedBlocks[block.name]?.playerId
+            ? 0.5
+            : 1,
+        outline:
+          MainStore.sellingProperty === block.name
+            ? "4px solid red"
+            : undefined,
+        zIndex: MainStore.sellingProperty === block.name ? 999 : undefined,
       }}
       className="block"
       id={`block-${idx}`}
@@ -29,6 +34,8 @@ const Block = ({ block, idx }) => {
     >
       <div
         style={{
+          background:
+            MainStore.ownedBlocks[block.name]?.lostElectricity > 0 ? 'rgb(0 0 0 / 30%)' : undefined,
           position: "relative",
           display: "flex",
           flexDirection: "column",
@@ -252,10 +259,10 @@ const Block = ({ block, idx }) => {
                   style={{
                     border: "1px solid black",
                     width: ["top", "bottom"].includes(block?.position)
-                      ? 60
+                      ? "80%"
                       : 10,
                     height: ["left", "right"].includes(block?.position)
-                      ? 60
+                      ? "80%"
                       : 10,
                     margin: "auto",
                     backgroundColor:
