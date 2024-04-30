@@ -7,7 +7,7 @@ const PlayerInfor = ({ playerId, rightSide }) => {
   const currentPlayerIndex = MainStore.players.findIndex(
     (p) => p.id === playerId
   );
-  const currentPlayer = MainStore.players[currentPlayerIndex];
+  const currentPlayer = MainStore.players[currentPlayerIndex] || {};
 
   return (
     <div className="information__player-infor">

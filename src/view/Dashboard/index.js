@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { random, range } from "lodash";
 import { Button, Modal, InputNumber, Input } from "antd";
 import { observer } from "mobx-react-lite";
@@ -12,10 +12,7 @@ import Block from "./Block";
 import PlayerInfor from "./PlayerInfor";
 
 const Dashboard = () => {
-  const [isModalOpen, setIsModalOpen] = useState(true);
-
   const handleOk = () => {
-    setIsModalOpen(false);
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
     MainStore.updatePlayingId(
       MainStore.players[random(0, MainStore.players.length - 1)].id
@@ -211,8 +208,11 @@ const Dashboard = () => {
   const checkEndGame = () => {
     if (MainStore.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = MainStore.players.find(p => !p.broke)
+      console.log(playerNotBroke);
       MainStore.updatePlayerData(playerNotBroke, 'winner', true)
+      MainStore.updatePlayerData(playerNotBroke, 'winReason', 'not-broke')
       MainStore.setEndGame(true);
+      return
     }
 
     let isFourPublic = false;
@@ -234,9 +234,11 @@ const Dashboard = () => {
       isFourPublic = Object.values(rows).some((value) => value === 4);
       isThreeMonopoly =
         Object.values(rows).filter((value) => value === 3).length === 3;
-      MainStore.updatePlayerData(p, 'winner', true)
-      if (isFourPublic || isThreeMonopoly) {
+        if (isFourPublic || isThreeMonopoly) {
+        MainStore.updatePlayerData(p, 'winner', true)
+        MainStore.updatePlayerData(p, 'winReason', isFourPublic ? 'four-public' : 'three-monopoly')
         MainStore.setEndGame(true);
+        return
       }
     });
   };
@@ -719,7 +721,7 @@ const Dashboard = () => {
       <Modal
         centered
         closable={false}
-        open={isModalOpen}
+        open={MainStore.gameState === 'init'}
         footer={[
           <Button key="submit" onClick={handleOk}>
             Bắt đầu
@@ -798,6 +800,12 @@ const Dashboard = () => {
           </p>
         </div>
         <PlayerInfor playerId={MainStore.players.find((p) => p.winner)?.id} />
+        <div>
+          {MainStore.players.find((p) => p.winner)?.name} đã thắng vì {" "}
+          {MainStore.players.find((p) => p.winner)?.winReason === "not-broke" && "là người chơi tồn tại cuối cùng"}
+          {MainStore.players.find((p) => p.winner)?.winReason === "four-public" && "sỡ hữu 4 ô công cộng"}
+          {MainStore.players.find((p) => p.winner)?.winReason === "three-monopoly" && "sỡ hữu 3 monopoly"}
+        </div>
       </Modal>
     </div>
   );
