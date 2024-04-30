@@ -2,14 +2,11 @@ import { range } from "lodash";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import Icon from "../../components/Icon";
-import { BLOCKS, COLORS } from "./constants";
+import { BLOCKS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
 
 const Block = ({ block, idx }) => {
-  console.log(MainStore.flightDestination);
-  const price = MainStore.getPrice(
-    block
-  );
+  const price = MainStore.getPrice(block);
   return (
     <div
       style={{
@@ -19,9 +16,16 @@ const Block = ({ block, idx }) => {
           : block.position === "left"
           ? "row"
           : "row-reverse",
+        opacity:
+          MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+          MainStore.gameState.split("--")[2] !==
+            MainStore.ownedBlocks[block.name]?.playerId ? 0.5 : 1 ,
+        outline: MainStore.sellingProperty === block.name ? '4px solid red' : undefined,
+        zIndex: MainStore.sellingProperty === block.name ? 999 : undefined
       }}
       className="block"
       id={`block-${idx}`}
+      onClick={() => MainStore.handleChooseBlock(block)}
     >
       <div
         style={{
@@ -46,8 +50,16 @@ const Block = ({ block, idx }) => {
           // color: MainStore.ownedBlocks[block?.name] ? "white" : "black",
         }}
       >
-        {block.type === "plane" || block.type === "jail" || block.type === "jail-visit" || block.type === "start"? (
-          <Icon style={{margin: "auto"}} symbol={block.type} width={window.innerWidth > 950 ? "40px" : "30px"} height={window.innerWidth > 950 ? "40px" : "30px"}  />
+        {block.type === "plane" ||
+        block.type === "jail" ||
+        block.type === "jail-visit" ||
+        block.type === "start" ? (
+          <Icon
+            style={{ margin: "auto" }}
+            symbol={block.type}
+            width={window.innerWidth > 950 ? "40px" : "30px"}
+            height={window.innerWidth > 950 ? "40px" : "30px"}
+          />
         ) : (
           <span
             style={{
@@ -55,14 +67,17 @@ const Block = ({ block, idx }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 8
+              fontSize: 8,
             }}
           >
             {block?.name}
           </span>
         )}
 
-        {(block.type === "jail" || block.type === "jail-visit" || block.type === "start") && <span
+        {(block.type === "jail" ||
+          block.type === "jail-visit" ||
+          block.type === "start") && (
+          <span
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,
@@ -72,7 +87,8 @@ const Block = ({ block, idx }) => {
             }}
           >
             {block.name}
-          </span>}
+          </span>
+        )}
 
         {price && (
           <span

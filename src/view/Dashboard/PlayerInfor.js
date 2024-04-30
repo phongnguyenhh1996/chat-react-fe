@@ -37,16 +37,25 @@ const PlayerInfor = ({ playerId, rightSide }) => {
       >
         {currentPlayer.money}$
         {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
-          MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)) && (
+          MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) ||
+          MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY+'_inc')) && (
           <div
             style={{ position: "absolute", top: 0 }}
             className="fade-out-top"
             key={MainStore.gameState}
-          > 
-            {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) && !rightSide ? "+" : ""}
-            {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) && rightSide ? "-" : ""}
-            {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) && !rightSide ? "-" : ""}
-            {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) && rightSide ? "+" : ""}
+          >
+            {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) && !rightSide
+              ? "+"
+              : ""}
+            {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) && rightSide
+              ? "-"
+              : ""}
+            {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) && !rightSide
+              ? "-"
+              : ""}
+            {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) && rightSide
+              ? "+"
+              : ""}
             {MainStore.gameState.split("--")[1]}$
           </div>
         )}

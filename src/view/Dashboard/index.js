@@ -73,7 +73,6 @@ const Dashboard = () => {
   const checkNewRound = async () => {
     const round = currentPlayer.round || 0;
     const currentRound = Math.floor((currentPlayer.position - 1) / 36);
-    console.log({ currentRound, round, position: currentPlayer.position });
     if (currentRound > round) {
       MainStore.updatePlayerData(
         currentPlayer,
@@ -98,18 +97,9 @@ const Dashboard = () => {
     if (block.type === "property" || block.type === "public") {
       const ownedBlock = MainStore.ownedBlocks[block.name];
       if (!ownedBlock) {
-        if (currentPlayer.money < block.price[0]) {
-          MainStore.updateGameState(
-            GAME_STATES.NOT_ENOUGH_MONEY_BUYING_PROPERTY
-          );
-          await delay(2000);
-          nextPlayerTurn();
-          return;
-        } else {
-          MainStore.updateBuyingProperty(block.name);
-          await delay(1000);
-          MainStore.updateGameState(GAME_STATES.BUYING);
-        }
+        MainStore.updateBuyingProperty(block.name);
+        await delay(1000);
+        MainStore.updateGameState(GAME_STATES.BUYING);
       } else {
         if (ownedBlock.playerId !== currentPlayer.id) {
           const receivePlayer =
@@ -118,6 +108,9 @@ const Dashboard = () => {
             ];
           if (!receivePlayer.onJail) {
             const price = MainStore.getPrice(block);
+            if (currentPlayer.money - price < 0) {
+              await handleNotEnoughMoney(currentPlayer, price);
+            }
             MainStore.updatePlayerData(
               currentPlayer,
               "money",
@@ -144,24 +137,14 @@ const Dashboard = () => {
             nextPlayerTurn();
             return;
           }
-          if (ownedBlock?.level === 5) {
+          if (ownedBlock?.level === 6) {
             MainStore.updateGameState(GAME_STATES.MAX_LEVEL_PROPERTY);
             await delay(2000);
             nextPlayerTurn();
           } else {
-            const price = block.price[(ownedBlock?.level || 1) - 1];
-            if (currentPlayer.money < price) {
-              MainStore.updateGameState(
-                GAME_STATES.NOT_ENOUGH_MONEY_UPDATING_PROPERTY
-              );
-              await delay(2000);
-              nextPlayerTurn();
-              return;
-            } else {
-              MainStore.updateBuyingProperty(block.name);
-              await delay(1000);
-              MainStore.updateGameState(GAME_STATES.UPDATING);
-            }
+            MainStore.updateBuyingProperty(block.name);
+            await delay(1000);
+            MainStore.updateGameState(GAME_STATES.UPDATING);
           }
         }
       }
@@ -174,7 +157,10 @@ const Dashboard = () => {
     }
 
     if (block.type === "badluck") {
-      const tax = parseInt(currentPlayer.money * 0.05);
+      const tax = parseInt(currentPlayer.money * 0.05) * 2;
+      if (currentPlayer.money - tax < 0) {
+        await handleNotEnoughMoney(currentPlayer, tax);
+      }
       MainStore.updatePlayerData(
         currentPlayer,
         "money",
@@ -222,6 +208,36 @@ const Dashboard = () => {
     nextPlayerTurn();
   };
 
+  const checkEndGame = () => {
+    if (MainStore.players.filter((p) => !p.broke).length < 2) {
+      MainStore.setEndGame(true);
+    }
+
+    let isFourPublic = false;
+    let isThreeMonopoly = false;
+    MainStore.players.forEach((p) => {
+      const ownedBlocks = Object.keys(MainStore.ownedBlocks).filter(
+        (key) => MainStore.ownedBlocks[key].playerId === p.id
+      );
+      let rows = {};
+      ownedBlocks.forEach((key) => {
+        const block = BLOCKS.find((b) => b.name === key);
+        const rowKey = block.row || block.type;
+        if (rows[rowKey]) {
+          rows[rowKey] += 1;
+        } else {
+          rows[rowKey] = 1;
+        }
+      });
+      isFourPublic = Object.values(rows).some((value) => value === 4);
+      isThreeMonopoly =
+        Object.values(rows).filter((value) => value === 3).length === 3;
+      if (isFourPublic || isThreeMonopoly) {
+        MainStore.setEndGame(true);
+      }
+    });
+  };
+
   const movingPlayer = async (callback, planeDestinationPostion) => {
     if (currentPlayer.onJail > 0) {
       if (MainStore.dice[0] === MainStore.dice[1]) {
@@ -237,7 +253,7 @@ const Dashboard = () => {
         );
         MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
         await delay(2000);
-        if (currentPlayer.onJail === 3) {
+        if (currentPlayer.onJail === 4) {
           MainStore.updatePlayerData(
             currentPlayer,
             "money",
@@ -297,17 +313,65 @@ const Dashboard = () => {
 
   const updatingPropertyInfo = MainStore.ownedBlocks[buyingProperty?.name];
 
+  const handleNotEnoughMoney = async (player, price) => {
+    MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
+    MainStore.setPriceNeedToPay(price);
+    const playerStillHaveMoney = await MainStore.ensureMoneyIsEnough(
+      MainStore.checkMoney,
+      player.id,
+      price
+    );
+    if (!playerStillHaveMoney) {
+      MainStore.updatePlayerData(player, "broke", true);
+      MainStore.updatePlayerData(player, "money", 0);
+      checkEndGame();
+    }
+    await delay(1000);
+    MainStore.resetSellingState();
+  };
+
   const buyProperty = async () => {
-    MainStore.updateOwnedBlocks(buyingProperty.name);
-    const price = buyingProperty.price[(updatingPropertyInfo?.level || 1) - 1];
+    const price = buyingProperty.price[updatingPropertyInfo?.level || 0];
+    if (currentPlayer.money - price < 0) {
+      await handleNotEnoughMoney(currentPlayer, price);
+    }
     MainStore.updatePlayerData(
       currentPlayer,
       "money",
       currentPlayer.money - price
     );
+    MainStore.updateOwnedBlocks(buyingProperty.name, price);
     MainStore.updateGameState(GAME_STATES.DEC_MONEY + "--" + price + "--bank");
     await delay(2000);
     nextPlayerTurn();
+  };
+
+  const sellingProperty = BLOCKS.find(
+    (block) => block.name === MainStore.sellingProperty
+  );
+  const sellingPropertyInfor = MainStore.ownedBlocks[MainStore.sellingProperty];
+
+  const getSellingPrice = () => {
+    if (sellingProperty.type === "public") return sellingProperty.price[0];
+    const price = sellingProperty.price[sellingPropertyInfor?.level - 1];
+    return parseInt(price / 2);
+  };
+
+  const sellProperty = async () => {
+    const price = getSellingPrice();
+    MainStore.updatePlayerData(
+      currentPlayer,
+      "money",
+      parseInt(currentPlayer.money + price)
+    );
+    MainStore.updateOwnedBlockLevel(
+      MainStore.sellingProperty,
+      sellingPropertyInfor.level - 1
+    );
+    MainStore.updateGameState(
+      GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + currentPlayer.id
+    );
+    await delay(1000);
   };
 
   return (
@@ -317,7 +381,12 @@ const Dashboard = () => {
       ))}
       {MainStore.players.map((player, index) => (
         <div
-          style={getBlockPositionStyle(player.position - 1)}
+          style={{
+            ...getBlockPositionStyle(player.position - 1),
+            opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
+              ? 0.5
+              : 1,
+          }}
           className="player"
           key={player.id}
         >
@@ -328,8 +397,10 @@ const Dashboard = () => {
               position: "relative",
               left: index === 0 || index === 2 ? -15 : undefined,
               top:
-                (index === 0 || index === 1)
-                  ? (window.innerWidth > 950 ? -20 : -10)
+                index === 0 || index === 1
+                  ? window.innerWidth > 950
+                    ? -20
+                    : -10
                   : undefined,
               right: index === 1 || index === 3 ? -15 : undefined,
               bottom:
@@ -342,7 +413,16 @@ const Dashboard = () => {
           />
         </div>
       ))}
-      <div className="center-space">
+      <div
+        style={{
+          backgroundColor: MainStore.gameState.startsWith(
+            GAME_STATES.NEED_MONEY
+          )
+            ? "#d8eeeb80"
+            : "#d8eeeb",
+        }}
+        className="center-space"
+      >
         {MainStore.gameState !== GAME_STATES.INIT && (
           <div className="information" onClick={rollDice}>
             <div className="information__row">
@@ -398,9 +478,43 @@ const Dashboard = () => {
                 MainStore.gameState.split("--")[0]
               ) && (
                 <>
-                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      position: "relative",
+                    }}
+                  >
                     <Die value={MainStore.dice[0]} />
                     <Die value={MainStore.dice[1]} />
+                    {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) && (
+                      <div
+                        style={{
+                          padding: "10px 0",
+                          color: "red",
+                          position: "absolute",
+                          bottom: -20,
+                          left: "50%",
+                          width: "160%",
+                          transform: "translateX(-50%)",
+                          textAlign: "center",
+                          background:
+                            "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
+                        }}
+                      >
+                        <span style={{ color: "white" }}>
+                          Bạn cần thanh toán
+                        </span>{" "}
+                        <br />{" "}
+                        <strong style={{ color: "red" }}>
+                          {MainStore.priceNeedToPay &&
+                            MainStore.priceNeedToPay
+                              .toString()
+                              .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                          $
+                        </strong>
+                      </div>
+                    )}
                   </div>
                   <div
                     style={{
@@ -502,6 +616,40 @@ const Dashboard = () => {
                     </div>
                   </div>
                 )}
+              {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+                MainStore.sellingProperty && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                    }}
+                  >
+                    <div style={{ display: "flex" }}>
+                      <span>
+                        Bạn muốn bán:{" "}
+                        {sellingPropertyInfor?.level === 6 && "Biệt thự"}
+                        {sellingPropertyInfor?.level === 1 && "Ô đất"}
+                        {[2, 3, 4, 5].includes(sellingPropertyInfor.level) &&
+                          `nhà cấp ${sellingPropertyInfor?.level - 1}`}{" "}
+                        {sellingProperty.name}
+                      </span>{" "}
+                    </div>
+                    <div>Tổng bán được: {getSellingPrice()}$</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "flex-end",
+                        marginTop: 10,
+                      }}
+                    >
+                      <Button type="primary" onClick={sellProperty}>
+                        OK
+                      </Button>
+                    </div>
+                  </div>
+                )}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[2] !== "bank" && (
                   <div>
@@ -550,7 +698,7 @@ const Dashboard = () => {
                 GAME_STATES.NOT_ENOUGH_MONEY_BUYING_PROPERTY &&
                 buyingProperty &&
                 `Mua ô này cần có ${
-                  buyingProperty.price[(updatingPropertyInfo?.level || 1) - 1]
+                  buyingProperty.price[updatingPropertyInfo?.level || 0]
                 }. Bạn không đủ tiền`}
               {MainStore.gameState ===
                 GAME_STATES.NOT_ENOUGH_MONEY_UPDATING_PROPERTY &&
@@ -558,6 +706,9 @@ const Dashboard = () => {
                 `Nâng cấp ô này cần có ${
                   buyingProperty.price[(updatingPropertyInfo?.level || 1) - 1]
                 } Bạn không đủ tiền`}
+              {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+                !MainStore.sellingProperty &&
+                "Chọn ô đất bạn muốn bán"}
             </div>
           </div>
         )}
@@ -626,6 +777,24 @@ const Dashboard = () => {
             onChange={MainStore.updateStartMoney}
           />
         </div>
+      </Modal>
+      <Modal
+        centered
+        closable={false}
+        open={MainStore.endGame}
+        footer={[
+          <Button key="submit" onClick={MainStore.resetGame}>
+            Chơi lại
+          </Button>,
+        ]}
+        maskClosable={false}
+      >
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+            Người chiến thắng là :
+          </p>
+        </div>
+        <PlayerInfor playerId={MainStore.players.find((p) => !p.broke)?.id} />
       </Modal>
     </div>
   );

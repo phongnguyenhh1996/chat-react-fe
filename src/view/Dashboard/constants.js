@@ -101,6 +101,12 @@ export const BLOCKS = [
     position: 'left'
   },
   {
+    type: "public",
+    name: "Điện lực",
+    price: [1000],
+    position: 'left'
+  },
+  {
     type: "property",
     name: "Thanh Hóa",
     price: [2700, 1350, 1350, 1350, 1350, 8100],
@@ -115,15 +121,15 @@ export const BLOCKS = [
     position: 'left'
   },
   {
+    type: "plane",
+    name: "Sân bay",
+    position: 'top'
+  },
+  {
     type: "property",
     name: "Hà Tĩnh",
     price: [1500, 750, 750, 750, 750, 4500],
     row: "#ff6969",
-    position: 'left'
-  },
-  {
-    type: "plane",
-    name: "Sân bay",
     position: 'top'
   },
   {
@@ -182,13 +188,6 @@ export const BLOCKS = [
   {
     type: "badluck",
     name: "Khí vận",
-    position: 'top'
-  },
-  {
-    type: "property",
-    name: "Nha Trang",
-    price: [2800, 1400, 1400, 1400, 1400, 8400],
-    row: '#FFCC29',
     position: 'top'
   },
   {
@@ -261,5 +260,6 @@ export const GAME_STATES = {
   MAX_LEVEL_PROPERTY: "max_level_property",
   FLIGHT: "flight",
   NOT_ENOUGH_MONEY_UPDATING_PROPERTY: "not_enough_money_updating_property",
-  NOT_ENOUGH_MONEY_BUYING_PROPERTY: "not_enough_money_buying_property"
+  NOT_ENOUGH_MONEY_BUYING_PROPERTY: "not_enough_money_buying_property",
+  NEED_MONEY: 'need_money'
 };
