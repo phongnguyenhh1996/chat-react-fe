@@ -210,6 +210,8 @@ const Dashboard = () => {
 
   const checkEndGame = () => {
     if (MainStore.players.filter((p) => !p.broke).length < 2) {
+      const playerNotBroke = MainStore.players.find(p => !p.broke)
+      MainStore.updatePlayerData(playerNotBroke, 'winner', true)
       MainStore.setEndGame(true);
     }
 
@@ -232,6 +234,7 @@ const Dashboard = () => {
       isFourPublic = Object.values(rows).some((value) => value === 4);
       isThreeMonopoly =
         Object.values(rows).filter((value) => value === 3).length === 3;
+      MainStore.updatePlayerData(p, 'winner', true)
       if (isFourPublic || isThreeMonopoly) {
         MainStore.setEndGame(true);
       }
@@ -794,7 +797,7 @@ const Dashboard = () => {
             Người chiến thắng là :
           </p>
         </div>
-        <PlayerInfor playerId={MainStore.players.find((p) => !p.broke)?.id} />
+        <PlayerInfor playerId={MainStore.players.find((p) => p.winner)?.id} />
       </Modal>
     </div>
   );
