@@ -42,6 +42,20 @@ class MainStore {
     },
   ];
   samePlayerRolling = 1;
+  festivalProperty =
+    BLOCKS[
+      [
+        random(2, 7),
+        10,
+        random(12, 14),
+        random(16, 17),
+        19,
+        random(21, 23),
+        random(25, 27),
+        random(30, 32),
+        random(34, 35),
+      ][random(0, 7)]
+    ].name;
 
   constructor() {
     makeAutoObservable(this, null, { autoBind: true });
@@ -107,7 +121,7 @@ class MainStore {
   }
 
   updateOwnedBlockLevel(name) {
-    const level = this.ownedBlocks[name]?.level
+    const level = this.ownedBlocks[name]?.level;
     if (level === 1) {
       delete this.ownedBlocks[name];
       if (name === this.sellingProperty) {
@@ -119,7 +133,7 @@ class MainStore {
   }
 
   updateOwnedBlockElectricity(name, turn) {
-    this.ownedBlocks[name].lostElectricity = turn
+    this.ownedBlocks[name].lostElectricity = turn;
   }
 
   getPlayerIndexById(id) {
@@ -151,7 +165,10 @@ class MainStore {
     if (!this.ownedBlocks[block.name]) return;
 
     const rate = [0.2, 1, 2, 3, 4, 1];
-    let totalPrice = prices[level - 1] * rate[level - 1];
+    let totalPrice =
+      prices[level - 1] *
+      rate[level - 1] *
+      (this.festivalProperty === block.name ? 2 : 1);
 
     if (block.type === "public") {
       const allOwnedPublicBlock = BLOCKS.filter(
@@ -202,17 +219,21 @@ class MainStore {
 
   handleChooseBlock(block) {
     if (
-      !this.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
-      (this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-        this.gameState.split("--")[2] !==
-          this.ownedBlocks[block.name]?.playerId)
+      this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+      this.gameState.split("--")[2] === this.ownedBlocks[block.name]?.playerId
     ) {
-      this.updateBuyingProperty(block.name);
-      this.updateGameState(this.ownedBlocks[block.name] ? GAME_STATES.UPDATING : GAME_STATES.BUYING);
+      this.sellingProperty = block.name;
       return;
     }
-
-    this.sellingProperty = block.name;
+    if (
+      this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
+      (!this.ownedBlocks[block.name]?.playerId ||
+        (this.ownedBlocks[block.name] &&
+          this.ownedBlocks[block.name]?.playerId !== this.playingId))
+    ) {
+      this.festivalProperty = block.name;
+      return;
+    }
   }
 
   resetSellingState() {
@@ -266,6 +287,20 @@ class MainStore {
       },
     ];
     this.samePlayerRolling = 1;
+    this.festivalProperty =
+      BLOCKS[
+        [
+          random(2, 7),
+          10,
+          random(12, 14),
+          random(16, 17),
+          19,
+          random(21, 23),
+          random(25, 27),
+          random(30, 32),
+          random(34, 35),
+        ][random(0, 7)]
+      ].name;
   }
 }
 

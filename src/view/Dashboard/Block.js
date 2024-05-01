@@ -4,6 +4,7 @@ import React from "react";
 import Icon from "../../components/Icon";
 import { BLOCKS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
+import fettiSVG from "../../asset/img/confetti.svg";
 
 const Block = ({ block, idx }) => {
   const price = MainStore.getPrice(block);
@@ -17,9 +18,15 @@ const Block = ({ block, idx }) => {
           ? "row"
           : "row-reverse",
         opacity:
-          MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-          MainStore.gameState.split("--")[2] !==
-            MainStore.ownedBlocks[block.name]?.playerId
+          (MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+            MainStore.gameState.split("--")[2] !==
+              MainStore.ownedBlocks[block.name]?.playerId &&
+            MainStore.ownedBlocks[block.name]?.playerId !== undefined) ||
+          (MainStore.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
+            (!MainStore.ownedBlocks[block.name]?.playerId ||
+              (MainStore.ownedBlocks[block.name] &&
+                MainStore.ownedBlocks[block.name]?.playerId !==
+                  MainStore.playingId)))
             ? 0.5
             : 1,
         outline:
@@ -33,9 +40,16 @@ const Block = ({ block, idx }) => {
       onClick={() => MainStore.handleChooseBlock(block)}
     >
       <div
+        className="diag"
         style={{
-          background:
-            MainStore.ownedBlocks[block.name]?.lostElectricity > 0 ? 'rgb(0 0 0 / 30%)' : undefined,
+          backgroundImage:
+            MainStore.festivalProperty === block.name
+              ? `url(${fettiSVG})`
+              : "none",
+          backgroundColor:
+            MainStore.ownedBlocks[block.name]?.lostElectricity > 0
+              ? "rgb(0 0 0 / 30%)"
+              : undefined,
           position: "relative",
           display: "flex",
           flexDirection: "column",

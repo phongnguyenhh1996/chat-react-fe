@@ -329,10 +329,36 @@ const Dashboard = () => {
               position += 36;
             }
             movingPlayer(() => {}, position);
+          } else {
+            MainStore.updatePlayerData(
+              currentPlayer,
+              "money",
+              currentPlayer.money + 500
+            );
+            MainStore.updateGameState(
+              GAME_STATES.INC_MONEY + "--" + 500 + "--bank"
+            );
+            await delay(2000);
+            nextPlayerTurn();
           }
           return;
         },
-      ][random(0, 3)]();
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+          );
+          if (allOwnedBlockKeys.length > 0) {
+            MainStore.updateGameState(GAME_STATES.CHOOSE_FESTIVAL_BUILDING);
+          } else {
+            MainStore.updateGameState(
+              GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING
+            );
+            await delay(2000);
+            nextPlayerTurn();
+            return;
+          }
+        },
+      ][random(0, 4)]();
       return;
     }
 
@@ -922,10 +948,15 @@ const Dashboard = () => {
               {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
                 "Đã sử dụng thẻ ra tù"}
               {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
-                "Đi tới 1 ô của bạn ngẫu nhiên"}
+                "Đi tới 1 ô của bạn ngẫu nhiên hoặc được tặng 500$ đi du lịch"}
               {MainStore.gameState.startsWith(
                 GAME_STATES.FIXING_ELECTRIC_BUILDING
               ) && `Ô ${MainStore.gameState.split("--")[1]} đang được sửa điện`}
+              {MainStore.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
+                "Vui lòng chọn một ô để tổ chức lễ hội"}
+              {MainStore.gameState ===
+                GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING &&
+                "Được chọn ô tổ chức lễ hội nhưng bạn chưa có ô nào"}
             </div>
           </div>
         )}

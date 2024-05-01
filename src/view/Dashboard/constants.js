@@ -269,5 +269,7 @@ export const GAME_STATES = {
   FREE_OUT_FAIL_CARD: 'free_out_fail_card',
   USE_FREE_CARD: 'use_free_card',
   FIXING_ELECTRIC_BUILDING: 'fixing_electric_building',
-  RANDOM_TRAVELING: 'random_traveling'
+  RANDOM_TRAVELING: 'random_traveling',
+  CHOOSE_FESTIVAL_BUILDING: 'choose_festival_building',
+  NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING: 'no_block_to_choose_festival_building'
 };
