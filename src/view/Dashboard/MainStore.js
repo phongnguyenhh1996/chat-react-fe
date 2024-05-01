@@ -227,9 +227,7 @@ class MainStore {
     }
     if (
       this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
-      (!this.ownedBlocks[block.name]?.playerId ||
-        (this.ownedBlocks[block.name] &&
-          this.ownedBlocks[block.name]?.playerId !== this.playingId))
+      this.ownedBlocks[block.name]?.playerId === this.playingId
     ) {
       this.festivalProperty = block.name;
       return;
