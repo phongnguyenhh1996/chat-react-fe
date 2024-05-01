@@ -6,7 +6,7 @@ import { BLOCKS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
 import fettiSVG from "../../asset/img/confetti.svg";
 
-const Block = ({ block, idx }) => {
+const Block = ({ block, idx, nextPlayerTurn }) => {
   const price = MainStore.getPrice(block);
   return (
     <div
@@ -37,7 +37,7 @@ const Block = ({ block, idx }) => {
       }}
       className="block"
       id={`block-${idx}`}
-      onClick={() => MainStore.handleChooseBlock(block)}
+      onClick={() => MainStore.handleChooseBlock(block, nextPlayerTurn)}
     >
       <div
         className="diag"

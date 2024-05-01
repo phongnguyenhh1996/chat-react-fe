@@ -358,7 +358,7 @@ const Dashboard = () => {
             return;
           }
         },
-      ][random(0, 3)]();
+      ][random(0, 4)]();
       return;
     }
 
@@ -579,7 +579,12 @@ const Dashboard = () => {
   return (
     <div className="container-page">
       {BLOCKS.map((block, index) => (
-        <Block key={block.name + index} block={block} idx={index} />
+        <Block
+          nextPlayerTurn={nextPlayerTurn}
+          key={block.name + index}
+          block={block}
+          idx={index}
+        />
       ))}
       {MainStore.players.map((player, index) => (
         <div

@@ -225,6 +225,7 @@ class MainStore {
       this.sellingProperty = block.name;
       return;
     }
+    console.log(this.ownedBlocks[block.name]?.playerId, this.playingId);
     if (
       this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
       this.ownedBlocks[block.name]?.playerId === this.playingId
