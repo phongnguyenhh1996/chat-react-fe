@@ -1,20 +1,21 @@
 {
   "files": {
-    "main.css": "/chat-react-fe/static/css/main.162f50dd.css",
-    "main.js": "/chat-react-fe/static/js/main.698524c1.js",
+    "main.css": "/chat-react-fe/static/css/main.6ab25d4b.css",
+    "main.js": "/chat-react-fe/static/js/main.cb420910.js",
     "static/media/icons.svg": "/chat-react-fe/static/media/icons.8df00165651d3b181e4ebbafd487208b.svg",
     "static/media/avatar4.svg": "/chat-react-fe/static/media/avatar4.1a08efc3c859e4bd8f418eadcb61d407.svg",
     "static/media/avatar1.svg": "/chat-react-fe/static/media/avatar1.690ea1a1f4203e3af5d4ab50d433612c.svg",
+    "static/media/confetti.svg": "/chat-react-fe/static/media/confetti.f99e4e4d9adffc0b6cf8be9320398931.svg",
     "static/media/avatar2.svg": "/chat-react-fe/static/media/avatar2.d4e78093d66dece3a716ae8afcbd01c7.svg",
     "static/media/money.svg": "/chat-react-fe/static/media/money.46fab7a471d919cd8b1a36fe36918509.svg",
     "static/media/avatar3.svg": "/chat-react-fe/static/media/avatar3.6d497afd97497d93ac3b9b7f7d532a81.svg",
     "static/media/bank.svg": "/chat-react-fe/static/media/bank.226f6a32056debba675706254fd46338.svg",
     "index.html": "/chat-react-fe/index.html",
-    "main.162f50dd.css.map": "/chat-react-fe/static/css/main.162f50dd.css.map",
-    "main.698524c1.js.map": "/chat-react-fe/static/js/main.698524c1.js.map"
+    "main.6ab25d4b.css.map": "/chat-react-fe/static/css/main.6ab25d4b.css.map",
+    "main.cb420910.js.map": "/chat-react-fe/static/js/main.cb420910.js.map"
   },
   "entrypoints": [
-    "static/css/main.162f50dd.css",
-    "static/js/main.698524c1.js"
+    "static/css/main.6ab25d4b.css",
+    "static/js/main.cb420910.js"
   ]
 }
