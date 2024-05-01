@@ -632,134 +632,6 @@ const Dashboard = () => {
       >
         {MainStore.gameState !== GAME_STATES.INIT && (
           <div className="information" onClick={rollDice}>
-            <div className="information__row">
-              <PlayerInfor playerId={MainStore.playingId} />
-              {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
-                MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)) && (
-                <>
-                  <img
-                    className={
-                      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)
-                        ? "fade-in-left"
-                        : "fade-in-right"
-                    }
-                    width={50}
-                    height={50}
-                    src={moneySVG}
-                    alt=""
-                  />
-                  {MainStore.gameState.split("--")[2] &&
-                    MainStore.gameState.split("--")[2] !== "bank" && (
-                      <PlayerInfor
-                        playerId={MainStore.gameState.split("--")[2]}
-                        rightSide
-                      />
-                    )}
-                  {MainStore.gameState.split("--")[2] === "bank" && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <img src={bankSVG} alt="" width={120} height={80} />
-                      <div
-                        style={{
-                          fontWeight: "bold",
-                          textAlign: "center",
-                          textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
-                          color: "white",
-                          marginTop: 10,
-                        }}
-                      >
-                        {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY)
-                          ? "-"
-                          : "+"}
-                        {MainStore.gameState.split("--")[1]}$
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-              {![GAME_STATES.INC_MONEY, GAME_STATES.DEC_MONEY].includes(
-                MainStore.gameState.split("--")[0]
-              ) && (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      position: "relative",
-                    }}
-                  >
-                    <Die value={MainStore.dice[0]} />
-                    <Die value={MainStore.dice[1]} />
-                    {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) && (
-                      <div
-                        style={{
-                          padding: "10px 0",
-                          color: "red",
-                          position: "absolute",
-                          bottom: -20,
-                          left: "50%",
-                          width: "160%",
-                          transform: "translateX(-50%)",
-                          textAlign: "center",
-                          background:
-                            "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
-                        }}
-                      >
-                        <span style={{ color: "white" }}>
-                          Bạn cần thanh toán
-                        </span>{" "}
-                        <br />{" "}
-                        <strong style={{ color: "red" }}>
-                          {MainStore.priceNeedToPay &&
-                            MainStore.priceNeedToPay
-                              .toString()
-                              .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                          $
-                        </strong>
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      rowGap: 5,
-                    }}
-                  >
-                    {MainStore.players.map((player, index) => (
-                      <div
-                        key={player.id}
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <img
-                          style={{
-                            flex: "0 0 25px",
-                            height: 25,
-                            marginRight: 10,
-                          }}
-                          alt=""
-                          src={AVATARS[index]}
-                        />
-                        <div
-                          style={{
-                            fontWeight: "bold",
-                            color: "white",
-                            textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
-                          }}
-                        >
-                          {player.money}$
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
             <div
               className="information__row"
               style={{
@@ -962,6 +834,203 @@ const Dashboard = () => {
               {MainStore.gameState ===
                 GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING &&
                 "Được chọn ô tổ chức lễ hội nhưng bạn chưa có ô nào"}
+            </div>
+            <div className="information__row">
+              <PlayerInfor playerId={MainStore.playingId} />
+              {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
+                MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)) && (
+                <>
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      bottom: 0,
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div
+                      className={
+                        MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)
+                          ? "fade-in-left"
+                          : "fade-in-right"
+                      }
+                      style={{
+                        display: "flex",
+                        flexDirection: "row-reverse",
+                        maxWidth: 60,
+                        flexWrap: "wrap-reverse",
+                        position: "relative",
+                        top: -30,
+                        alignSelf: "end",
+                      }}
+                    >
+                      <div
+                        style={{ width: 30, height: 30, position: "relative" }}
+                      >
+                        <img
+                          style={{
+                            position: "absolute",
+                            width: 50,
+                            height: 50,
+                            maxWidth: 50,
+                          }}
+                          width={50}
+                          height={50}
+                          src={moneySVG}
+                          alt=""
+                        />
+                      </div>
+                      {parseInt(MainStore.gameState.split("--")[1]) > 1000 &&
+                        range(
+                          1,
+                          Math.floor(
+                            parseInt(MainStore.gameState.split("--")[1]) / 1000
+                          ) > 25
+                            ? 25
+                            : Math.floor(
+                                parseInt(MainStore.gameState.split("--")[1]) /
+                                  1000
+                              )
+                        ).map((numb) => (
+                          <div
+                            key={numb}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              position: "relative",
+                            }}
+                          >
+                            <img
+                              style={{
+                                position: "absolute",
+                                width: 50,
+                                height: 50,
+                                maxWidth: 50,
+                                top:
+                                  14 * ((numb % 2 !== 0 ? numb + 1 : numb) / 2),
+                              }}
+                              width={50}
+                              height={50}
+                              src={moneySVG}
+                              alt=""
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  </div>{" "}
+                  {MainStore.gameState.split("--")[2] &&
+                    MainStore.gameState.split("--")[2] !== "bank" && (
+                      <PlayerInfor
+                        playerId={MainStore.gameState.split("--")[2]}
+                        rightSide
+                      />
+                    )}
+                  {MainStore.gameState.split("--")[2] === "bank" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img src={bankSVG} alt="" width={120} height={80} />
+                      <div
+                        style={{
+                          fontWeight: "bold",
+                          textAlign: "center",
+                          textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                          color: "white",
+                          marginTop: 10,
+                        }}
+                      >
+                        {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY)
+                          ? "-"
+                          : "+"}
+                        {MainStore.gameState.split("--")[1]}$
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {![GAME_STATES.INC_MONEY, GAME_STATES.DEC_MONEY].includes(
+                MainStore.gameState.split("--")[0]
+              ) && (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      position: "relative",
+                    }}
+                  >
+                    <Die value={MainStore.dice[0]} />
+                    <Die value={MainStore.dice[1]} />
+                    {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) && (
+                      <div
+                        style={{
+                          padding: "10px 0",
+                          color: "red",
+                          position: "absolute",
+                          bottom: -20,
+                          left: "50%",
+                          width: "160%",
+                          transform: "translateX(-50%)",
+                          textAlign: "center",
+                          background:
+                            "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
+                        }}
+                      >
+                        <span style={{ color: "white" }}>
+                          Bạn cần thanh toán
+                        </span>{" "}
+                        <br />{" "}
+                        <strong style={{ color: "red" }}>
+                          {MainStore.priceNeedToPay &&
+                            MainStore.priceNeedToPay
+                              .toString()
+                              .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                          $
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      rowGap: 5,
+                    }}
+                  >
+                    {MainStore.players.map((player, index) => (
+                      <div
+                        key={player.id}
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <img
+                          style={{
+                            flex: "0 0 25px",
+                            height: 25,
+                            marginRight: 10,
+                          }}
+                          alt=""
+                          src={AVATARS[index]}
+                        />
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            color: "white",
+                            textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                          }}
+                        >
+                          {player.money}$
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

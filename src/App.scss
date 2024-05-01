@@ -126,7 +126,7 @@ img {
 .information {
   display: flex;
   align-items: center;
-  flex-direction: column;
+  flex-direction: column-reverse;
   min-width: 478px;
   min-height: 203px;
   &__player-infor {
@@ -140,6 +140,7 @@ img {
     justify-content: space-between;
     column-gap: 50px;
     width: 100%;
+    position: relative;
   }
 }
 
@@ -191,17 +192,10 @@ img {
 @keyframes fade-in-left {
   0% {
     transform: translateX(-70px);
-    opacity: 0;
-  }
-  20% {
     opacity: 1;
   }
   30% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  40% {
-    transform: translateX(0);
+    transform: translateX(-70px);
     opacity: 1;
   }
   80% {
@@ -216,18 +210,11 @@ img {
 @keyframes fade-in-right {
   0% {
     transform: translateX(70px);
-    opacity: 0;
-  }
-  20% {
     opacity: 1;
   }
   30% {
-    transform: translateX(0);
     opacity: 1;
-  }
-  40% {
-    transform: translateX(0);
-    opacity: 1;
+    transform: translateX(70px);
   }
   80% {
     opacity: 1;
