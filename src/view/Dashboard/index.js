@@ -358,7 +358,7 @@ const Dashboard = () => {
             return;
           }
         },
-      ][random(0, 4)]();
+      ][random(0, 3)]();
       return;
     }
 

@@ -217,7 +217,7 @@ class MainStore {
     });
   }
 
-  handleChooseBlock(block) {
+  handleChooseBlock(block, callback) {
     if (
       this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
       this.gameState.split("--")[2] === this.ownedBlocks[block.name]?.playerId
@@ -230,6 +230,7 @@ class MainStore {
       this.ownedBlocks[block.name]?.playerId === this.playingId
     ) {
       this.festivalProperty = block.name;
+      if (callback) callback()
       return;
     }
   }
