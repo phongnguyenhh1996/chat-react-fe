@@ -151,14 +151,14 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       {["property", "public"].includes(block?.type) && (
         <div
           style={{
-            flex: "0 0 15px",
+            flex: "0 0 10px",
             width: "100%",
             maxWidth: ["left", "right"].includes(block.position)
-              ? "15px"
+              ? "10px"
               : undefined,
             height: ["left", "right"].includes(block.position)
               ? "100%"
-              : "15px",
+              : "10px",
             display: "flex",
             flexDirection: ["left", "right"].includes(block.position)
               ? "column"
@@ -213,12 +213,12 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                         ) * 90
                       }deg)`,
                       margin: "auto",
-                      flex: "0 0 15px",
+                      flex: "0 0 10px",
 
                       position: "relative",
                     }}
-                    width="15px"
-                    height="15px"
+                    width="10px"
+                    height="10px"
                   />
                 </div>
               )}
@@ -256,11 +256,11 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                                 block.position
                               ) * 90
                             }deg)`,
-                            flex: "0 0 15px",
+                            flex: "0 0 10px",
                             position: "relative",
                           }}
-                          width="15px"
-                          height="15px"
+                          width="10px"
+                          height="10px"
                         />
                       )
                     )}
