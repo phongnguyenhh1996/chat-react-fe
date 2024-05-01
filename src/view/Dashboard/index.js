@@ -184,6 +184,29 @@ const Dashboard = () => {
       return;
     }
 
+    if (block.type === "jail-visit") {
+      const totalPlayerOnJail = MainStore.players.filter(
+        (p) => p.onJail > 0
+      ).length;
+      if (totalPlayerOnJail > 0) {
+        const price = totalPlayerOnJail * 200;
+        if (currentPlayer.money - price < 0) {
+          await handleNotEnoughMoney(currentPlayer, price);
+        }
+        MainStore.updatePlayerData(
+          currentPlayer,
+          "money",
+          currentPlayer.money - price
+        );
+        MainStore.updateGameState(
+          GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
+        );
+        await delay(2000);
+      }
+      nextPlayerTurn();
+      return;
+    }
+
     if (block.type === "badluck") {
       await [
         async () => {
@@ -427,6 +450,14 @@ const Dashboard = () => {
 
   const movingPlayer = async (callback, planeDestinationPostion) => {
     if (currentPlayer.onJail > 0) {
+      if (currentPlayer.haveFreeCard) {
+        MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
+        MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
+        MainStore.updatePlayerData(currentPlayer, "onJail", 0);
+        await delay(2000);
+        MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+        return;
+      }
       if (MainStore.dice[0] === MainStore.dice[1]) {
         MainStore.updateGameState(GAME_STATES.GOING_OUT_JAIL);
         MainStore.updatePlayerData(currentPlayer, "onJail", 0);
@@ -440,13 +471,7 @@ const Dashboard = () => {
         );
         MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
         await delay(2000);
-        if (currentPlayer.haveFreeCard) {
-          MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
-          MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
-          await delay(2000);
-          nextPlayerTurn(true);
-        } else if (currentPlayer.onJail === 4) {
+        if (currentPlayer.onJail === 4) {
           if (currentPlayer.money - 500 < 0) {
             await handleNotEnoughMoney(currentPlayer, 500);
           }
@@ -760,6 +785,9 @@ const Dashboard = () => {
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "tax" &&
                 `Bạn phải nộp thuế ${MainStore.gameState.split("--")[1]}$`}
+              {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+                MainStore.gameState.split("--")[3] === "jail-visit" &&
+                `Đi thăm tù hết ${MainStore.gameState.split("--")[1]}$`}
               {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "gift" &&
                 `Bạn nhận được ${
