@@ -546,6 +546,11 @@ const Dashboard = () => {
     if (!playerStillHaveMoney) {
       MainStore.updatePlayerData(player, "broke", true);
       MainStore.updatePlayerData(player, "money", 0);
+      Object.keys(MainStore.ownedBlocks).forEach((key) => {
+        if (MainStore.ownedBlocks[key].playerId === player.id) {
+          MainStore.deleteOwnedBlock(key);
+        }
+      });
       checkEndGame();
     }
     await delay(1000);
@@ -619,6 +624,7 @@ const Dashboard = () => {
             opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
               ? 0.5
               : 1,
+            pointerEvents: "none",
           }}
           className="player"
           key={player.id}

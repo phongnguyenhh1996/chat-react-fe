@@ -120,6 +120,12 @@ class MainStore {
     }
   }
 
+  deleteOwnedBlock(name) {
+    if (this.ownedBlocks[name]) {
+      delete this.ownedBlocks[name];
+    }
+  }
+
   updateOwnedBlockLevel(name) {
     const level = this.ownedBlocks[name]?.level;
     if (level === 1) {
@@ -231,7 +237,7 @@ class MainStore {
       this.ownedBlocks[block.name]?.playerId === this.playingId
     ) {
       this.festivalProperty = block.name;
-      if (callback) callback()
+      if (callback) callback();
       return;
     }
   }
