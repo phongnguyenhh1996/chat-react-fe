@@ -20,8 +20,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
         opacity:
           (MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
             MainStore.gameState.split("--")[2] !==
-              MainStore.ownedBlocks[block.name]?.playerId &&
-            MainStore.ownedBlocks[block.name]?.playerId !== undefined) ||
+              MainStore.ownedBlocks[block.name]?.playerId) ||
           (MainStore.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
             (!MainStore.ownedBlocks[block.name]?.playerId ||
               (MainStore.ownedBlocks[block.name] &&

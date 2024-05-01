@@ -410,7 +410,8 @@ const Dashboard = () => {
       });
       isFourPublic = Object.values(rows).some((value) => value === 4);
       isThreeMonopoly =
-        Object.values(rows).filter((value) => value === 3).length === 3;
+        Object.keys(rows).filter((key) => rows[key] === 3 && key !== "public")
+          .length === 3;
       if (isFourPublic || isThreeMonopoly) {
         MainStore.updatePlayerData(p, "winner", true);
         MainStore.updatePlayerData(
@@ -686,7 +687,11 @@ const Dashboard = () => {
                         marginTop: 10,
                       }}
                     >
-                      <Button onClick={nextPlayerTurn} type="primary" danger>
+                      <Button
+                        onClick={() => nextPlayerTurn()}
+                        type="primary"
+                        danger
+                      >
                         Không
                       </Button>
                       <Button type="primary" onClick={buyProperty}>
@@ -882,7 +887,32 @@ const Dashboard = () => {
                           alt=""
                         />
                       </div>
-                      {parseInt(MainStore.gameState.split("--")[1]) > 1000 &&
+                      {parseInt(MainStore.gameState.split("--")[1]) >= 2000 &&
+                        parseInt(MainStore.gameState.split("--")[1]) < 3000 && (
+                          <div
+                            style={{
+                              width: 30,
+                              height: 30,
+                              position: "relative",
+                            }}
+                          >
+                            <img
+                              style={{
+                                position: "absolute",
+                                width: 50,
+                                height: 50,
+                                maxWidth: 50,
+                                top: -16,
+                                left: 30,
+                              }}
+                              width={50}
+                              height={50}
+                              src={moneySVG}
+                              alt=""
+                            />
+                          </div>
+                        )}
+                      {parseInt(MainStore.gameState.split("--")[1]) >= 3000 &&
                         range(
                           1,
                           Math.floor(
