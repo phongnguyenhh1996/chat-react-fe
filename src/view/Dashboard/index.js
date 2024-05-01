@@ -10,6 +10,7 @@ import moneySVG from "../../asset/img/money.svg";
 import bankSVG from "../../asset/img/bank.svg";
 import Block from "./Block";
 import PlayerInfor from "./PlayerInfor";
+import Icon from "../../components/Icon";
 
 const Dashboard = () => {
   const handleOk = () => {
@@ -48,7 +49,7 @@ const Dashboard = () => {
 
   const nextPlayerTurn = async (forceSwitch) => {
     MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
-    await delay(1000);
+    await delay(100);
     if (forceSwitch) {
       MainStore.setSamePlayerRolling(1);
       let nextPlayerIndex = currentPlayerIndex + 1;
@@ -305,8 +306,9 @@ const Dashboard = () => {
         async () => {
           MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
           await delay(2000);
-          MainStore.updatePlayerData(currentPlayer, "havefreeCard", true);
+          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
           nextPlayerTurn();
+          return;
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
@@ -1070,8 +1072,20 @@ const Dashboard = () => {
                     {MainStore.players.map((player, index) => (
                       <div
                         key={player.id}
-                        style={{ display: "flex", alignItems: "center" }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          position: "relative",
+                        }}
                       >
+                        {player.haveFreeCard && (
+                          <Icon
+                            style={{ position: "absolute", left: -20 }}
+                            symbol="card"
+                            width="20px"
+                            height="20px"
+                          />
+                        )}
                         <img
                           style={{
                             flex: "0 0 25px",
