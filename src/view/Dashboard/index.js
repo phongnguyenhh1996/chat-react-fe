@@ -664,7 +664,14 @@ const Dashboard = () => {
           cancelText="Không"
         >
           <Button
-            style={{ position: "absolute", top: 10, right: 10 }}
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
+                ? 0.5
+                : 1,
+            }}
           >
             Chơi lại
           </Button>
