@@ -38,13 +38,7 @@ const Dashboard = () => {
       getJailPosition(currentPlayer)
     );
     MainStore.updatePlayerData(currentPlayer, "onJail", 1);
-    MainStore.setSamePlayerRolling(1);
-    let nextPlayerIndex = currentPlayerIndex + 1;
-    if (nextPlayerIndex >= MainStore.players.length) {
-      nextPlayerIndex = 0;
-    }
-    MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
-    MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+    nextPlayerTurn(true)
   };
 
   const nextPlayerTurn = async (forceSwitch) => {
@@ -548,6 +542,7 @@ const Dashboard = () => {
     if (!playerStillHaveMoney) {
       MainStore.updatePlayerData(player, "broke", true);
       MainStore.updatePlayerData(player, "money", 0);
+      MainStore.updatePlayerData(player, "position", 1);
       Object.keys(MainStore.ownedBlocks).forEach((key) => {
         if (MainStore.ownedBlocks[key].playerId === player.id) {
           MainStore.deleteOwnedBlock(key);
@@ -619,41 +614,44 @@ const Dashboard = () => {
           idx={index}
         />
       ))}
-      {MainStore.players.map((player, index) => (
-        <div
-          style={{
-            ...getBlockPositionStyle(player.position - 1),
-            opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
-              ? 0.5
-              : 1,
-            pointerEvents: "none",
-          }}
-          className="player"
-          key={player.id}
-        >
-          <img
-            style={{
-              flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
-              height: window.innerWidth > 950 ? 25 : 15,
-              position: "relative",
-              left: index === 0 || index === 2 ? -15 : undefined,
-              top:
-                index === 0 || index === 1
-                  ? window.innerWidth > 950
-                    ? -20
-                    : -10
-                  : undefined,
-              right: index === 1 || index === 3 ? -15 : undefined,
-              bottom:
-                (index === 2 || index === 3) && MainStore.totalPlayers > 2
-                  ? -15
-                  : undefined,
-            }}
-            alt=""
-            src={AVATARS[index]}
-          />
-        </div>
-      ))}
+      {MainStore.players.map(
+        (player, index) =>
+          !player.broke && (
+            <div
+              style={{
+                ...getBlockPositionStyle(player.position - 1),
+                opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
+                  ? 0.5
+                  : 1,
+                pointerEvents: "none",
+              }}
+              className="player"
+              key={player.id}
+            >
+              <img
+                style={{
+                  flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
+                  height: window.innerWidth > 950 ? 25 : 15,
+                  position: "relative",
+                  left: index === 0 || index === 2 ? -15 : undefined,
+                  top:
+                    index === 0 || index === 1
+                      ? window.innerWidth > 950
+                        ? -20
+                        : -10
+                      : undefined,
+                  right: index === 1 || index === 3 ? -15 : undefined,
+                  bottom:
+                    (index === 2 || index === 3) && MainStore.totalPlayers > 2
+                      ? -15
+                      : undefined,
+                }}
+                alt=""
+                src={AVATARS[index]}
+              />
+            </div>
+          )
+      )}
       <div
         style={{
           backgroundColor: MainStore.gameState.startsWith(
