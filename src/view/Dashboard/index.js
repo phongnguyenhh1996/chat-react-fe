@@ -38,30 +38,36 @@ const Dashboard = () => {
       getJailPosition(currentPlayer)
     );
     MainStore.updatePlayerData(currentPlayer, "onJail", 1);
-    nextPlayerTurn(true)
+    nextPlayerTurn(true);
+  };
+
+  const goNextAvailablePlayer = () => {
+    MainStore.setSamePlayerRolling(1);
+    let nextPlayerIndex = currentPlayerIndex + 1;
+    if (nextPlayerIndex >= MainStore.players.length) {
+      nextPlayerIndex = 0;
+    }
+    while (
+      MainStore.players[nextPlayerIndex] &&
+      MainStore.players[nextPlayerIndex].broke
+    ) {
+      nextPlayerIndex += 1;
+      if (nextPlayerIndex >= MainStore.players.length) {
+        nextPlayerIndex = 0;
+      }
+    }
+    MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
+    MainStore.updateGameState(GAME_STATES.ROLL_DICE);
   };
 
   const nextPlayerTurn = async (forceSwitch) => {
     MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
     await delay(100);
-    if (forceSwitch) {
-      MainStore.setSamePlayerRolling(1);
-      let nextPlayerIndex = currentPlayerIndex + 1;
-      if (nextPlayerIndex >= MainStore.players.length) {
-        nextPlayerIndex = 0;
-      }
-      while (
-        MainStore.players[nextPlayerIndex] &&
-        MainStore.players[nextPlayerIndex].broke
-      ) {
-        nextPlayerIndex += 1;
-        if (nextPlayerIndex >= MainStore.players.length) {
-          nextPlayerIndex = 0;
-        }
-      }
-      MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
-      MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-    } else if (MainStore.dice[0] === MainStore.dice[1] && !forceSwitch) {
+    if (forceSwitch || currentPlayer.broke) {
+      goNextAvailablePlayer();
+      return;
+    }
+    if (MainStore.dice[0] === MainStore.dice[1]) {
       MainStore.setSamePlayerRolling(MainStore.samePlayerRolling + 1);
       if (MainStore.samePlayerRolling > 3) {
         goToJail();
@@ -69,22 +75,7 @@ const Dashboard = () => {
         MainStore.updateGameState(GAME_STATES.ROLL_DICE);
       }
     } else {
-      MainStore.setSamePlayerRolling(1);
-      let nextPlayerIndex = currentPlayerIndex + 1;
-      if (nextPlayerIndex >= MainStore.players.length) {
-        nextPlayerIndex = 0;
-      }
-      while (
-        MainStore.players[nextPlayerIndex] &&
-        MainStore.players[nextPlayerIndex].broke
-      ) {
-        nextPlayerIndex += 1;
-        if (nextPlayerIndex >= MainStore.players.length) {
-          nextPlayerIndex = 0;
-        }
-      }
-      MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
-      MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+      goNextAvailablePlayer();
     }
   };
 
@@ -129,9 +120,9 @@ const Dashboard = () => {
               MainStore.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
               MainStore.updateOwnedBlockElectricity(block.name);
             } else {
-              const price = MainStore.getPrice(block);
+              let price = MainStore.getPrice(block);
               if (currentPlayer.money - price < 0) {
-                await handleNotEnoughMoney(currentPlayer, price);
+                price = await handleNotEnoughMoney(currentPlayer, price);
               }
               MainStore.updatePlayerData(
                 currentPlayer,
@@ -184,9 +175,9 @@ const Dashboard = () => {
         (p) => p.onJail > 0
       ).length;
       if (totalPlayerOnJail > 0) {
-        const price = totalPlayerOnJail * 200;
+        let price = totalPlayerOnJail * 200;
         if (currentPlayer.money - price < 0) {
-          await handleNotEnoughMoney(currentPlayer, price);
+          price = await handleNotEnoughMoney(currentPlayer, price);
         }
         MainStore.updatePlayerData(
           currentPlayer,
@@ -205,9 +196,9 @@ const Dashboard = () => {
     if (block.type === "badluck") {
       await [
         async () => {
-          const tax = [500, 1000][random(0, 1)];
+          let tax = [500, 1000][random(0, 1)];
           if (currentPlayer.money - tax < 0) {
-            await handleNotEnoughMoney(currentPlayer, tax);
+            tax = await handleNotEnoughMoney(currentPlayer, tax);
           }
           MainStore.updatePlayerData(
             currentPlayer,
@@ -468,17 +459,18 @@ const Dashboard = () => {
         MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
         await delay(2000);
         if (currentPlayer.onJail === 4) {
+          let price = 500;
           if (currentPlayer.money - 500 < 0) {
-            await handleNotEnoughMoney(currentPlayer, 500);
+            price = await handleNotEnoughMoney(currentPlayer, price);
           }
           MainStore.updatePlayerData(
             currentPlayer,
             "money",
-            currentPlayer.money - 500
+            currentPlayer.money - price
           );
           MainStore.updatePlayerData(currentPlayer, "onJail", 0);
           MainStore.updateGameState(
-            GAME_STATES.DEC_MONEY + "--500--bank--pay-out-jail"
+            GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
           await delay(2000);
           nextPlayerTurn(true);
@@ -540,6 +532,7 @@ const Dashboard = () => {
       price
     );
     if (!playerStillHaveMoney) {
+      price = player.money;
       MainStore.updatePlayerData(player, "broke", true);
       MainStore.updatePlayerData(player, "money", 0);
       MainStore.updatePlayerData(player, "position", 1);
@@ -552,6 +545,7 @@ const Dashboard = () => {
     }
     await delay(1000);
     MainStore.resetSellingState();
+    return price;
   };
 
   const buyProperty = async () => {
