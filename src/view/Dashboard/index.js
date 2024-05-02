@@ -446,20 +446,20 @@ const Dashboard = () => {
 
   const movingPlayer = async (callback, planeDestinationPostion) => {
     if (currentPlayer.onJail > 0) {
-      if (currentPlayer.haveFreeCard) {
-        MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
-        MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
-        MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-        await delay(2000);
-        MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-        return;
-      }
       if (MainStore.dice[0] === MainStore.dice[1]) {
         MainStore.updateGameState(GAME_STATES.GOING_OUT_JAIL);
         MainStore.updatePlayerData(currentPlayer, "onJail", 0);
         await delay(2000);
         nextPlayerTurn(true);
       } else {
+        if (currentPlayer.haveFreeCard) {
+          MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
+          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
+          MainStore.updatePlayerData(currentPlayer, "onJail", 0);
+          await delay(2000);
+          nextPlayerTurn(true);
+          return;
+        }
         MainStore.updatePlayerData(
           currentPlayer,
           "onJail",
