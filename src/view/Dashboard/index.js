@@ -1,6 +1,6 @@
 import React from "react";
 import { random, range } from "lodash";
-import { Button, Modal, InputNumber, Input } from "antd";
+import { Button, Modal, InputNumber, Input, Popconfirm } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
 import { AVATARS, BLOCKS, COLORS, GAME_STATES } from "./constants";
@@ -656,6 +656,19 @@ const Dashboard = () => {
         }}
         className="center-space"
       >
+        <Popconfirm
+          title="Chơi lại"
+          description="Bạn muốn hủy ván hiện tại và chơi lại không?"
+          onConfirm={MainStore.resetGame}
+          okText="Chơi lại"
+          cancelText="Không"
+        >
+          <Button
+            style={{ position: "absolute", top: 10, right: 10 }}
+          >
+            Chơi lại
+          </Button>
+        </Popconfirm>
         {MainStore.gameState !== GAME_STATES.INIT && (
           <div className="information" onClick={rollDice}>
             <div
