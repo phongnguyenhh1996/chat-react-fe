@@ -5,12 +5,17 @@ import { BLOCKS, GAME_STATES } from "./constants";
 import { delay } from "./utils";
 
 class MainStore {
+  online = false;
+  isHost = true;
+  myName = "Player 1";
+  roomId = uuidv4();
+  channel = null;
+
   totalPlayers = 2;
   startMoney = 20000;
   gameState = "init";
   playingId = "";
   dice = [6, 6];
-  diceManual = [1, 1];
   ownedBlocks = {};
   buyingProperty = "";
   sellingProperty = "";
@@ -30,7 +35,7 @@ class MainStore {
   players = [
     {
       name: "Player 1",
-      id: uuidv4(),
+      id: "Player 1",
       money: 20000,
       position: 1,
     },
@@ -63,17 +68,19 @@ class MainStore {
 
   updateTotalPlayers(total) {
     this.totalPlayers = total;
-    this.players.length = total;
-    this.players = this.players.map((player, index) =>
-      !player
-        ? {
-            name: "Player " + (index + 1),
-            id: uuidv4(),
-            money: 20000,
-            position: 1,
-          }
-        : player
-    );
+    if (!this.online) {
+      this.players.length = total;
+      this.players = this.players.map((player, index) =>
+        !player
+          ? {
+              name: "Player " + (index + 1),
+              id: uuidv4(),
+              money: this.startMoney,
+              position: 1,
+            }
+          : player
+      );
+    }
   }
 
   updateStartMoney(money) {
@@ -226,17 +233,37 @@ class MainStore {
   handleChooseBlock(block, callback) {
     if (
       this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-      this.gameState.split("--")[2] === this.ownedBlocks[block.name]?.playerId
+      this.gameState.split("--")[2] ===
+        this.ownedBlocks[block.name]?.playerId &&
+      this.playingId === this.myName
     ) {
       this.sellingProperty = block.name;
+      this.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            sellingProperty: this.sellingProperty,
+          },
+        },
+      });
       return;
     }
-    console.log(this.ownedBlocks[block.name]?.playerId, this.playingId);
     if (
       this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
-      this.ownedBlocks[block.name]?.playerId === this.playingId
+      this.ownedBlocks[block.name]?.playerId === this.playingId &&
+      this.playingId === this.myName
     ) {
       this.festivalProperty = block.name;
+      this.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            festivalProperty: this.festivalProperty,
+          },
+        },
+      });
       if (callback) callback();
       return;
     }
@@ -245,6 +272,16 @@ class MainStore {
   resetSellingState() {
     this.sellingProperty = "";
     this.priceNeedToPay = null;
+    this.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          sellingProperty: this.sellingProperty,
+          priceNeedToPay: this.priceNeedToPay,
+        },
+      },
+    });
   }
 
   setPriceNeedToPay(price) {
@@ -261,7 +298,6 @@ class MainStore {
     this.gameState = "init";
     this.playingId = "";
     this.dice = [6, 6];
-    this.diceManual = [1, 1];
     this.ownedBlocks = {};
     this.buyingProperty = "";
     this.sellingProperty = "";
@@ -281,7 +317,7 @@ class MainStore {
     this.players = [
       {
         name: "Player 1",
-        id: uuidv4(),
+        id: "Player 1",
         money: 20000,
         position: 1,
       },
@@ -307,6 +343,45 @@ class MainStore {
           random(34, 35),
         ][random(0, 7)]
       ].name;
+  }
+
+  setOnline(isOnline) {
+    this.online = isOnline;
+  }
+
+  setHost(isHost) {
+    this.isHost = isHost;
+  }
+
+  setMyName(name) {
+    this.myName = name;
+    this.players[0].name = name;
+    this.players[0].id = name;
+  }
+
+  setRoomId(id) {
+    this.roomId = id;
+  }
+
+  setChannel(channel) {
+    this.channel = channel;
+  }
+
+  addPlayer(name) {
+    this.players.push({
+      name: name,
+      id: name,
+      money: this.startMoney,
+      position: 1,
+    });
+  }
+
+  setPlayers(players) {
+    this.players = players;
+  }
+
+  updateStore(data) {
+    Object.keys(data).forEach((key) => (this[key] = data[key]));
   }
 }
 

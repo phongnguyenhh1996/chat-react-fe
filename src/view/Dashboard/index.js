@@ -1,23 +1,104 @@
 import React from "react";
-import { random, range } from "lodash";
-import { Button, Modal, InputNumber, Input, Popconfirm } from "antd";
+import { get, pick, random, range } from "lodash";
+import { Button, Modal, InputNumber, Input, Popconfirm, Switch } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
 import { AVATARS, BLOCKS, COLORS, GAME_STATES } from "./constants";
 import { delay, getBlockPositionStyle } from "./utils";
 import Die from "../../components/Dice";
-import moneySVG from "../../asset/img/money.svg";
-import bankSVG from "../../asset/img/bank.svg";
 import Block from "./Block";
 import PlayerInfor from "./PlayerInfor";
 import Icon from "../../components/Icon";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://vqjkcypfolcemvcxpgdw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxamtjeXBmb2xjZW12Y3hwZ2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ4NzI0MjQsImV4cCI6MjAzMDQ0ODQyNH0.OYfrix-OpHrloU60t4WTyuUTVpMtk9pD89wiQ0DeoQ4"
+);
 
 const Dashboard = () => {
-  const handleOk = () => {
-    MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-    MainStore.updatePlayingId(
-      MainStore.players[random(0, MainStore.players.length - 1)].id
-    );
+  const handleOk = async () => {
+    if (!MainStore.online) {
+      MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+      MainStore.updatePlayingId(
+        MainStore.players[random(0, MainStore.players.length - 1)].id
+      );
+      MainStore.setChannel(supabase.channel("nothing"));
+    } else {
+      MainStore.setChannel(
+        supabase.channel(MainStore.roomId, {
+          config: {
+            presence: {
+              key: MainStore.isHost ? "host" : MainStore.myName,
+            },
+          },
+        })
+      );
+      MainStore.updateGameState(GAME_STATES.WAITING);
+      if (MainStore.isHost) {
+        MainStore.setPlayers([]);
+        MainStore.addPlayer(MainStore.myName);
+        MainStore.channel
+          .on("broadcast", { event: "updateStore" }, (payload) => {
+            MainStore.updateStore(get(payload, ["payload", "data"], {}));
+          })
+          .on("presence", { event: "join" }, ({ key }) => {
+            if (key === "host") {
+              return;
+            }
+            MainStore.addPlayer(key);
+            if (MainStore.players.length === MainStore.totalPlayers) {
+              MainStore.updatePlayingId(
+                MainStore.players[random(0, MainStore.players.length - 1)].id
+              );
+              MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+            }
+            MainStore.channel.track({
+              data: pick(MainStore, ["gameState", "players", "playingId", "totalPlayers"]),
+            });
+          })
+          .subscribe(async (status) => {
+            if (status !== "SUBSCRIBED") {
+              return;
+            }
+
+            await MainStore.channel.track({
+              data: pick(MainStore, [
+                "totalPlayers",
+                "startMoney",
+                "gameState",
+                "flightDestination",
+                "players",
+                "festivalProperty",
+              ]),
+            });
+          });
+      } else {
+        MainStore.channel
+          .on("broadcast", { event: "updateStore" }, (payload) => {
+            MainStore.updateStore(get(payload, ["payload", "data"], {}));
+          })
+          .on("presence", { event: "sync" }, ({ key }) => {
+            if (
+              key === MainStore.myName ||
+              MainStore.playingId === MainStore.myName
+            ) {
+              return;
+            }
+            const newState = MainStore.channel.presenceState();
+            MainStore.updateStore(get(newState, ["host", "0", "data"], {}));
+          })
+          .subscribe(async (status) => {
+            if (status !== "SUBSCRIBED") {
+              return;
+            }
+
+            await MainStore.channel.track({
+              online_at: new Date().toISOString(),
+            });
+          });
+      }
+    }
   };
 
   const currentPlayerIndex = MainStore.players.findIndex(
@@ -31,6 +112,15 @@ const Dashboard = () => {
 
   const goToJail = async () => {
     MainStore.updateGameState(GAME_STATES.GOING_JAIL);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          gameState: MainStore.gameState,
+        },
+      },
+    });
     await delay(2000);
     MainStore.updatePlayerData(
       currentPlayer,
@@ -38,6 +128,15 @@ const Dashboard = () => {
       getJailPosition(currentPlayer)
     );
     MainStore.updatePlayerData(currentPlayer, "onJail", 1);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          players: MainStore.players,
+        },
+      },
+    });
     nextPlayerTurn(true);
   };
 
@@ -58,10 +157,30 @@ const Dashboard = () => {
     }
     MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          samePlayerRolling: MainStore.samePlayerRolling,
+          gameState: MainStore.gameState,
+          playingId: MainStore.playingId,
+        },
+      },
+    });
   };
 
   const nextPlayerTurn = async (forceSwitch) => {
     MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          gameState: MainStore.gameState,
+        },
+      },
+    });
     await delay(100);
     if (forceSwitch || currentPlayer.broke) {
       goNextAvailablePlayer();
@@ -74,6 +193,16 @@ const Dashboard = () => {
       } else {
         MainStore.updateGameState(GAME_STATES.ROLL_DICE);
       }
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            gameState: MainStore.gameState,
+            samePlayerRolling: MainStore.samePlayerRolling,
+          },
+        },
+      });
     } else {
       goNextAvailablePlayer();
     }
@@ -92,6 +221,16 @@ const Dashboard = () => {
       MainStore.updateGameState(
         GAME_STATES.INC_MONEY + "--2000--bank--new-round"
       );
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            gameState: MainStore.gameState,
+            players: MainStore.players,
+          },
+        },
+      });
       await delay(2000);
       checkCurrentBlock();
     } else checkCurrentBlock();
@@ -107,8 +246,26 @@ const Dashboard = () => {
       const ownedBlock = MainStore.ownedBlocks[block.name];
       if (!ownedBlock) {
         MainStore.updateBuyingProperty(block.name);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              buyingProperty: MainStore.buyingProperty,
+            },
+          },
+        });
         await delay(1000);
         MainStore.updateGameState(GAME_STATES.BUYING);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              gameState: MainStore.gameState,
+            },
+          },
+        });
       } else {
         if (ownedBlock.playerId !== currentPlayer.id) {
           const receivePlayer =
@@ -119,6 +276,16 @@ const Dashboard = () => {
             if (ownedBlock.lostElectricity > 0) {
               MainStore.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
               MainStore.updateOwnedBlockElectricity(block.name);
+              MainStore.channel.send({
+                type: "broadcast",
+                event: "updateStore",
+                payload: {
+                  data: {
+                    gameState: MainStore.gameState,
+                    ownedBlocks: MainStore.ownedBlocks,
+                  },
+                },
+              });
             } else {
               let price = MainStore.getPrice(block);
               if (currentPlayer.money - price < 0) {
@@ -139,9 +306,28 @@ const Dashboard = () => {
               MainStore.updateGameState(
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
+              MainStore.channel.send({
+                type: "broadcast",
+                event: "updateStore",
+                payload: {
+                  data: {
+                    gameState: MainStore.gameState,
+                    players: MainStore.players,
+                  },
+                },
+              });
             }
           } else {
             MainStore.updateGameState(GAME_STATES.RECEIVER_ON_JAIL);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
           }
           await delay(2000);
           nextPlayerTurn();
@@ -153,12 +339,39 @@ const Dashboard = () => {
           }
           if (ownedBlock?.level === 6) {
             MainStore.updateGameState(GAME_STATES.MAX_LEVEL_PROPERTY);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
             await delay(2000);
             nextPlayerTurn();
           } else {
             MainStore.updateBuyingProperty(block.name);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  buyingProperty: MainStore.buyingProperty,
+                },
+              },
+            });
             await delay(1000);
             MainStore.updateGameState(GAME_STATES.UPDATING);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
           }
         }
       }
@@ -187,6 +400,16 @@ const Dashboard = () => {
         MainStore.updateGameState(
           GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
         );
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              gameState: MainStore.gameState,
+              players: MainStore.players,
+            },
+          },
+        });
         await delay(2000);
       }
       nextPlayerTurn();
@@ -208,6 +431,16 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+                players: MainStore.players,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn();
         },
@@ -218,6 +451,15 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           movingPlayer(() => {}, position);
         },
@@ -232,6 +474,15 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
             );
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
             await delay(2000);
             nextPlayerTurn();
             return;
@@ -241,6 +492,15 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           const price = getSellingPrice(randomKey);
           MainStore.updatePlayerData(
@@ -252,6 +512,18 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.INC_MONEY + "--" + price + "--bank"
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+                sellingProperty: MainStore.sellingProperty,
+                ownedBlocks: MainStore.ownedBlocks,
+                players: MainStore.players,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn();
         },
@@ -260,11 +532,29 @@ const Dashboard = () => {
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           if (allOwnedBlockKeys.length > 0) {
             const randomKey =
               allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
             MainStore.updateOwnedBlockElectricity(randomKey, 1);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  ownedBlocks: MainStore.ownedBlocks,
+                },
+              },
+            });
           }
           nextPlayerTurn();
           return;
@@ -285,13 +575,41 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift"
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+                players: MainStore.players,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn();
         },
         async () => {
           MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                players: MainStore.players,
+              },
+            },
+          });
           nextPlayerTurn();
           return;
         },
@@ -308,6 +626,16 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.FIXING_ELECTRIC_BUILDING + "--" + randomKey
             );
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                  ownedBlocks: MainStore.ownedBlocks,
+                },
+              },
+            });
             await delay(2000);
           }
           MainStore.updatePlayerData(
@@ -318,6 +646,16 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + "--" + 200 + "--bank--fix-electric"
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+                players: MainStore.players,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn();
           return;
@@ -327,6 +665,15 @@ const Dashboard = () => {
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           MainStore.updateGameState(GAME_STATES.RANDOM_TRAVELING);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           if (allOwnedBlockKeys.length > 0) {
             const randomKey =
@@ -348,6 +695,16 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.INC_MONEY + "--" + 500 + "--bank"
             );
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                  players: MainStore.players,
+                },
+              },
+            });
             await delay(2000);
             nextPlayerTurn();
           }
@@ -359,10 +716,28 @@ const Dashboard = () => {
           );
           if (allOwnedBlockKeys.length > 0) {
             MainStore.updateGameState(GAME_STATES.CHOOSE_FESTIVAL_BUILDING);
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
           } else {
             MainStore.updateGameState(
               GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING
             );
+            MainStore.channel.send({
+              type: "broadcast",
+              event: "updateStore",
+              payload: {
+                data: {
+                  gameState: MainStore.gameState,
+                },
+              },
+            });
             await delay(2000);
             nextPlayerTurn();
             return;
@@ -384,8 +759,26 @@ const Dashboard = () => {
       MainStore.updateGameState(
         GAME_STATES.FLIGHT + "--" + MainStore.flightDestination
       );
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            gameState: MainStore.gameState,
+          },
+        },
+      });
       await delay(2000);
       movingPlayer(MainStore.randomFlightDestination, position);
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            flightDestination: MainStore.flightDestination,
+          },
+        },
+      });
       return;
     }
 
@@ -395,10 +788,19 @@ const Dashboard = () => {
   const checkEndGame = () => {
     if (MainStore.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = MainStore.players.find((p) => !p.broke);
-      console.log(playerNotBroke);
       MainStore.updatePlayerData(playerNotBroke, "winner", true);
       MainStore.updatePlayerData(playerNotBroke, "winReason", "not-broke");
       MainStore.setEndGame(true);
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            players: MainStore.players,
+            endGame: MainStore.endGame,
+          },
+        },
+      });
       return;
     }
 
@@ -430,6 +832,16 @@ const Dashboard = () => {
           isFourPublic ? "four-public" : "three-monopoly"
         );
         MainStore.setEndGame(true);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              players: MainStore.players,
+              endGame: MainStore.endGame,
+            },
+          },
+        });
         return;
       }
     });
@@ -440,6 +852,16 @@ const Dashboard = () => {
       if (MainStore.dice[0] === MainStore.dice[1]) {
         MainStore.updateGameState(GAME_STATES.GOING_OUT_JAIL);
         MainStore.updatePlayerData(currentPlayer, "onJail", 0);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              players: MainStore.players,
+              gameState: MainStore.gameState,
+            },
+          },
+        });
         await delay(2000);
         nextPlayerTurn(true);
       } else {
@@ -447,6 +869,16 @@ const Dashboard = () => {
           MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
           MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
           MainStore.updatePlayerData(currentPlayer, "onJail", 0);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                players: MainStore.players,
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn(true);
           return;
@@ -457,6 +889,16 @@ const Dashboard = () => {
           currentPlayer.onJail + 1
         );
         MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              players: MainStore.players,
+              gameState: MainStore.gameState,
+            },
+          },
+        });
         await delay(2000);
         if (currentPlayer.onJail === 4) {
           let price = 500;
@@ -472,6 +914,16 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                players: MainStore.players,
+                gameState: MainStore.gameState,
+              },
+            },
+          });
           await delay(2000);
           nextPlayerTurn(true);
         } else {
@@ -502,6 +954,15 @@ const Dashboard = () => {
             currentPlayer.position +
               (newPosition > currentPlayer.position ? 1 : -1)
           );
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                players: MainStore.players,
+              },
+            },
+          });
         }
       },
       planeDestinationPostion ? 100 : 200
@@ -509,9 +970,20 @@ const Dashboard = () => {
   };
 
   const rollDice = async () => {
-    if (MainStore.gameState !== GAME_STATES.ROLL_DICE) return;
+    if (
+      MainStore.gameState !== GAME_STATES.ROLL_DICE ||
+      (MainStore.online && MainStore.playingId !== MainStore.myName)
+    )
+      return;
     MainStore.updateGameState(GAME_STATES.ROLLING_DICE);
-    const roll = setInterval(() => MainStore.randomDice(), 100);
+    const roll = setInterval(() => {
+      MainStore.randomDice();
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: { data: { dice: MainStore.dice } },
+      });
+    }, 150);
     await delay(2000);
     clearInterval(roll);
     movingPlayer();
@@ -526,6 +998,16 @@ const Dashboard = () => {
   const handleNotEnoughMoney = async (player, price) => {
     MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
     MainStore.setPriceNeedToPay(price);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          priceNeedToPay: MainStore.priceNeedToPay,
+          gameState: MainStore.gameState,
+        },
+      },
+    });
     const playerStillHaveMoney = await MainStore.ensureMoneyIsEnough(
       MainStore.checkMoney,
       player.id,
@@ -540,6 +1022,17 @@ const Dashboard = () => {
         if (MainStore.ownedBlocks[key].playerId === player.id) {
           MainStore.deleteOwnedBlock(key);
         }
+      });
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            players: MainStore.players,
+            gameState: MainStore.gameState,
+            ownedBlocks: MainStore.ownedBlocks,
+          },
+        },
       });
       checkEndGame();
     }
@@ -560,6 +1053,17 @@ const Dashboard = () => {
     );
     MainStore.updateOwnedBlocks(buyingProperty.name, price);
     MainStore.updateGameState(GAME_STATES.DEC_MONEY + "--" + price + "--bank");
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          gameState: MainStore.gameState,
+          ownedBlocks: MainStore.ownedBlocks,
+          players: MainStore.players,
+        },
+      },
+    });
     await delay(2000);
     checkEndGame();
     nextPlayerTurn();
@@ -595,6 +1099,18 @@ const Dashboard = () => {
     MainStore.updateGameState(
       GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + currentPlayer.id
     );
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          gameState: MainStore.gameState,
+          ownedBlocks: MainStore.ownedBlocks,
+          players: MainStore.players,
+          sellingProperty: MainStore.sellingProperty,
+        },
+      },
+    });
     await delay(1000);
   };
 
@@ -693,13 +1209,17 @@ const Dashboard = () => {
             >
               {MainStore.gameState === GAME_STATES.ROLL_DICE &&
                 MainStore.samePlayerRolling === 1 &&
+                (MainStore.playingId === MainStore.myName ||
+                  !MainStore.online) &&
                 "Chạm để tung xúc xắc"}
               {MainStore.gameState === GAME_STATES.ROLL_DICE &&
                 MainStore.samePlayerRolling > 1 &&
-                `Chạm để tung xúc xắc. Bạn được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`}
+                `Được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`}
               {(MainStore.gameState === GAME_STATES.BUYING ||
                 MainStore.gameState === GAME_STATES.UPDATING) &&
-                buyingProperty && (
+                buyingProperty &&
+                (MainStore.playingId === MainStore.myName ||
+                  !MainStore.online) && (
                   <div
                     style={{
                       display: "flex",
@@ -746,7 +1266,9 @@ const Dashboard = () => {
                   </div>
                 )}
               {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-                MainStore.sellingProperty && (
+                MainStore.sellingProperty &&
+                (MainStore.playingId === MainStore.myName ||
+                  !MainStore.online) && (
                   <div
                     style={{
                       display: "flex",
@@ -782,70 +1304,53 @@ const Dashboard = () => {
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[2] !== "bank" && (
                   <div>
-                    Bạn đã mất {MainStore.gameState.split("--")[1]}$ khi đi vào
-                    ô này
+                    Mất {MainStore.gameState.split("--")[1]}$ khi đi vào ô này
                   </div>
                 )}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[2] === "bank" &&
                 !MainStore.gameState.split("--")[3] && (
-                  <div>
-                    Bạn đã thanh toán {MainStore.gameState.split("--")[1]}$
-                  </div>
+                  <div>Đã thanh toán {MainStore.gameState.split("--")[1]}$</div>
                 )}
               {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "new-round" &&
-                "Bạn nhận được 2000$ vì qua vòng mới"}
+                "Nhận được 2000$ vì qua vòng mới"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "pay-out-jail" &&
-                "Bạn phải trả 500$ để ra tù"}
+                "Phải trả 500$ để ra tù"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "fix-electric" &&
-                "Bạn mất 200$ phí sửa điện"}
+                "Mất 200$ phí sửa điện"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "tax" &&
-                `Bạn phải nộp thuế ${MainStore.gameState.split("--")[1]}$`}
+                `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$`}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "jail-visit" &&
                 `Đi thăm tù hết ${MainStore.gameState.split("--")[1]}$`}
               {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "gift" &&
-                `Bạn nhận được ${
+                `Nhận được ${
                   MainStore.gameState.split("--")[1]
                 }$ quà sinh nhật`}
               {MainStore.gameState === GAME_STATES.GOING_JAIL &&
-                "Bạn bị đưa vào tù"}
+                "Bị đưa vào tù"}
               {MainStore.gameState === GAME_STATES.GOING_OUT_JAIL &&
-                "Bạn được ra tù do xúc xắc ra đôi"}
-              {MainStore.gameState === GAME_STATES.NO_BONUS &&
-                "Bạn không có tiền thưởng vòng mới khi bước vào ô này"}
+                "Được ra tù do xúc xắc ra đôi"}
               {MainStore.gameState === GAME_STATES.DOUBLE_TO_OUT &&
-                `Bạn cần xúc xắc ra đôi để ra tù!`}
+                `Cần xúc xắc ra đôi để ra tù!`}
               {MainStore.gameState === GAME_STATES.RECEIVER_ON_JAIL &&
-                `Bạn không mất tiền do chủ nhà đang ở tù`}
+                `Không mất tiền do chủ nhà đang ở tù`}
               {MainStore.gameState === GAME_STATES.MAX_LEVEL_PROPERTY &&
                 `Không thể nâng cấp thêm do ô này đã đạt cấp độ tối đa`}
               {MainStore.gameState.startsWith(GAME_STATES.FLIGHT) &&
-                `Bạn được bay tới ô ${
+                `Được bay tới ô ${
                   BLOCKS[MainStore.gameState.split("--")[1]].name
                 }`}
-              {MainStore.gameState ===
-                GAME_STATES.NOT_ENOUGH_MONEY_BUYING_PROPERTY &&
-                buyingProperty &&
-                `Mua ô này cần có ${
-                  buyingProperty.price[updatingPropertyInfo?.level || 0]
-                }. Bạn không đủ tiền`}
-              {MainStore.gameState ===
-                GAME_STATES.NOT_ENOUGH_MONEY_UPDATING_PROPERTY &&
-                buyingProperty &&
-                `Nâng cấp ô này cần có ${
-                  buyingProperty.price[(updatingPropertyInfo?.level || 1) - 1]
-                } Bạn không đủ tiền`}
               {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
                 !MainStore.sellingProperty &&
-                "Chọn ô đất bạn muốn bán"}
+                "Chọn ô đất muốn bán"}
               {MainStore.gameState.startsWith(GAME_STATES.GOING_BACK) &&
-                `Bạn bị đi lùi ${MainStore.gameState.split("--")[1]} bước`}
+                `Bị đi lùi ${MainStore.gameState.split("--")[1]} bước`}
               {MainStore.gameState.startsWith(
                 GAME_STATES.DOWN_GRADE_BUILDING
               ) &&
@@ -853,7 +1358,7 @@ const Dashboard = () => {
                   <div>
                     Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
                     <br />
-                    {`Bạn bị buộc bán 1 căn nhà ở ${
+                    {`Bị buộc bán 1 căn nhà ở ${
                       MainStore.gameState.split("--")[1]
                     }`}
                   </div>
@@ -865,16 +1370,16 @@ const Dashboard = () => {
                   <div>
                     Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
                     <br />
-                    Bạn chưa thỏa mãn điều kiện
+                    Chưa thỏa mãn điều kiện
                   </div>
                 )}
               {MainStore.gameState.startsWith(
                 GAME_STATES.LOST_ELECTRIC_BUILDING
-              ) && "Một ô ngẫu nhiên của bạn sẽ bị cắt điện"}
+              ) && "Một ô ngẫu nhiên sẽ bị cắt điện"}
               {MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC &&
-                "Bạn không mất tiền vì ô hiện tại đang mất điện"}
+                "Không mất tiền vì ô hiện tại đang mất điện"}
               {MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD &&
-                "Bạn được tặng thẻ ra tù miễn phí"}
+                "Được tặng thẻ ra tù miễn phí"}
               {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
                 "Đã sử dụng thẻ ra tù"}
               {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
@@ -886,10 +1391,37 @@ const Dashboard = () => {
                 "Vui lòng chọn một ô để tổ chức lễ hội"}
               {MainStore.gameState ===
                 GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING &&
-                "Được chọn ô tổ chức lễ hội nhưng bạn chưa có ô nào"}
+                "Được chọn ô tổ chức lễ hội nhưng chưa có ô nào"}
             </div>
             <div className="information__row">
-              <PlayerInfor playerId={MainStore.playingId} />
+              {MainStore.gameState === GAME_STATES.WAITING && (
+                <>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -45,
+                      userSelect: "auto",
+                      display: 'flex',
+                      alignItems: "center",
+                      left: 0,
+                      right: 0,
+                      columnGap: 10
+                    }}
+                  >
+                    <span style={{flexShrink: 0}}>ID phòng:</span> <Input readOnly defaultValue={MainStore.roomId} />
+                  </div>
+                  {range(0, MainStore.totalPlayers).map((idx, index) => (
+                    <PlayerInfor
+                      key={(MainStore.players[idx]?.id || 'noname-') + index}
+                      playerId={MainStore.players[idx]?.id}
+                    />
+                  ))}
+                </>
+              )}
+              {MainStore.gameState !== GAME_STATES.WAITING && (
+                <PlayerInfor playerId={MainStore.playingId} />
+              )}
+
               {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
                 MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)) && (
                 <>
@@ -922,17 +1454,16 @@ const Dashboard = () => {
                       <div
                         style={{ width: 30, height: 30, position: "relative" }}
                       >
-                        <img
+                        <Icon
+                          symbol="money"
                           style={{
                             position: "absolute",
                             width: 50,
                             height: 50,
                             maxWidth: 50,
                           }}
-                          width={50}
-                          height={50}
-                          src={moneySVG}
-                          alt=""
+                          width="50px"
+                          height="50px"
                         />
                       </div>
                       {parseInt(MainStore.gameState.split("--")[1]) >= 2000 &&
@@ -944,7 +1475,7 @@ const Dashboard = () => {
                               position: "relative",
                             }}
                           >
-                            <img
+                            <Icon
                               style={{
                                 position: "absolute",
                                 width: 50,
@@ -953,10 +1484,9 @@ const Dashboard = () => {
                                 top: -16,
                                 left: 30,
                               }}
-                              width={50}
-                              height={50}
-                              src={moneySVG}
-                              alt=""
+                              width={'50px'}
+                              height={'50px'}
+                              symbol="money"
                             />
                           </div>
                         )}
@@ -980,7 +1510,7 @@ const Dashboard = () => {
                               position: "relative",
                             }}
                           >
-                            <img
+                            <Icon
                               style={{
                                 position: "absolute",
                                 width: 50,
@@ -989,10 +1519,9 @@ const Dashboard = () => {
                                 top:
                                   14 * ((numb % 2 !== 0 ? numb + 1 : numb) / 2),
                               }}
-                              width={50}
-                              height={50}
-                              src={moneySVG}
-                              alt=""
+                              width={'50px'}
+                              height={'50px'}
+                              symbol="money"
                             />
                           </div>
                         ))}
@@ -1013,7 +1542,7 @@ const Dashboard = () => {
                         justifyContent: "center",
                       }}
                     >
-                      <img src={bankSVG} alt="" width={120} height={80} />
+                      <Icon symbol="bank" width={'120px'} height={'80px'} />
                       <div
                         style={{
                           fontWeight: "bold",
@@ -1032,9 +1561,11 @@ const Dashboard = () => {
                   )}
                 </>
               )}
-              {![GAME_STATES.INC_MONEY, GAME_STATES.DEC_MONEY].includes(
-                MainStore.gameState.split("--")[0]
-              ) && (
+              {![
+                GAME_STATES.INC_MONEY,
+                GAME_STATES.DEC_MONEY,
+                GAME_STATES.WAITING,
+              ].includes(MainStore.gameState.split("--")[0]) && (
                 <>
                   <div
                     style={{
@@ -1131,64 +1662,116 @@ const Dashboard = () => {
         open={MainStore.gameState === "init"}
         footer={[
           <Button key="submit" onClick={handleOk}>
-            Bắt đầu
+            {!MainStore.online && "Bắt đầu"}
+            {MainStore.online && MainStore.isHost && "Tạo phòng"}
+            {MainStore.online && !MainStore.isHost && "Tham gia"}
           </Button>,
         ]}
         maskClosable={false}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-            Tổng số người chơi:
-          </p>
-          <InputNumber
-            min={2}
-            max={4}
-            value={MainStore.totalPlayers}
-            onChange={MainStore.updateTotalPlayers}
-          />
-        </div>
-
-        {range(0, MainStore.totalPlayers).map((numb) => (
-          <div
-            style={{ display: "flex", alignItems: "center", marginBottom: 10 }}
-            key={numb}
-          >
-            <img
-              style={{ flex: "0 0 40px", height: 40 }}
-              alt=""
-              src={AVATARS[numb]}
-            />
-            <Input
-              value={MainStore.players[numb]?.name}
-              onChange={(e) =>
-                MainStore.updatePlayerData(
-                  MainStore.players[numb],
-                  "name",
-                  e.target.value
-                )
-              }
-            />
-            <div
-              style={{
-                flex: "0 0 20px",
-                height: 20,
-                borderRadius: "50%",
-                marginLeft: 10,
-                background: COLORS[numb],
-              }}
-            ></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <p style={{ flex: "0 0 auto", marginRight: 10 }}>Chơi online:</p>
+            <Switch value={MainStore.online} onChange={MainStore.setOnline} />
           </div>
-        ))}
-
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <p style={{ flex: "0 0 auto", marginRight: 10 }}>Số tiền ban đầu:</p>
-          <InputNumber
-            suffix="$"
-            min={5000}
-            value={MainStore.startMoney}
-            onChange={MainStore.updateStartMoney}
-          />
+          {MainStore.online && (
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                Tạo phòng mới:
+              </p>
+              <Switch value={MainStore.isHost} onChange={MainStore.setHost} />
+            </div>
+          )}
         </div>
+        {MainStore.online && (
+          <>
+            {!MainStore.isHost && (
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                  Nhập Id phòng:
+                </p>
+                <Input
+                  onChange={(e) => MainStore.setRoomId(e.target.value)}
+                  placeholder="Nhập Id phòng"
+                />
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <p style={{ flex: "0 0 auto", marginRight: 10 }}>Nhập tên:</p>
+              <Input
+                value={MainStore.myName}
+                onChange={(e) => MainStore.setMyName(e.target.value)}
+                placeholder="Nhập tên của bạn"
+              />
+            </div>
+          </>
+        )}
+
+        {!MainStore.online && (
+          <>
+            {range(0, MainStore.totalPlayers).map((numb) => (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+                key={numb}
+              >
+                <img
+                  style={{ flex: "0 0 40px", height: 40 }}
+                  alt=""
+                  src={AVATARS[numb]}
+                />
+                <Input
+                  value={MainStore.players[numb]?.name}
+                  onChange={(e) =>
+                    MainStore.updatePlayerData(
+                      MainStore.players[numb],
+                      "name",
+                      e.target.value
+                    )
+                  }
+                />
+                <div
+                  style={{
+                    flex: "0 0 20px",
+                    height: 20,
+                    borderRadius: "50%",
+                    marginLeft: 10,
+                    background: COLORS[numb],
+                  }}
+                ></div>
+              </div>
+            ))}
+          </>
+        )}
+        {(!MainStore.online || (MainStore.online && MainStore.isHost)) && (
+          <>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                Số tiền ban đầu:
+              </p>
+              <InputNumber
+                suffix="$"
+                min={5000}
+                value={MainStore.startMoney}
+                onChange={MainStore.updateStartMoney}
+              />
+            </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                Tổng số người chơi:
+              </p>
+              <InputNumber
+                min={2}
+                max={4}
+                value={MainStore.totalPlayers}
+                onChange={MainStore.updateTotalPlayers}
+              />
+            </div>
+          </>
+        )}
       </Modal>
       <Modal
         centered

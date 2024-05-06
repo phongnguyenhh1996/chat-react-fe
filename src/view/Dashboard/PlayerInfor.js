@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
+import Icon from "../../components/Icon";
 import { AVATARS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
 
@@ -8,6 +9,7 @@ const PlayerInfor = ({ playerId, rightSide }) => {
     (p) => p.id === playerId
   );
   const currentPlayer = MainStore.players[currentPlayerIndex] || {};
+  const color = COLORS[currentPlayerIndex] || "black";
 
   return (
     <div className="information__player-infor">
@@ -16,29 +18,39 @@ const PlayerInfor = ({ playerId, rightSide }) => {
           textAlign: "center",
           fontWeight: "bold",
           color: "white",
-          textShadow: `-1px -1px 0 ${COLORS[currentPlayerIndex]}, 1px -1px 0 ${COLORS[currentPlayerIndex]}, -1px 1px 0 ${COLORS[currentPlayerIndex]}, 1px 1px 0 ${COLORS[currentPlayerIndex]}`,
+          textShadow: `-1px -1px 0 ${color}, 1px -1px 0 ${color}, -1px 1px 0 ${color}, 1px 1px 0 ${color}`,
         }}
       >
-        {currentPlayer.name}
+        {currentPlayer.name || "Đang chờ..."}
       </div>
-      <img
-        style={{ flex: "0 0 80px", height: 40 }}
-        alt=""
-        src={AVATARS[currentPlayerIndex]}
-      />
+      {AVATARS[currentPlayerIndex] ? (
+        <img
+          style={{ flex: "0 0 80px", height: 40 }}
+          alt=""
+          src={AVATARS[currentPlayerIndex]}
+        />
+      ) : (
+        <Icon
+          style={{ flex: "0 0 80px" }}
+          symbol="placeholder-player"
+          width="80px"
+          height="40px"
+        />
+      )}
+
       <div
         style={{
           textAlign: "center",
           position: "relative",
           fontWeight: "bold",
           color: "white",
-          textShadow: `-1px -1px 0 ${COLORS[currentPlayerIndex]}, 1px -1px 0 ${COLORS[currentPlayerIndex]}, -1px 1px 0 ${COLORS[currentPlayerIndex]}, 1px 1px 0 ${COLORS[currentPlayerIndex]}`,
+          textShadow: `-1px -1px 0 ${color}, 1px -1px 0 ${color}, -1px 1px 0 ${color}, 1px 1px 0 ${color}`,
         }}
       >
-        {currentPlayer.money}$
+        {currentPlayer.money || MainStore.startMoney}$
         {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
           MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) ||
-          MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY+'_inc')) && (
+          MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY + "_inc")) && (
           <div
             style={{ position: "absolute", top: 0 }}
             className="fade-out-top"

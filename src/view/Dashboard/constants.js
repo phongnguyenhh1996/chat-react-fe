@@ -244,6 +244,7 @@ export const AVATARS = [avatar1, avatar2, avatar3, avatar4];
 
 export const GAME_STATES = {
   INIT: "init",
+  WAITING: "waiting",
   ROLL_DICE: "roll_dice",
   ROLLING_DICE: "rolling_dice",
   MOVING: "moving",
