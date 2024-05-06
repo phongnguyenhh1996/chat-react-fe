@@ -1,21 +1,21 @@
 {
   "files": {
     "main.css": "/chat-react-fe/static/css/main.cc3a409c.css",
-    "main.js": "/chat-react-fe/static/js/main.f0336862.js",
-    "static/media/icons.svg": "/chat-react-fe/static/media/icons.bb31083b3491d17157cd98fa29d2f651.svg",
+    "main.js": "/chat-react-fe/static/js/main.10863d0d.js",
+    "static/js/289.aeaeda9e.chunk.js": "/chat-react-fe/static/js/289.aeaeda9e.chunk.js",
+    "static/media/icons.svg": "/chat-react-fe/static/media/icons.3cf5953be1f2d204090c9c2fee52b58d.svg",
     "static/media/avatar4.svg": "/chat-react-fe/static/media/avatar4.1a08efc3c859e4bd8f418eadcb61d407.svg",
     "static/media/avatar1.svg": "/chat-react-fe/static/media/avatar1.690ea1a1f4203e3af5d4ab50d433612c.svg",
     "static/media/confetti.svg": "/chat-react-fe/static/media/confetti.f99e4e4d9adffc0b6cf8be9320398931.svg",
     "static/media/avatar2.svg": "/chat-react-fe/static/media/avatar2.d4e78093d66dece3a716ae8afcbd01c7.svg",
-    "static/media/money.svg": "/chat-react-fe/static/media/money.46fab7a471d919cd8b1a36fe36918509.svg",
     "static/media/avatar3.svg": "/chat-react-fe/static/media/avatar3.6d497afd97497d93ac3b9b7f7d532a81.svg",
-    "static/media/bank.svg": "/chat-react-fe/static/media/bank.226f6a32056debba675706254fd46338.svg",
     "index.html": "/chat-react-fe/index.html",
     "main.cc3a409c.css.map": "/chat-react-fe/static/css/main.cc3a409c.css.map",
-    "main.f0336862.js.map": "/chat-react-fe/static/js/main.f0336862.js.map"
+    "main.10863d0d.js.map": "/chat-react-fe/static/js/main.10863d0d.js.map",
+    "289.aeaeda9e.chunk.js.map": "/chat-react-fe/static/js/289.aeaeda9e.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cc3a409c.css",
-    "static/js/main.f0336862.js"
+    "static/js/main.10863d0d.js"
   ]
 }
