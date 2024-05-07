@@ -10,7 +10,9 @@ class MainStore {
   myName = "Player 1";
   roomId = uuidv4();
   channel = null;
-
+  showChat = false;
+  
+  chat = {};
   totalPlayers = 2;
   startMoney = 20000;
   gameState = "init";
@@ -232,7 +234,7 @@ class MainStore {
 
   checkPayToOutJail(playerId) {
     const player = this.players[this.getPlayerIndexById(playerId)];
-    return player.payToOutJail
+    return player.payToOutJail;
   }
 
   ensureMoneyIsEnough(checkFunction, playerId, price) {
@@ -397,7 +399,20 @@ class MainStore {
   }
 
   updateStore(data) {
-    Object.keys(data).forEach((key) => (this[key] = data[key]));
+    Object.keys(data).forEach((key) => {
+      this[key] = data[key];
+    });
+  }
+
+  openChat() {
+    this.showChat = true;
+  }
+  closeChat() {
+    this.showChat = false;
+  }
+
+  addChat(playerId, message) {
+    this.chat[playerId] = message;
   }
 }
 

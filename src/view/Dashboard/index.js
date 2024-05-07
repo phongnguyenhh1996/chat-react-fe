@@ -1,6 +1,14 @@
-import React from "react";
-import { get, pick, random, range } from "lodash";
-import { Button, Modal, InputNumber, Input, Popconfirm, Switch } from "antd";
+import React, { useEffect } from "react";
+import { debounce, get, pick, random, range } from "lodash";
+import {
+  Button,
+  Modal,
+  InputNumber,
+  Input,
+  Popconfirm,
+  Switch,
+  Popover,
+} from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
 import { AVATARS, BLOCKS, COLORS, GAME_STATES } from "./constants";
@@ -10,6 +18,7 @@ import Block from "./Block";
 import PlayerInfor from "./PlayerInfor";
 import Icon from "../../components/Icon";
 import { createClient } from "@supabase/supabase-js";
+import moment from "moment";
 
 const supabase = createClient(
   "https://vqjkcypfolcemvcxpgdw.supabase.co",
@@ -1163,6 +1172,32 @@ const Dashboard = () => {
     });
   };
 
+  useEffect(() => {
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Enter" && !MainStore.showChat) {
+        debounce(MainStore.openChat, 100)();
+      }
+    });
+  }, []);
+
+  const sendChat = (e) => {
+    e.preventDefault();
+    MainStore.addChat(
+      MainStore.myName,
+      e.target[0]?.value + "--" + new Date().toISOString()
+    );
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          chat: MainStore.chat,
+        },
+      },
+    });
+    MainStore.closeChat();
+  };
+
   return (
     <div className="container-page">
       {BLOCKS.map((block, index) => (
@@ -1186,28 +1221,51 @@ const Dashboard = () => {
               }}
               className="player"
               key={player.id}
+              id={player.id + "avatar"}
             >
-              <img
-                style={{
-                  flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
-                  height: window.innerWidth > 950 ? 25 : 15,
-                  position: "relative",
-                  left: index === 0 || index === 2 ? -15 : undefined,
-                  top:
-                    index === 0 || index === 1
-                      ? window.innerWidth > 950
-                        ? -20
-                        : -10
-                      : undefined,
-                  right: index === 1 || index === 3 ? -15 : undefined,
-                  bottom:
-                    (index === 2 || index === 3) && MainStore.totalPlayers > 2
-                      ? -15
-                      : undefined,
-                }}
-                alt=""
-                src={AVATARS[index]}
-              />
+              <Popover
+                getPopupContainer={() =>
+                  document.getElementById(player.id + "avatar")
+                }
+                content={
+                  <div style={{ color: COLORS[index] }}>
+                    {MainStore.chat[player.id] ? MainStore.chat[player.id].split("--")[0] : ""}
+                  </div>
+                }
+                open={
+                  MainStore.chat[player.id] &&
+                  moment(MainStore.chat[player.id].split("--")[1])
+                    .add("5", "second")
+                    .isAfter(moment())
+                }
+                key={
+                  player.id +
+                  BLOCKS[(player.position - 1) % 36]?.position +
+                  (MainStore.chat[player.id] || 'no-message')
+                }
+              >
+                <img
+                  style={{
+                    flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
+                    height: window.innerWidth > 950 ? 25 : 15,
+                    position: "relative",
+                    left: index === 0 || index === 2 ? -15 : undefined,
+                    top:
+                      index === 0 || index === 1
+                        ? window.innerWidth > 950
+                          ? -20
+                          : -10
+                        : undefined,
+                    right: index === 1 || index === 3 ? -15 : undefined,
+                    bottom:
+                      (index === 2 || index === 3) && MainStore.totalPlayers > 2
+                        ? -15
+                        : undefined,
+                  }}
+                  alt=""
+                  src={AVATARS[index]}
+                />
+              </Popover>
             </div>
           )
       )}
@@ -1221,6 +1279,38 @@ const Dashboard = () => {
         }}
         className="center-space"
       >
+        {MainStore.online && (
+          <form
+            style={{
+              position: "absolute",
+              bottom: 30,
+              width: "50%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onSubmit={sendChat}
+          >
+            {!MainStore.showChat && (
+              <div style={{ textAlign: "center", marginBottom: 6 }}>
+                Nhấn <strong>Enter</strong> để chat
+              </div>
+            )}
+            {MainStore.showChat && (
+              <Input
+                style={{
+                  width: "100%",
+                }}
+                autoFocus
+                placeholder="Nhập nội dung chat"
+                name="chat"
+              />
+            )}
+          </form>
+        )}
+
         <Popconfirm
           title="Chơi lại"
           description="Bạn muốn hủy ván hiện tại và chơi lại không?"
@@ -1442,28 +1532,28 @@ const Dashboard = () => {
                     }}
                   >
                     <div>Bạn có muốn trả 500$ để ra tù không?</div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 10,
-                          justifyContent: "flex-end",
-                          marginTop: 10,
-                        }}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "flex-end",
+                        marginTop: 10,
+                      }}
+                    >
+                      <Button
+                        onClick={() => updatePayToOutJail(false)}
+                        type="primary"
+                        danger
                       >
-                        <Button
-                          onClick={() => updatePayToOutJail(false)}
-                          type="primary"
-                          danger
-                        >
-                          Không
-                        </Button>
-                        <Button
-                          type="primary"
-                          onClick={() => updatePayToOutJail(true)}
-                        >
-                          Có
-                        </Button>
-                      </div>
+                        Không
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={() => updatePayToOutJail(true)}
+                      >
+                        Có
+                      </Button>
+                    </div>
                   </div>
                 )}
               {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&

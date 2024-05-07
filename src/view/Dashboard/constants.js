@@ -77,7 +77,7 @@ export const BLOCKS = [
   {
     type: "jail-visit",
     name: "Trại giam",
-    position: 'bottom'
+    position: 'left'
   },
   {
     type: "property",
