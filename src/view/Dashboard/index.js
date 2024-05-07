@@ -52,7 +52,7 @@ const Dashboard = () => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
           })
           .on("presence", { event: "join" }, ({ key }) => {
-            if (key === "host") {
+            if (key === "host" || MainStore.gameState !== GAME_STATES.WAITING) {
               return;
             }
             MainStore.addPlayer(key);
@@ -484,7 +484,7 @@ const Dashboard = () => {
               MainStore.ownedBlocks[key].level > 1 &&
               MainStore.ownedBlocks[key].level < 6
           );
-          if (allOwnedBlockKeys.length === 0 || currentPlayer.money <= 5000) {
+          if (allOwnedBlockKeys.length === 0) {
             MainStore.updateGameState(
               GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
             );
@@ -1059,7 +1059,6 @@ const Dashboard = () => {
     if (!playerStillHaveMoney) {
       price = player.money;
       MainStore.updatePlayerData(player, "broke", true);
-      MainStore.updatePlayerData(player, "money", 0);
       MainStore.updatePlayerData(player, "position", 1);
       Object.keys(MainStore.ownedBlocks).forEach((key) => {
         if (MainStore.ownedBlocks[key].playerId === player.id) {
@@ -1109,7 +1108,23 @@ const Dashboard = () => {
     });
     await delay(2000);
     checkEndGame();
-    nextPlayerTurn();
+    if (
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
+      buyingProperty.type === "property"
+    ) {
+      MainStore.updateGameState(GAME_STATES.UPDATING);
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            gameState: MainStore.gameState,
+          },
+        },
+      });
+    } else {
+      nextPlayerTurn();
+    }
   };
 
   const sellingProperty = BLOCKS.find(
@@ -1229,7 +1244,9 @@ const Dashboard = () => {
                 }
                 content={
                   <div style={{ color: COLORS[index] }}>
-                    {MainStore.chat[player.id] ? MainStore.chat[player.id].split("--")[0] : ""}
+                    {MainStore.chat[player.id]
+                      ? MainStore.chat[player.id].split("--")[0]
+                      : ""}
                   </div>
                 }
                 open={
@@ -1241,7 +1258,7 @@ const Dashboard = () => {
                 key={
                   player.id +
                   BLOCKS[(player.position - 1) % 36]?.position +
-                  (MainStore.chat[player.id] || 'no-message')
+                  (MainStore.chat[player.id] || "no-message")
                 }
               >
                 <img
@@ -1492,26 +1509,17 @@ const Dashboard = () => {
                 `Bị đi lùi ${MainStore.gameState.split("--")[1]} bước`}
               {MainStore.gameState.startsWith(
                 GAME_STATES.DOWN_GRADE_BUILDING
-              ) &&
-                MainStore.gameState.split("--")[1] !== "no-property" && (
-                  <div>
-                    Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
-                    <br />
-                    {`Bị buộc bán 1 căn nhà ở ${
-                      MainStore.gameState.split("--")[1]
-                    }`}
-                  </div>
-                )}
-              {MainStore.gameState.startsWith(
-                GAME_STATES.DOWN_GRADE_BUILDING
-              ) &&
-                MainStore.gameState.split("--")[1] === "no-property" && (
-                  <div>
-                    Người chơi hiện tại nếu trên 5000$ bị buộc bán 1 căn nhà.
-                    <br />
-                    Chưa thỏa mãn điều kiện
-                  </div>
-                )}
+              ) && (
+                <div>
+                  Người chơi bị buộc bán 1 căn nhà.
+                  <br />
+                  {MainStore.gameState.split("--")[1] !== "no-property"
+                    ? `Bị buộc bán 1 căn nhà ở ${
+                        MainStore.gameState.split("--")[1]
+                      }`
+                    : "Không sỡ hữu căn nhà nào"}
+                </div>
+              )}
               {MainStore.gameState.startsWith(
                 GAME_STATES.LOST_ELECTRIC_BUILDING
               ) && "Một ô ngẫu nhiên sẽ bị cắt điện"}
@@ -1804,6 +1812,14 @@ const Dashboard = () => {
                             height="20px"
                           />
                         )}
+                        {player.broke && (
+                          <Icon
+                            style={{ position: "absolute", left: -3 }}
+                            symbol="stop"
+                            width="30px"
+                            height="30px"
+                          />
+                        )}
                         <img
                           style={{
                             flex: "0 0 25px",
@@ -1815,6 +1831,9 @@ const Dashboard = () => {
                         />
                         <div
                           style={{
+                            textDecoration: player.broke
+                              ? "line-through"
+                              : undefined,
                             fontWeight: "bold",
                             color: "white",
                             textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
