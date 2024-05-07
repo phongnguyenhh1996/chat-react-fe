@@ -479,10 +479,7 @@ const Dashboard = () => {
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) =>
-              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
-              MainStore.ownedBlocks[key].level > 1 &&
-              MainStore.ownedBlocks[key].level < 6
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           if (allOwnedBlockKeys.length === 0) {
             MainStore.updateGameState(
@@ -1109,7 +1106,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 &&
       buyingProperty.type === "property"
     ) {
       MainStore.updateGameState(GAME_STATES.UPDATING);
