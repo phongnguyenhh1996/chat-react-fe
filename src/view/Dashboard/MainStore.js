@@ -169,6 +169,17 @@ class MainStore {
       random(30, 32),
       random(34, 35),
     ][random(0, 7)];
+    if (this.myName === this.playingId) {
+      this.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            flightDestination: this.flightDestination,
+          },
+        },
+      });
+    }
   }
 
   getPrice(block = {}, level, isSelling) {
@@ -217,6 +228,11 @@ class MainStore {
       ) === -1
     )
       return false;
+  }
+
+  checkPayToOutJail(playerId) {
+    const player = this.players[this.getPlayerIndexById(playerId)];
+    return player.payToOutJail
   }
 
   ensureMoneyIsEnough(checkFunction, playerId, price) {

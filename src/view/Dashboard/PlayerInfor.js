@@ -47,7 +47,10 @@ const PlayerInfor = ({ playerId, rightSide }) => {
           textShadow: `-1px -1px 0 ${color}, 1px -1px 0 ${color}, -1px 1px 0 ${color}, 1px 1px 0 ${color}`,
         }}
       >
-        {currentPlayer.money || MainStore.startMoney}$
+        {currentPlayer.money !== undefined
+          ? currentPlayer.money
+          : MainStore.startMoney}
+        $
         {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
           MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) ||
           MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY + "_inc")) && (

@@ -54,7 +54,12 @@ const Dashboard = () => {
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
             }
             MainStore.channel.track({
-              data: pick(MainStore, ["gameState", "players", "playingId", "totalPlayers"]),
+              data: pick(MainStore, [
+                "gameState",
+                "players",
+                "playingId",
+                "totalPlayers",
+              ]),
             });
           })
           .subscribe(async (status) => {
@@ -770,15 +775,6 @@ const Dashboard = () => {
       });
       await delay(2000);
       movingPlayer(MainStore.randomFlightDestination, position);
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            flightDestination: MainStore.flightDestination,
-          },
-        },
-      });
       return;
     }
 
@@ -888,8 +884,7 @@ const Dashboard = () => {
           "onJail",
           currentPlayer.onJail + 1
         );
-        MainStore.updateGameState(GAME_STATES.DOUBLE_TO_OUT);
-        MainStore.channel.send({
+        await MainStore.channel.send({
           type: "broadcast",
           event: "updateStore",
           payload: {
@@ -899,7 +894,7 @@ const Dashboard = () => {
             },
           },
         });
-        await delay(2000);
+        await delay(500);
         if (currentPlayer.onJail === 4) {
           let price = 500;
           if (currentPlayer.money - 500 < 0) {
@@ -926,9 +921,48 @@ const Dashboard = () => {
           });
           await delay(2000);
           nextPlayerTurn(true);
-        } else {
-          nextPlayerTurn(true);
+          return;
         }
+        MainStore.updateGameState(GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              gameState: MainStore.gameState,
+            },
+          },
+        });
+        const playerPayToOutJail = await MainStore.ensureMoneyIsEnough(
+          MainStore.checkPayToOutJail,
+          currentPlayer.id
+        );
+        if (playerPayToOutJail) {
+          MainStore.updatePlayerData(currentPlayer, "onJail", 3);
+          MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
+          MainStore.channel.send({
+            type: "broadcast",
+            event: "updateStore",
+            payload: {
+              data: {
+                players: MainStore.players,
+              },
+            },
+          });
+          movingPlayer();
+          return;
+        }
+        MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
+        MainStore.channel.send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              players: MainStore.players,
+            },
+          },
+        });
+        nextPlayerTurn(true);
       }
       return;
     }
@@ -937,7 +971,7 @@ const Dashboard = () => {
       : currentPlayer.position + MainStore.dice[0] + MainStore.dice[1];
     if (!planeDestinationPostion) {
       MainStore.updateGameState(GAME_STATES.MOVING);
-      await delay(2000);
+      await delay(1000);
     }
     const moving = setInterval(
       () => {
@@ -1112,6 +1146,21 @@ const Dashboard = () => {
       },
     });
     await delay(1000);
+  };
+
+  const updatePayToOutJail = (payToOutJail) => {
+    MainStore.updatePlayerData(currentPlayer, "payToOutJail", payToOutJail);
+    MainStore.updateGameState(GAME_STATES.RESPONDED_PAY_OUT_JAIL);
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          players: MainStore.players,
+          gameState: MainStore.gameState,
+        },
+      },
+    });
   };
 
   return (
@@ -1382,6 +1431,41 @@ const Dashboard = () => {
                 "Được tặng thẻ ra tù miễn phí"}
               {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
                 "Đã sử dụng thẻ ra tù"}
+              {MainStore.gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL &&
+                (MainStore.playingId === MainStore.myName ||
+                  !MainStore.online) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1,
+                    }}
+                  >
+                    <div>Bạn có muốn trả 500$ để ra tù không?</div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          justifyContent: "flex-end",
+                          marginTop: 10,
+                        }}
+                      >
+                        <Button
+                          onClick={() => updatePayToOutJail(false)}
+                          type="primary"
+                          danger
+                        >
+                          Không
+                        </Button>
+                        <Button
+                          type="primary"
+                          onClick={() => updatePayToOutJail(true)}
+                        >
+                          Có
+                        </Button>
+                      </div>
+                  </div>
+                )}
               {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
                 "Đi tới 1 ô của bạn ngẫu nhiên hoặc được tặng 500$ đi du lịch"}
               {MainStore.gameState.startsWith(
@@ -1401,18 +1485,19 @@ const Dashboard = () => {
                       position: "absolute",
                       top: -45,
                       userSelect: "auto",
-                      display: 'flex',
+                      display: "flex",
                       alignItems: "center",
                       left: 0,
                       right: 0,
-                      columnGap: 10
+                      columnGap: 10,
                     }}
                   >
-                    <span style={{flexShrink: 0}}>ID phòng:</span> <Input readOnly defaultValue={MainStore.roomId} />
+                    <span style={{ flexShrink: 0 }}>ID phòng:</span>{" "}
+                    <Input readOnly defaultValue={MainStore.roomId} />
                   </div>
                   {range(0, MainStore.totalPlayers).map((idx, index) => (
                     <PlayerInfor
-                      key={(MainStore.players[idx]?.id || 'noname-') + index}
+                      key={(MainStore.players[idx]?.id || "noname-") + index}
                       playerId={MainStore.players[idx]?.id}
                     />
                   ))}
@@ -1484,8 +1569,8 @@ const Dashboard = () => {
                                 top: -16,
                                 left: 30,
                               }}
-                              width={'50px'}
-                              height={'50px'}
+                              width={"50px"}
+                              height={"50px"}
                               symbol="money"
                             />
                           </div>
@@ -1519,8 +1604,8 @@ const Dashboard = () => {
                                 top:
                                   14 * ((numb % 2 !== 0 ? numb + 1 : numb) / 2),
                               }}
-                              width={'50px'}
-                              height={'50px'}
+                              width={"50px"}
+                              height={"50px"}
                               symbol="money"
                             />
                           </div>
@@ -1542,7 +1627,7 @@ const Dashboard = () => {
                         justifyContent: "center",
                       }}
                     >
-                      <Icon symbol="bank" width={'120px'} height={'80px'} />
+                      <Icon symbol="bank" width={"120px"} height={"80px"} />
                       <div
                         style={{
                           fontWeight: "bold",

@@ -272,5 +272,7 @@ export const GAME_STATES = {
   FIXING_ELECTRIC_BUILDING: 'fixing_electric_building',
   RANDOM_TRAVELING: 'random_traveling',
   CHOOSE_FESTIVAL_BUILDING: 'choose_festival_building',
-  NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING: 'no_block_to_choose_festival_building'
+  NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING: 'no_block_to_choose_festival_building',
+  ASK_TO_PAY_TO_OUT_JAIL: 'ask_to_pay_to_out_jail',
+  RESPONDED_PAY_OUT_JAIL: 'responsed_pay_out_jail'
 };
