@@ -252,8 +252,9 @@ const Dashboard = () => {
               MainStore.sendDataToChannel(["gameState", "players"]);
               await delay(2000);
               if (block.type === "property") {
+                MainStore.updateBuyingProperty(block.name);
                 MainStore.updateGameState(GAME_STATES.BUYING);
-                MainStore.sendDataToChannel(["gameState"]);
+                MainStore.sendDataToChannel(["gameState", "buyingProperty"]);
                 return;
               }
             }
