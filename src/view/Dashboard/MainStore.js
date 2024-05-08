@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from "uuid";
 import { BLOCKS, GAME_STATES } from "./constants";
 import { delay } from "./utils";
 
-
 class Reset {
   gameState = GAME_STATES.ROLL_DICE;
   dice = [6, 6];
@@ -348,10 +347,16 @@ class MainStore {
   }
 
   resetGame() {
-    if (!this.isHost) return
-    const newData = new Reset()
-    Object.keys(newData).forEach(key => this[key] = newData[key])
-    this.players = this.players.map(p => ({...p, money: this.startMoney, position: 1}))
+    if (!this.isHost) return;
+    const newData = new Reset();
+    Object.keys(newData).forEach((key) => (this[key] = newData[key]));
+    this.players = this.players.map((p) => ({
+      name: p.name,
+      id: p.id,
+      money: this.startMoney,
+      position: 1,
+      broke: false,
+    }));
     this.channel.send({
       type: "broadcast",
       event: "updateStore",
@@ -373,7 +378,7 @@ class MainStore {
   }
 
   setMyName(name) {
-    localStorage.setItem('myName', name)
+    localStorage.setItem("myName", name);
     this.myName = name;
     this.players[0].name = name;
     this.players[0].id = name;
@@ -423,6 +428,20 @@ class MainStore {
 
   addChat(playerId, message) {
     this.chat[playerId] = message;
+  }
+
+  sendDataToChannel(keys = []) {
+    const data = keys.reduce((fullData, key) => {
+      fullData[key] = this[key];
+      return fullData;
+    }, {});
+    this.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data,
+      },
+    });
   }
 }
 

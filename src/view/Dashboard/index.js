@@ -128,15 +128,7 @@ const Dashboard = () => {
 
   const goToJail = async () => {
     MainStore.updateGameState(GAME_STATES.GOING_JAIL);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          gameState: MainStore.gameState,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["gameState"]);
     await delay(2000);
     MainStore.updatePlayerData(
       currentPlayer,
@@ -144,15 +136,7 @@ const Dashboard = () => {
       getJailPosition(currentPlayer)
     );
     MainStore.updatePlayerData(currentPlayer, "onJail", 1);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          players: MainStore.players,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["players"]);
     nextPlayerTurn(true);
   };
 
@@ -173,30 +157,16 @@ const Dashboard = () => {
     }
     MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          samePlayerRolling: MainStore.samePlayerRolling,
-          gameState: MainStore.gameState,
-          playingId: MainStore.playingId,
-        },
-      },
-    });
+    MainStore.sendDataToChannel([
+      "playingId",
+      "samePlayerRolling",
+      "gameState",
+    ]);
   };
 
   const nextPlayerTurn = async (forceSwitch) => {
     MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          gameState: MainStore.gameState,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["gameState"]);
     await delay(100);
     if (forceSwitch || currentPlayer.broke) {
       goNextAvailablePlayer();
@@ -209,16 +179,7 @@ const Dashboard = () => {
       } else {
         MainStore.updateGameState(GAME_STATES.ROLL_DICE);
       }
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            gameState: MainStore.gameState,
-            samePlayerRolling: MainStore.samePlayerRolling,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["gameState", "samePlayerRolling"]);
     } else {
       goNextAvailablePlayer();
     }
@@ -237,16 +198,7 @@ const Dashboard = () => {
       MainStore.updateGameState(
         GAME_STATES.INC_MONEY + "--2000--bank--new-round"
       );
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            gameState: MainStore.gameState,
-            players: MainStore.players,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["gameState", "players"]);
       await delay(2000);
       checkCurrentBlock();
     } else checkCurrentBlock();
@@ -262,26 +214,10 @@ const Dashboard = () => {
       const ownedBlock = MainStore.ownedBlocks[block.name];
       if (!ownedBlock) {
         MainStore.updateBuyingProperty(block.name);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              buyingProperty: MainStore.buyingProperty,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["buyingProperty"]);
         await delay(1000);
         MainStore.updateGameState(GAME_STATES.BUYING);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              gameState: MainStore.gameState,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["gameState"]);
       } else {
         if (ownedBlock.playerId !== currentPlayer.id) {
           const receivePlayer =
@@ -292,16 +228,7 @@ const Dashboard = () => {
             if (ownedBlock.lostElectricity > 0) {
               MainStore.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
               MainStore.updateOwnedBlockElectricity(block.name);
-              MainStore.channel.send({
-                type: "broadcast",
-                event: "updateStore",
-                payload: {
-                  data: {
-                    gameState: MainStore.gameState,
-                    ownedBlocks: MainStore.ownedBlocks,
-                  },
-                },
-              });
+              MainStore.sendDataToChannel(["gameState", "ownedBlocks"]);
             } else {
               let price = MainStore.getPrice(block);
               if (currentPlayer.money - price < 0) {
@@ -322,28 +249,17 @@ const Dashboard = () => {
               MainStore.updateGameState(
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
-              MainStore.channel.send({
-                type: "broadcast",
-                event: "updateStore",
-                payload: {
-                  data: {
-                    gameState: MainStore.gameState,
-                    players: MainStore.players,
-                  },
-                },
-              });
+              MainStore.sendDataToChannel(["gameState", "players"]);
+              await delay(2000);
+              if (block.type === "property") {
+                MainStore.updateGameState(GAME_STATES.BUYING);
+                MainStore.sendDataToChannel(["gameState"]);
+                return;
+              }
             }
           } else {
             MainStore.updateGameState(GAME_STATES.RECEIVER_ON_JAIL);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
           }
           await delay(2000);
           nextPlayerTurn();
@@ -355,39 +271,15 @@ const Dashboard = () => {
           }
           if (ownedBlock?.level === 6) {
             MainStore.updateGameState(GAME_STATES.MAX_LEVEL_PROPERTY);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
             await delay(2000);
             nextPlayerTurn();
           } else {
             MainStore.updateBuyingProperty(block.name);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  buyingProperty: MainStore.buyingProperty,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["buyingProperty"]);
             await delay(1000);
             MainStore.updateGameState(GAME_STATES.UPDATING);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
           }
         }
       }
@@ -416,16 +308,7 @@ const Dashboard = () => {
         MainStore.updateGameState(
           GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
         );
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              gameState: MainStore.gameState,
-              players: MainStore.players,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["gameState", "players"]);
         await delay(2000);
       }
       nextPlayerTurn();
@@ -447,16 +330,7 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState", "players"]);
           await delay(2000);
           nextPlayerTurn();
         },
@@ -467,15 +341,7 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState"]);
           await delay(2000);
           movingPlayer(() => {}, position);
         },
@@ -487,15 +353,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
             );
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
             await delay(2000);
             nextPlayerTurn();
             return;
@@ -505,15 +363,7 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState"]);
           await delay(2000);
           const price = getSellingPrice(randomKey);
           MainStore.updatePlayerData(
@@ -525,18 +375,12 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.INC_MONEY + "--" + price + "--bank"
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-                sellingProperty: MainStore.sellingProperty,
-                ownedBlocks: MainStore.ownedBlocks,
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel([
+            "gameState",
+            "players",
+            "sellingProperty",
+            "ownedBlocks",
+          ]);
           await delay(2000);
           nextPlayerTurn();
         },
@@ -545,29 +389,13 @@ const Dashboard = () => {
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState"]);
           await delay(2000);
           if (allOwnedBlockKeys.length > 0) {
             const randomKey =
               allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
             MainStore.updateOwnedBlockElectricity(randomKey, 1);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  ownedBlocks: MainStore.ownedBlocks,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["ownedBlocks"]);
           }
           nextPlayerTurn();
           return;
@@ -588,41 +416,16 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift"
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState", "players"]);
           await delay(2000);
           nextPlayerTurn();
         },
         async () => {
           MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState"]);
           await delay(2000);
           MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players"]);
           nextPlayerTurn();
           return;
         },
@@ -639,16 +442,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.FIXING_ELECTRIC_BUILDING + "--" + randomKey
             );
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                  ownedBlocks: MainStore.ownedBlocks,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["players", "ownedBlocks"]);
             await delay(2000);
           }
           MainStore.updatePlayerData(
@@ -659,16 +453,7 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + "--" + 200 + "--bank--fix-electric"
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players", "gameState"]);
           await delay(2000);
           nextPlayerTurn();
           return;
@@ -678,15 +463,7 @@ const Dashboard = () => {
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           MainStore.updateGameState(GAME_STATES.RANDOM_TRAVELING);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["gameState"]);
           await delay(2000);
           if (allOwnedBlockKeys.length > 0) {
             const randomKey =
@@ -708,16 +485,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.INC_MONEY + "--" + 500 + "--bank"
             );
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                  players: MainStore.players,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState", "players"]);
             await delay(2000);
             nextPlayerTurn();
           }
@@ -729,28 +497,12 @@ const Dashboard = () => {
           );
           if (allOwnedBlockKeys.length > 0) {
             MainStore.updateGameState(GAME_STATES.CHOOSE_FESTIVAL_BUILDING);
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
               GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING
             );
-            MainStore.channel.send({
-              type: "broadcast",
-              event: "updateStore",
-              payload: {
-                data: {
-                  gameState: MainStore.gameState,
-                },
-              },
-            });
+            MainStore.sendDataToChannel(["gameState"]);
             await delay(2000);
             nextPlayerTurn();
             return;
@@ -772,15 +524,7 @@ const Dashboard = () => {
       MainStore.updateGameState(
         GAME_STATES.FLIGHT + "--" + MainStore.flightDestination
       );
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            gameState: MainStore.gameState,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["gameState"]);
       await delay(2000);
       movingPlayer(MainStore.randomFlightDestination, position);
       return;
@@ -795,16 +539,7 @@ const Dashboard = () => {
       MainStore.updatePlayerData(playerNotBroke, "winner", true);
       MainStore.updatePlayerData(playerNotBroke, "winReason", "not-broke");
       MainStore.setEndGame(true);
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            players: MainStore.players,
-            endGame: MainStore.endGame,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["players", "endGame"]);
       return;
     }
 
@@ -836,16 +571,7 @@ const Dashboard = () => {
           isFourPublic ? "four-public" : "three-monopoly"
         );
         MainStore.setEndGame(true);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              players: MainStore.players,
-              endGame: MainStore.endGame,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["players", "endGame"]);
         return;
       }
     });
@@ -856,16 +582,7 @@ const Dashboard = () => {
       if (MainStore.dice[0] === MainStore.dice[1]) {
         MainStore.updateGameState(GAME_STATES.GOING_OUT_JAIL);
         MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              players: MainStore.players,
-              gameState: MainStore.gameState,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["players", "gameState"]);
         await delay(2000);
         nextPlayerTurn(true);
       } else {
@@ -873,16 +590,7 @@ const Dashboard = () => {
           MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
           MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
           MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                players: MainStore.players,
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players", "gameState"]);
           await delay(2000);
           nextPlayerTurn(true);
           return;
@@ -892,16 +600,7 @@ const Dashboard = () => {
           "onJail",
           currentPlayer.onJail + 1
         );
-        await MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              players: MainStore.players,
-              gameState: MainStore.gameState,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["players", "gameState"]);
         await delay(500);
         if (currentPlayer.onJail === 4) {
           let price = 500;
@@ -917,30 +616,13 @@ const Dashboard = () => {
           MainStore.updateGameState(
             GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                players: MainStore.players,
-                gameState: MainStore.gameState,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players", "gameState"]);
           await delay(2000);
           nextPlayerTurn(true);
           return;
         }
         MainStore.updateGameState(GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              gameState: MainStore.gameState,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["gameState"]);
         const playerPayToOutJail = await MainStore.ensureMoneyIsEnough(
           MainStore.checkPayToOutJail,
           currentPlayer.id
@@ -948,28 +630,12 @@ const Dashboard = () => {
         if (playerPayToOutJail) {
           MainStore.updatePlayerData(currentPlayer, "onJail", 3);
           MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players"]);
           movingPlayer();
           return;
         }
         MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
-        MainStore.channel.send({
-          type: "broadcast",
-          event: "updateStore",
-          payload: {
-            data: {
-              players: MainStore.players,
-            },
-          },
-        });
+        MainStore.sendDataToChannel(["players"]);
         nextPlayerTurn(true);
       }
       return;
@@ -996,15 +662,7 @@ const Dashboard = () => {
             currentPlayer.position +
               (newPosition > currentPlayer.position ? 1 : -1)
           );
-          MainStore.channel.send({
-            type: "broadcast",
-            event: "updateStore",
-            payload: {
-              data: {
-                players: MainStore.players,
-              },
-            },
-          });
+          MainStore.sendDataToChannel(["players", "gameState"]);
         }
       },
       planeDestinationPostion ? 100 : 200
@@ -1020,11 +678,7 @@ const Dashboard = () => {
     MainStore.updateGameState(GAME_STATES.ROLLING_DICE);
     const roll = setInterval(() => {
       MainStore.randomDice();
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: { data: { dice: MainStore.dice } },
-      });
+      MainStore.sendDataToChannel(["dice"]);
     }, 150);
     await delay(2000);
     clearInterval(roll);
@@ -1035,21 +689,12 @@ const Dashboard = () => {
     (block) => block.name === MainStore.buyingProperty
   );
 
-  const updatingPropertyInfo = MainStore.ownedBlocks[buyingProperty?.name];
+  const updatingPropertyInfo = MainStore.ownedBlocks[buyingProperty?.name] || {};
 
   const handleNotEnoughMoney = async (player, price) => {
     MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
     MainStore.setPriceNeedToPay(price);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          priceNeedToPay: MainStore.priceNeedToPay,
-          gameState: MainStore.gameState,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["priceNeedToPay", "gameState"]);
     const playerStillHaveMoney = await MainStore.ensureMoneyIsEnough(
       MainStore.checkMoney,
       player.id,
@@ -1064,16 +709,7 @@ const Dashboard = () => {
           MainStore.deleteOwnedBlock(key);
         }
       });
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            players: MainStore.players,
-            ownedBlocks: MainStore.ownedBlocks,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["players", "ownedBlocks"]);
       checkEndGame();
     }
     await delay(1000);
@@ -1081,8 +717,16 @@ const Dashboard = () => {
     return price;
   };
 
+  const isRebuy =
+    updatingPropertyInfo?.playerId !== undefined &&
+    updatingPropertyInfo.playerId !== MainStore.playingId;
+
   const buyProperty = async () => {
-    const price = buyingProperty.price[updatingPropertyInfo?.level || 0];
+    let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
+    let receivePlayer;
+    if (isRebuy) {
+      price = updatingPropertyInfo.price * 2;
+    }
     if (currentPlayer.money - price < 0) {
       await handleNotEnoughMoney(currentPlayer, price);
     }
@@ -1091,19 +735,31 @@ const Dashboard = () => {
       "money",
       currentPlayer.money - price
     );
+    if (isRebuy) {
+      receivePlayer =
+        MainStore.players[
+          MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
+        ];
+      MainStore.deleteOwnedBlock(buyingProperty.name);
+      MainStore.updatePlayerData(
+        receivePlayer,
+        "money",
+        receivePlayer.money + price
+      );
+      MainStore.updateGameState(
+        GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+      );
+    }
     MainStore.updateOwnedBlocks(buyingProperty.name, price);
     MainStore.updateGameState(GAME_STATES.DEC_MONEY + "--" + price + "--bank");
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          gameState: MainStore.gameState,
-          ownedBlocks: MainStore.ownedBlocks,
-          players: MainStore.players,
-        },
-      },
-    });
+    MainStore.updateGameState(
+      GAME_STATES.DEC_MONEY +
+        "--" +
+        price +
+        "--" +
+        (isRebuy ? receivePlayer.id : "bank")
+    );
+    MainStore.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
     await delay(2000);
     checkEndGame();
     if (
@@ -1111,15 +767,7 @@ const Dashboard = () => {
       buyingProperty.type === "property"
     ) {
       MainStore.updateGameState(GAME_STATES.UPDATING);
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            gameState: MainStore.gameState,
-          },
-        },
-      });
+      MainStore.sendDataToChannel(["gameState"]);
     } else {
       nextPlayerTurn();
     }
@@ -1155,34 +803,19 @@ const Dashboard = () => {
     MainStore.updateGameState(
       GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + currentPlayer.id
     );
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          gameState: MainStore.gameState,
-          ownedBlocks: MainStore.ownedBlocks,
-          players: MainStore.players,
-          sellingProperty: MainStore.sellingProperty,
-        },
-      },
-    });
+    MainStore.sendDataToChannel([
+      "gameState",
+      "ownedBlocks",
+      "players",
+      "sellingProperty",
+    ]);
     await delay(1000);
   };
 
   const updatePayToOutJail = (payToOutJail) => {
     MainStore.updatePlayerData(currentPlayer, "payToOutJail", payToOutJail);
     MainStore.updateGameState(GAME_STATES.RESPONDED_PAY_OUT_JAIL);
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          players: MainStore.players,
-          gameState: MainStore.gameState,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["gameState", "players"]);
   };
 
   useEffect(() => {
@@ -1223,16 +856,7 @@ const Dashboard = () => {
         MainStore.deleteOwnedBlock(key);
       }
     });
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          players: MainStore.players,
-          ownedBlocks: MainStore.ownedBlocks,
-        },
-      },
-    });
+    MainStore.sendDataToChannel(["ownedBlocks", "players"]);
     checkEndGame();
   };
 
@@ -1262,6 +886,14 @@ const Dashboard = () => {
               id={player.id + "avatar"}
             >
               <Popover
+                zIndex={
+                  [...Object.values(MainStore.chat)]
+                    .sort(
+                      (a, b) =>
+                        new Date(a.split("--")[1]) - new Date(b.split("--")[1])
+                    )
+                    .indexOf(MainStore.chat[player.id]) + 1
+                }
                 getPopupContainer={() =>
                   document.getElementById(player.id + "avatar")
                 }
@@ -1416,8 +1048,37 @@ const Dashboard = () => {
                   >
                     {MainStore.gameState === GAME_STATES.BUYING && (
                       <div>
-                        Bạn có muốn mua {buyingProperty.name} với giá là{" "}
-                        {buyingProperty.price[0]}$ ?
+                        Bạn có muốn mua {buyingProperty.name}{" "}
+                        {isRebuy ? (
+                          <>
+                            của{" "}
+                            <span
+                              style={{
+                                color:
+                                  COLORS[
+                                    MainStore.getPlayerIndexById(
+                                      updatingPropertyInfo.playerId
+                                    )
+                                  ],
+                              }}
+                            >
+                              {
+                                MainStore.players[
+                                  MainStore.getPlayerIndexById(
+                                    updatingPropertyInfo.playerId
+                                  )
+                                ].name
+                              }
+                            </span>
+                          </>
+                        ) : (
+                          ""
+                        )}{" "}
+                        với giá là{" "}
+                        {isRebuy
+                          ? updatingPropertyInfo.price * 2
+                          : buyingProperty.price[0]}
+                        $ ?
                       </div>
                     )}
                     {MainStore.gameState === GAME_STATES.UPDATING && (
@@ -2037,8 +1698,12 @@ const Dashboard = () => {
         closable={false}
         open={MainStore.endGame}
         footer={[
-          <Button key="submit" disabled={!MainStore.isHost} onClick={MainStore.resetGame}>
-           {MainStore.isHost ? "Chơi lại" : "Xin chờ"} 
+          <Button
+            key="submit"
+            disabled={!MainStore.isHost}
+            onClick={MainStore.resetGame}
+          >
+            {MainStore.isHost ? "Chơi lại" : "Xin chờ"}
           </Button>,
         ]}
         maskClosable={false}
