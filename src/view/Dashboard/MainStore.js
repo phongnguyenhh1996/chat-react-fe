@@ -7,7 +7,7 @@ import { delay } from "./utils";
 class MainStore {
   online = false;
   isHost = true;
-  myName = "Player 1";
+  myName = localStorage.getItem("myName") || "Player 1";
   roomId = uuidv4();
   channel = null;
   showChat = false;
@@ -372,6 +372,7 @@ class MainStore {
   }
 
   setMyName(name) {
+    localStorage.setItem('myName', name)
     this.myName = name;
     this.players[0].name = name;
     this.players[0].id = name;
