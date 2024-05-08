@@ -68,6 +68,8 @@ const Dashboard = () => {
                 "players",
                 "playingId",
                 "totalPlayers",
+                "festivalProperty",
+                "flightDestination",
               ]),
             });
           })
@@ -1068,7 +1070,6 @@ const Dashboard = () => {
         payload: {
           data: {
             players: MainStore.players,
-            gameState: MainStore.gameState,
             ownedBlocks: MainStore.ownedBlocks,
           },
         },
@@ -1210,6 +1211,29 @@ const Dashboard = () => {
     MainStore.closeChat();
   };
 
+  const surrender = () => {
+    const player =
+      MainStore.players[MainStore.getPlayerIndexById(MainStore.myName)];
+    MainStore.updatePlayerData(player, "broke", true);
+    MainStore.updatePlayerData(player, "position", 1);
+    Object.keys(MainStore.ownedBlocks).forEach((key) => {
+      if (MainStore.ownedBlocks[key].playerId === player.id) {
+        MainStore.deleteOwnedBlock(key);
+      }
+    });
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          players: MainStore.players,
+          ownedBlocks: MainStore.ownedBlocks,
+        },
+      },
+    });
+    checkEndGame();
+  };
+
   return (
     <div className="container-page">
       {BLOCKS.map((block, index) => (
@@ -1324,27 +1348,35 @@ const Dashboard = () => {
             )}
           </form>
         )}
-
-        <Popconfirm
-          title="Chơi lại"
-          description="Bạn muốn hủy ván hiện tại và chơi lại không?"
-          onConfirm={MainStore.resetGame}
-          okText="Chơi lại"
-          cancelText="Không"
-        >
-          <Button
-            style={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
-                ? 0.5
-                : 1,
-            }}
+        {(!MainStore.online ||
+          (MainStore.online &&
+            MainStore.gameState !== GAME_STATES.WAITING &&
+            !MainStore.players[MainStore.getPlayerIndexById(MainStore.myName)]
+              .broke)) && (
+          <Popconfirm
+            title={!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+            description={`Bạn muốn ${
+              !MainStore.online ? "hủy ván hiện tại và chơi lại" : "đầu hàng"
+            } không?`}
+            onConfirm={!MainStore.online ? MainStore.resetGame : surrender}
+            okText={!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+            cancelText="Không"
           >
-            Chơi lại
-          </Button>
-        </Popconfirm>
+            <Button
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
+                  ? 0.5
+                  : 1,
+              }}
+            >
+              {!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+            </Button>
+          </Popconfirm>
+        )}
+
         {MainStore.gameState !== GAME_STATES.INIT && (
           <div className="information" onClick={rollDice}>
             <div
@@ -1817,15 +1849,49 @@ const Dashboard = () => {
                             height="30px"
                           />
                         )}
-                        <img
-                          style={{
-                            flex: "0 0 25px",
-                            height: 25,
-                            marginRight: 10,
-                          }}
-                          alt=""
-                          src={AVATARS[index]}
-                        />
+                        {player.broke && (
+                          <Popover
+                            content={
+                              <div style={{ color: COLORS[index] }}>
+                                {MainStore.chat[player.id]
+                                  ? MainStore.chat[player.id].split("--")[0]
+                                  : ""}
+                              </div>
+                            }
+                            open={
+                              MainStore.chat[player.id] &&
+                              moment(MainStore.chat[player.id].split("--")[1])
+                                .add("5", "second")
+                                .isAfter(moment())
+                            }
+                            key={
+                              player.id +
+                              BLOCKS[(player.position - 1) % 36]?.position +
+                              (MainStore.chat[player.id] || "no-message")
+                            }
+                          >
+                            <img
+                              style={{
+                                flex: "0 0 25px",
+                                height: 25,
+                                marginRight: 10,
+                              }}
+                              alt=""
+                              src={AVATARS[index]}
+                            />
+                          </Popover>
+                        )}
+                        {!player.broke && (
+                          <img
+                            style={{
+                              flex: "0 0 25px",
+                              height: 25,
+                              marginRight: 10,
+                            }}
+                            alt=""
+                            src={AVATARS[index]}
+                          />
+                        )}
                         <div
                           style={{
                             textDecoration: player.broke
