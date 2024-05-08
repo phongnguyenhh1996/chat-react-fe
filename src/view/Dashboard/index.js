@@ -1352,7 +1352,7 @@ const Dashboard = () => {
           (MainStore.online &&
             MainStore.gameState !== GAME_STATES.WAITING &&
             !MainStore.players[MainStore.getPlayerIndexById(MainStore.myName)]
-              .broke)) && (
+              ?.broke)) && (
           <Popconfirm
             title={!MainStore.online ? "Chơi lại" : "Đầu hàng"}
             description={`Bạn muốn ${
