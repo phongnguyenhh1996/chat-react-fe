@@ -35,7 +35,7 @@ const Dashboard = () => {
       MainStore.setChannel(supabase.channel("nothing"));
     } else {
       MainStore.setChannel(
-        supabase.channel(MainStore.roomId, {
+        supabase.channel(MainStore.roomId.trim(), {
           config: {
             presence: {
               key: MainStore.isHost ? "host" : MainStore.myName,
@@ -1106,7 +1106,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
       buyingProperty.type === "property"
     ) {
       MainStore.updateGameState(GAME_STATES.UPDATING);
@@ -1203,7 +1203,7 @@ const Dashboard = () => {
       event: "updateStore",
       payload: {
         data: {
-          chat: MainStore.chat,
+          chat: { [MainStore.myName]: e.target[0]?.value },
         },
       },
     });

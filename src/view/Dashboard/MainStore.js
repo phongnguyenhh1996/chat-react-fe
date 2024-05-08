@@ -11,7 +11,7 @@ class MainStore {
   roomId = uuidv4();
   channel = null;
   showChat = false;
-  
+
   chat = {};
   totalPlayers = 2;
   startMoney = 20000;
@@ -400,7 +400,15 @@ class MainStore {
 
   updateStore(data) {
     Object.keys(data).forEach((key) => {
-      this[key] = data[key];
+      if (key === "chat") {
+        Object.keys(data[key]).forEach(
+          (name) =>
+            (this.chat[name] =
+              data[key][name] + "--" + new Date().toISOString())
+        );
+      } else {
+        this[key] = data[key];
+      }
     });
   }
 
