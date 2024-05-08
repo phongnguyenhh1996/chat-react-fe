@@ -726,7 +726,7 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = updatingPropertyInfo.price * 1.5;
+      price = updatingPropertyInfo.price * 1.3;
     }
     if (currentPlayer.money - price < 0) {
       await handleNotEnoughMoney(currentPlayer, price);
