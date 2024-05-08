@@ -250,8 +250,8 @@ const Dashboard = () => {
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
               MainStore.sendDataToChannel(["gameState", "players"]);
-              await delay(2000);
-              if (block.type === "property") {
+              if (block.type === "property" && !currentPlayer.broke) {
+                await delay(2000);
                 MainStore.updateBuyingProperty(block.name);
                 MainStore.updateGameState(GAME_STATES.BUYING);
                 MainStore.sendDataToChannel(["gameState", "buyingProperty"]);
@@ -726,7 +726,7 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = updatingPropertyInfo.price * 2;
+      price = updatingPropertyInfo.price * 1.5;
     }
     if (currentPlayer.money - price < 0) {
       await handleNotEnoughMoney(currentPlayer, price);
