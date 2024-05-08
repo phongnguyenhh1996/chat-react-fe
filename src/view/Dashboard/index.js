@@ -1195,19 +1195,21 @@ const Dashboard = () => {
 
   const sendChat = (e) => {
     e.preventDefault();
-    MainStore.addChat(
-      MainStore.myName,
-      e.target[0]?.value + "--" + new Date().toISOString()
-    );
-    MainStore.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          chat: { [MainStore.myName]: e.target[0]?.value },
+    if (e.target[0]?.value) {
+      MainStore.addChat(
+        MainStore.myName,
+        e.target[0]?.value + "--" + new Date().toISOString()
+      );
+      MainStore.channel.send({
+        type: "broadcast",
+        event: "updateStore",
+        payload: {
+          data: {
+            chat: { [MainStore.myName]: e.target[0]?.value },
+          },
         },
-      },
-    });
+      });
+    }
     MainStore.closeChat();
   };
 
@@ -2035,8 +2037,8 @@ const Dashboard = () => {
         closable={false}
         open={MainStore.endGame}
         footer={[
-          <Button key="submit" onClick={MainStore.resetGame}>
-            Chơi lại
+          <Button key="submit" disabled={!MainStore.isHost} onClick={MainStore.resetGame}>
+           {MainStore.isHost ? "Chơi lại" : "Xin chờ"} 
           </Button>,
         ]}
         maskClosable={false}

@@ -4,6 +4,43 @@ import { v4 as uuidv4 } from "uuid";
 import { BLOCKS, GAME_STATES } from "./constants";
 import { delay } from "./utils";
 
+
+class Reset {
+  gameState = GAME_STATES.ROLL_DICE;
+  dice = [6, 6];
+  ownedBlocks = {};
+  buyingProperty = "";
+  sellingProperty = "";
+  priceNeedToPay = null;
+  endGame = false;
+  flightDestination = [
+    random(2, 7),
+    10,
+    random(12, 14),
+    random(16, 17),
+    19,
+    random(21, 23),
+    random(25, 27),
+    random(30, 32),
+    random(34, 35),
+  ][random(0, 7)];
+  samePlayerRolling = 1;
+  festivalProperty =
+    BLOCKS[
+      [
+        random(2, 7),
+        10,
+        random(12, 14),
+        random(16, 17),
+        19,
+        random(21, 23),
+        random(25, 27),
+        random(30, 32),
+        random(34, 35),
+      ][random(0, 7)]
+    ].name;
+}
+
 class MainStore {
   online = false;
   isHost = true;
@@ -311,56 +348,20 @@ class MainStore {
   }
 
   resetGame() {
-    this.totalPlayers = 2;
-    this.startMoney = 20000;
-    this.gameState = "init";
-    this.playingId = "";
-    this.dice = [6, 6];
-    this.ownedBlocks = {};
-    this.buyingProperty = "";
-    this.sellingProperty = "";
-    this.priceNeedToPay = null;
-    this.endGame = false;
-    this.flightDestination = [
-      random(2, 7),
-      10,
-      random(12, 14),
-      random(16, 17),
-      19,
-      random(21, 23),
-      random(25, 27),
-      random(30, 32),
-      random(34, 35),
-    ][random(0, 7)];
-    this.players = [
-      {
-        name: "Player 1",
-        id: "Player 1",
-        money: 20000,
-        position: 1,
+    if (!this.isHost) return
+    const newData = new Reset()
+    Object.keys(newData).forEach(key => this[key] = newData[key])
+    this.players = this.players.map(p => ({...p, money: this.startMoney, position: 1}))
+    this.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          ...newData,
+          players: this.players,
+        },
       },
-      {
-        name: "Player 2",
-        id: uuidv4(),
-        money: 20000,
-        position: 1,
-      },
-    ];
-    this.samePlayerRolling = 1;
-    this.festivalProperty =
-      BLOCKS[
-        [
-          random(2, 7),
-          10,
-          random(12, 14),
-          random(16, 17),
-          19,
-          random(21, 23),
-          random(25, 27),
-          random(30, 32),
-          random(34, 35),
-        ][random(0, 7)]
-      ].name;
+    });
   }
 
   setOnline(isOnline) {
