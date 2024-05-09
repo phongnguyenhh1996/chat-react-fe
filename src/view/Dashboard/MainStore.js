@@ -179,6 +179,7 @@ class MainStore {
         this.sellingProperty = "";
       }
     } else {
+      this.ownedBlocks[name].price -= this.getPrice(this.ownedBlocks[name], '', true)
       this.ownedBlocks[name].level -= 1;
     }
   }

@@ -742,7 +742,7 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = updatingPropertyInfo.price * REBUY_RATE;
+      price = parseInt(updatingPropertyInfo.price * REBUY_RATE);
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -1103,7 +1103,7 @@ const Dashboard = () => {
                         )}{" "}
                         với giá là{" "}
                         {MainStore.gameState === GAME_STATES.REBUYING
-                          ? updatingPropertyInfo.price * REBUY_RATE
+                          ? parseInt(updatingPropertyInfo.price * REBUY_RATE)
                           : buyingProperty.price[0]}
                         $ ?
                       </div>
