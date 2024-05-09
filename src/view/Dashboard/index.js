@@ -26,6 +26,7 @@ import PlayerInfor from "./PlayerInfor";
 import Icon from "../../components/Icon";
 import { createClient } from "@supabase/supabase-js";
 import moment from "moment";
+import packageJson from "../../../package.json";
 
 const supabase = createClient(
   "https://vqjkcypfolcemvcxpgdw.supabase.co",
@@ -970,6 +971,19 @@ const Dashboard = () => {
         }}
         className="center-space"
       >
+        <div
+          style={{
+            position: "absolute",
+            bottom: 10,
+            right: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "end",
+            fontSize: 14,
+          }}
+        >
+          Version: {packageJson.version}
+        </div>
         {MainStore.online && (
           <form
             style={{
