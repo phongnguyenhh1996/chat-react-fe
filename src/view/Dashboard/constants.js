@@ -280,16 +280,18 @@ export const GAME_STATES = {
   END: 'end'
 };
 
-const createSound = url => new Howl({
+const createSound = (url, rate = 1.0) => new Howl({
   src: [
     url
   ],
+  rate
 })
 
 const cash = createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715217235/cash-register-purchase.wav")
 const success = createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715218482/success_ypjtyu.mp3")
 
 export const sound = {
+  [GAME_STATES.ROLL_DICE]: createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715238259/144319__fumiya112__decide_nfpyvk.mp3",1.5),
   [GAME_STATES.ROLLING_DICE]: createSound(
       "https://res.cloudinary.com/easy-toeic/video/upload/v1715216197/220744__dermotte__dice_06_wa2vzk.wav",
   ),
