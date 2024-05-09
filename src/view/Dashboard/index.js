@@ -457,7 +457,7 @@ const Dashboard = () => {
         goToJail,
         async () => {
           const round = currentPlayer.round || 0;
-          const position = random(currentPlayer.position - 1, round * 36 + 2);
+          const position = random(currentPlayer.position - 1, round * 36 + 1);
           MainStore.updateGameState(
             GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
           );
@@ -737,7 +737,13 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = parseInt(updatingPropertyInfo.price * REBUY_RATE);
+      price =
+        parseInt(
+          range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
+            total += buyingProperty.price[currentIdx];
+            return total;
+          }, 0) * REBUY_RATE
+        ) * (buyingProperty.name === MainStore.festivalProperty ? 2 : 1);
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -1111,7 +1117,18 @@ const Dashboard = () => {
                         )}{" "}
                         với giá là{" "}
                         {MainStore.gameState === GAME_STATES.REBUYING
-                          ? parseInt(updatingPropertyInfo.price * REBUY_RATE)
+                          ? parseInt(
+                              range(0, updatingPropertyInfo.level).reduce(
+                                (total, currentIdx) => {
+                                  total += buyingProperty.price[currentIdx];
+                                  return total;
+                                },
+                                0
+                              ) * REBUY_RATE
+                            ) *
+                            (buyingProperty.name === MainStore.festivalProperty
+                              ? 2
+                              : 1)
                           : buyingProperty.price[0]}
                         $ ?
                       </div>
