@@ -289,7 +289,7 @@ class MainStore {
       this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
       this.gameState.split("--")[2] ===
         this.ownedBlocks[block.name]?.playerId &&
-      this.playingId === this.myName
+      (!this.online || (this.online && this.playingId === this.myName))
     ) {
       this.sellingProperty = block.name;
       this.channel.send({
@@ -306,7 +306,7 @@ class MainStore {
     if (
       this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
       this.ownedBlocks[block.name]?.playerId === this.playingId &&
-      this.playingId === this.myName
+      (!this.online || (this.online && this.playingId === this.myName))
     ) {
       this.festivalProperty = block.name;
       this.channel.send({

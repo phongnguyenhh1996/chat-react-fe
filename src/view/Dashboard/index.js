@@ -690,7 +690,8 @@ const Dashboard = () => {
     (block) => block.name === MainStore.buyingProperty
   );
 
-  const updatingPropertyInfo = MainStore.ownedBlocks[buyingProperty?.name] || {};
+  const updatingPropertyInfo =
+    MainStore.ownedBlocks[buyingProperty?.name] || {};
 
   const handleNotEnoughMoney = async (player, price) => {
     MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
@@ -728,44 +729,52 @@ const Dashboard = () => {
     if (isRebuy) {
       price = updatingPropertyInfo.price * 1.3;
     }
+    const priceBefore = price;
+    let priceAfter = price;
     if (currentPlayer.money - price < 0) {
-      await handleNotEnoughMoney(currentPlayer, price);
+      priceAfter = await handleNotEnoughMoney(currentPlayer, price);
     }
-    MainStore.updatePlayerData(
-      currentPlayer,
-      "money",
-      currentPlayer.money - price
-    );
-    if (isRebuy) {
-      receivePlayer =
-        MainStore.players[
-          MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
-        ];
-      MainStore.deleteOwnedBlock(buyingProperty.name);
+    if (priceBefore === priceAfter) {
       MainStore.updatePlayerData(
-        receivePlayer,
+        currentPlayer,
         "money",
-        receivePlayer.money + price
+        currentPlayer.money - price
+      );
+      if (isRebuy) {
+        receivePlayer =
+          MainStore.players[
+            MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
+          ];
+        MainStore.deleteOwnedBlock(buyingProperty.name);
+        MainStore.updatePlayerData(
+          receivePlayer,
+          "money",
+          receivePlayer.money + price
+        );
+        MainStore.updateGameState(
+          GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+        );
+      }
+      MainStore.updateOwnedBlocks(buyingProperty.name, price);
+      MainStore.updateGameState(
+        GAME_STATES.DEC_MONEY + "--" + price + "--bank"
       );
       MainStore.updateGameState(
-        GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+        GAME_STATES.DEC_MONEY +
+          "--" +
+          price +
+          "--" +
+          (isRebuy ? receivePlayer.id : "bank")
       );
+      MainStore.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
     }
-    MainStore.updateOwnedBlocks(buyingProperty.name, price);
-    MainStore.updateGameState(GAME_STATES.DEC_MONEY + "--" + price + "--bank");
-    MainStore.updateGameState(
-      GAME_STATES.DEC_MONEY +
-        "--" +
-        price +
-        "--" +
-        (isRebuy ? receivePlayer.id : "bank")
-    );
-    MainStore.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
+
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
-      buyingProperty.type === "property"
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 5 &&
+      buyingProperty.type === "property" &&
+      !currentPlayer.broke
     ) {
       MainStore.updateGameState(GAME_STATES.UPDATING);
       MainStore.sendDataToChannel(["gameState"]);
