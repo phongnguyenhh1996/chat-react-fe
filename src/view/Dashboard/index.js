@@ -11,7 +11,14 @@ import {
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
-import { AVATARS, BLOCKS, COLORS, GAME_STATES } from "./constants";
+import {
+  AVATARS,
+  BLOCKS,
+  COLORS,
+  GAME_STATES,
+  REBUY_RATE,
+  sound,
+} from "./constants";
 import { delay, getBlockPositionStyle } from "./utils";
 import Die from "../../components/Dice";
 import Block from "./Block";
@@ -26,6 +33,15 @@ const supabase = createClient(
 );
 
 const Dashboard = () => {
+  const gameState = MainStore.gameState;
+
+  useEffect(() => {
+    const state = gameState?.split("--")[0] || gameState;
+    if (sound[state]?.play) {
+      sound[state].play();
+    }
+  }, [gameState]);
+
   const handleOk = async () => {
     if (!MainStore.online) {
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
@@ -253,7 +269,7 @@ const Dashboard = () => {
               if (block.type === "property" && !currentPlayer.broke) {
                 await delay(2000);
                 MainStore.updateBuyingProperty(block.name);
-                MainStore.updateGameState(GAME_STATES.BUYING);
+                MainStore.updateGameState(GAME_STATES.REBUYING);
                 MainStore.sendDataToChannel(["gameState", "buyingProperty"]);
                 return;
               }
@@ -719,15 +735,14 @@ const Dashboard = () => {
     return price;
   };
 
-  const isRebuy =
-    updatingPropertyInfo?.playerId !== undefined &&
-    updatingPropertyInfo.playerId !== MainStore.playingId;
+  const isRebuy = MainStore.gameState === GAME_STATES.REBUYING;
 
-  const buyProperty = async () => {
+  const buyProperty = async (player) => {
+    const currentPlayer = player;
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = updatingPropertyInfo.price * 1.3;
+      price = updatingPropertyInfo.price * REBUY_RATE;
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -772,7 +787,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 5 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 4 &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
@@ -1045,7 +1060,8 @@ const Dashboard = () => {
                 MainStore.samePlayerRolling > 1 &&
                 `Được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`}
               {(MainStore.gameState === GAME_STATES.BUYING ||
-                MainStore.gameState === GAME_STATES.UPDATING) &&
+                MainStore.gameState === GAME_STATES.UPDATING ||
+                MainStore.gameState === GAME_STATES.REBUYING) &&
                 buyingProperty &&
                 (MainStore.playingId === MainStore.myName ||
                   !MainStore.online) && (
@@ -1056,10 +1072,11 @@ const Dashboard = () => {
                       flex: 1,
                     }}
                   >
-                    {MainStore.gameState === GAME_STATES.BUYING && (
+                    {(MainStore.gameState === GAME_STATES.BUYING ||
+                      MainStore.gameState === GAME_STATES.REBUYING) && (
                       <div>
                         Bạn có muốn mua {buyingProperty.name}{" "}
-                        {isRebuy ? (
+                        {MainStore.gameState === GAME_STATES.REBUYING ? (
                           <>
                             của{" "}
                             <span
@@ -1085,8 +1102,8 @@ const Dashboard = () => {
                           ""
                         )}{" "}
                         với giá là{" "}
-                        {isRebuy
-                          ? updatingPropertyInfo.price * 2
+                        {MainStore.gameState === GAME_STATES.REBUYING
+                          ? updatingPropertyInfo.price * REBUY_RATE
                           : buyingProperty.price[0]}
                         $ ?
                       </div>
@@ -1117,7 +1134,10 @@ const Dashboard = () => {
                       >
                         Không
                       </Button>
-                      <Button type="primary" onClick={buyProperty}>
+                      <Button
+                        type="primary"
+                        onClick={() => buyProperty(currentPlayer)}
+                      >
                         Có
                       </Button>
                     </div>

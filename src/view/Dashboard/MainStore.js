@@ -344,6 +344,7 @@ class MainStore {
 
   setEndGame(isEnd) {
     this.endGame = isEnd;
+    this.gameState = GAME_STATES.END
   }
 
   resetGame() {
