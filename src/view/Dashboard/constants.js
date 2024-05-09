@@ -64,8 +64,8 @@ export const BLOCKS = [
     price: [1000],
   },
   {
-    type: "badluck",
-    name: "Khí vận",
+    type: "chance",
+    name: "Cơ hội",
     position: "bottom",
   },
   {
@@ -187,8 +187,8 @@ export const BLOCKS = [
     position: "top",
   },
   {
-    type: "badluck",
-    name: "Khí vận",
+    type: "chance",
+    name: "Cơ hội",
     position: "top",
   },
   {

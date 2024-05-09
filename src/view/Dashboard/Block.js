@@ -60,20 +60,12 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
           height: ["left", "right"].includes(block.position)
             ? "100%"
             : undefined,
-          // background: MainStore.ownedBlocks[block?.name]
-          //   ? COLORS[
-          //       MainStore.getPlayerIndexById(
-          //         MainStore.ownedBlocks[block?.name].playerId
-          //       )
-          //     ]
-          //   : "transparent",
-          // color: MainStore.ownedBlocks[block?.name] ? "white" : "black",
         }}
       >
         {block.type === "plane" ||
         block.type === "jail" ||
         block.type === "jail-visit" ||
-        block.type === "start" ? (
+        block.type === "start" || block.type === "chance"? (
           <Icon
             style={{ margin: "auto" }}
             symbol={block.type}

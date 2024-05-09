@@ -332,95 +332,6 @@ const Dashboard = () => {
       return;
     }
 
-    if (block.type === "badluck") {
-      await [
-        async () => {
-          let tax = [500, 1000][random(0, 1)];
-          if (currentPlayer.money - tax < 0) {
-            tax = await handleNotEnoughMoney(currentPlayer, tax);
-          }
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            currentPlayer.money - tax
-          );
-          MainStore.updateGameState(
-            GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
-          );
-          MainStore.sendDataToChannel(["gameState", "players"]);
-          await delay(2000);
-          nextPlayerTurn();
-        },
-        goToJail,
-        async () => {
-          const round = currentPlayer.round || 0;
-          const position = random(currentPlayer.position - 1, round * 36 + 2);
-          MainStore.updateGameState(
-            GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          movingPlayer(() => {}, position);
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          if (allOwnedBlockKeys.length === 0) {
-            MainStore.updateGameState(
-              GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
-          const randomKey =
-            allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-          MainStore.updateGameState(
-            GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          const price = getSellingPrice(randomKey);
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            parseInt(currentPlayer.money + price)
-          );
-          MainStore.updateOwnedBlockLevel(randomKey);
-          MainStore.updateGameState(
-            GAME_STATES.INC_MONEY + "--" + price + "--bank"
-          );
-          MainStore.sendDataToChannel([
-            "gameState",
-            "players",
-            "sellingProperty",
-            "ownedBlocks",
-          ]);
-          await delay(2000);
-          nextPlayerTurn();
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          if (allOwnedBlockKeys.length > 0) {
-            const randomKey =
-              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-            MainStore.updateOwnedBlockElectricity(randomKey, 1);
-            MainStore.sendDataToChannel(["ownedBlocks"]);
-          }
-          nextPlayerTurn();
-          return;
-        },
-      ][random(0, 4)]();
-      return;
-    }
-
     if (block.type === "chance") {
       await [
         async () => {
@@ -525,7 +436,90 @@ const Dashboard = () => {
             return;
           }
         },
-      ][random(0, 4)]();
+        async () => {
+          let tax = [500, 1000][random(0, 1)];
+          if (currentPlayer.money - tax < 0) {
+            tax = await handleNotEnoughMoney(currentPlayer, tax);
+          }
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            currentPlayer.money - tax
+          );
+          MainStore.updateGameState(
+            GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
+          );
+          MainStore.sendDataToChannel(["gameState", "players"]);
+          await delay(2000);
+          nextPlayerTurn();
+        },
+        goToJail,
+        async () => {
+          const round = currentPlayer.round || 0;
+          const position = random(currentPlayer.position - 1, round * 36 + 2);
+          MainStore.updateGameState(
+            GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
+          );
+          MainStore.sendDataToChannel(["gameState"]);
+          await delay(2000);
+          movingPlayer(() => {}, position);
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+          );
+          if (allOwnedBlockKeys.length === 0) {
+            MainStore.updateGameState(
+              GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
+            await delay(2000);
+            nextPlayerTurn();
+            return;
+          }
+          const randomKey =
+            allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+          MainStore.updateGameState(
+            GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
+          );
+          MainStore.sendDataToChannel(["gameState"]);
+          await delay(2000);
+          const price = getSellingPrice(randomKey);
+          MainStore.updatePlayerData(
+            currentPlayer,
+            "money",
+            parseInt(currentPlayer.money + price)
+          );
+          MainStore.updateOwnedBlockLevel(randomKey);
+          MainStore.updateGameState(
+            GAME_STATES.INC_MONEY + "--" + price + "--bank"
+          );
+          MainStore.sendDataToChannel([
+            "gameState",
+            "players",
+            "sellingProperty",
+            "ownedBlocks",
+          ]);
+          await delay(2000);
+          nextPlayerTurn();
+        },
+        async () => {
+          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+          );
+          MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
+          MainStore.sendDataToChannel(["gameState"]);
+          await delay(2000);
+          if (allOwnedBlockKeys.length > 0) {
+            const randomKey =
+              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+            MainStore.updateOwnedBlockElectricity(randomKey, 1);
+            MainStore.sendDataToChannel(["ownedBlocks"]);
+          }
+          nextPlayerTurn();
+          return;
+        },
+      ][random(0, 9)]();
       return;
     }
 
