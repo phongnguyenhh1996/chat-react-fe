@@ -18,7 +18,7 @@ import {
   COLORS,
   GAME_STATES,
   REBUY_RATE,
-  sound,
+  SOUND,
 } from "./constants";
 import { delay, getBlockPositionStyle } from "./utils";
 import Die from "../../components/Dice";
@@ -39,8 +39,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     const state = gameState?.split("--")[0] || gameState;
-    if (sound[state]?.play) {
-      sound[state].play();
+    if (SOUND[state]?.play) {
+      SOUND[state].play();
     }
   }, [gameState]);
 

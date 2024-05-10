@@ -3,6 +3,7 @@ import avatar2 from "../../asset/img/avatar2.svg";
 import avatar3 from "../../asset/img/avatar3.svg";
 import avatar4 from "../../asset/img/avatar4.svg";
 import { Howl } from "howler";
+import { random } from "lodash";
 
 export const BLOCKS = [
   {
@@ -289,7 +290,7 @@ const success = createSound(
   "https://res.cloudinary.com/easy-toeic/video/upload/v1715218482/success_ypjtyu.mp3"
 );
 
-export const sound = {
+export const SOUND = {
   [GAME_STATES.ROLL_DICE]: createSound(
     "https://res.cloudinary.com/easy-toeic/video/upload/v1715238259/144319__fumiya112__decide_nfpyvk.mp3",
     1.5
@@ -332,6 +333,9 @@ export const sound = {
   NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING: "no_block_to_choose_festival_building",
   ASK_TO_PAY_TO_OUT_JAIL: "ask_to_pay_to_out_jail",
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
+  chat: createSound(
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715314170/chat_tp6kqo.wav"
+  ),
 };
 
 export const CHOOSE_BUILDING_ACTIONS = {
@@ -341,3 +345,16 @@ export const CHOOSE_BUILDING_ACTIONS = {
 };
 
 export const REBUY_RATE = 1.5;
+
+export const randomPropertyIndex = () =>
+  [
+    random(2, 7),
+    10,
+    random(12, 13),
+    random(16, 17),
+    19,
+    random(21, 23),
+    random(25, 27),
+    random(30, 31),
+    random(34, 35),
+  ][random(0, 7)];

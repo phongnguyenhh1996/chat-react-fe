@@ -1,38 +1,12 @@
 import { random } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
-import { BLOCKS, GAME_STATES } from "./constants";
+import { BLOCKS, GAME_STATES, randomPropertyIndex, SOUND } from "./constants";
 import { delay } from "./utils";
-
-const randomPropertyIndex = () =>
-  [
-    random(2, 7),
-    10,
-    random(12, 13),
-    random(16, 17),
-    19,
-    random(21, 23),
-    random(25, 27),
-    random(30, 31),
-    random(34, 35),
-  ][random(0, 7)];
-
-class Reset {
-  gameState = GAME_STATES.ROLL_DICE;
-  dice = [6, 6];
-  ownedBlocks = {};
-  buyingProperty = "";
-  sellingProperty = "";
-  priceNeedToPay = null;
-  endGame = false;
-  flightDestination = randomPropertyIndex();
-  samePlayerRolling = 1;
-  festivalProperty = [BLOCKS[randomPropertyIndex()].name];
-}
 
 class MainStore {
   online = false;
-  isHost = true;
+  isHost = false;
   myName = localStorage.getItem("myName") || "Player 1";
   roomId = random(1000, 9999).toString();
   channel = null;
@@ -200,7 +174,10 @@ class MainStore {
             this.ownedBlocks[block.name].playerId
       );
       if (isSelling) return totalPrice;
-      if (isOwnedAllPropertySameRow) return totalPrice * 2;
+      if (isOwnedAllPropertySameRow)
+        return parseInt(
+          totalPrice * (allPropertySameRow.length === 2 ? 1.8 : 2)
+        );
     }
     return totalPrice;
   }
@@ -341,6 +318,7 @@ class MainStore {
   updateStore(data) {
     Object.keys(data).forEach((key) => {
       if (key === "chat") {
+        SOUND.chat.play();
         Object.keys(data[key]).forEach(
           (name) =>
             (this.chat[name] =
@@ -364,6 +342,7 @@ class MainStore {
   }
 
   sendDataToChannel(keys = []) {
+    SOUND.chat.play();
     const data = keys.reduce((fullData, key) => {
       fullData[key] = this[key];
       return fullData;
@@ -376,6 +355,19 @@ class MainStore {
       },
     });
   }
+}
+
+class Reset {
+  gameState = GAME_STATES.ROLL_DICE;
+  dice = [6, 6];
+  ownedBlocks = {};
+  buyingProperty = "";
+  sellingProperty = "";
+  priceNeedToPay = null;
+  endGame = false;
+  flightDestination = randomPropertyIndex();
+  samePlayerRolling = 1;
+  festivalProperty = [BLOCKS[randomPropertyIndex()].name];
 }
 
 export default new MainStore();
