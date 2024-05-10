@@ -235,6 +235,11 @@ class MainStore {
         this.sendDataToChannel(["ownedBlocks"]);
       }
 
+      if (this.gameState.split("--")[2] === "fixElectricity") {
+        this.updateOwnedBlockElectricity(block.name, 0);
+        this.sendDataToChannel(["ownedBlocks"]);
+      }
+
       if (callback) callback();
 
       return;

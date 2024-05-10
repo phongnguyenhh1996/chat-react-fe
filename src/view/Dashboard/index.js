@@ -365,32 +365,22 @@ const Dashboard = () => {
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) =>
-              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
-              MainStore.ownedBlocks[key].lostElectricity
+            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           if (allOwnedBlockKeys.length > 0) {
-            const randomKey =
-              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-            MainStore.updateOwnedBlockElectricity(randomKey, 0);
             MainStore.updateGameState(
-              GAME_STATES.FIXING_ELECTRIC_BUILDING + "--" + randomKey
+              GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
             );
-            MainStore.sendDataToChannel(["players", "ownedBlocks"]);
+            MainStore.sendDataToChannel(["gameState"]);
+          } else {
+            MainStore.updateGameState(
+              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--fixElectricity"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
             await delay(2000);
+            nextPlayerTurn();
+            return;
           }
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            currentPlayer.money - 200
-          );
-          MainStore.updateGameState(
-            GAME_STATES.DEC_MONEY + "--" + 200 + "--bank--fix-electric"
-          );
-          MainStore.sendDataToChannel(["players", "gameState"]);
-          await delay(2000);
-          nextPlayerTurn();
-          return;
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
@@ -783,9 +773,7 @@ const Dashboard = () => {
     return price;
   };
 
-  const isRebuy = MainStore.gameState === GAME_STATES.REBUYING;
-
-  const buyProperty = async (player) => {
+  const buyProperty = async (player, isRebuy) => {
     const currentPlayer = player;
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
@@ -841,7 +829,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 4 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
@@ -1265,7 +1253,7 @@ const Dashboard = () => {
                       </Button>
                       <Button
                         type="primary"
-                        onClick={() => buyProperty(currentPlayer)}
+                        onClick={() => buyProperty(currentPlayer, MainStore.gameState === GAME_STATES.REBUYING)}
                       >
                         Có
                       </Button>
@@ -1326,7 +1314,7 @@ const Dashboard = () => {
                 MainStore.gameState.split("--")[3] === "pay-out-jail" &&
                 "Phải trả 500$ để ra tù"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                MainStore.gameState.split("--")[3] === "fix-electric" &&
+                MainStore.gameState.split("--")[3] === "fixElectric" &&
                 "Mất 200$ phí sửa điện"}
               {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
                 MainStore.gameState.split("--")[3] === "tax" &&

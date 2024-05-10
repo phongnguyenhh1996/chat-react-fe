@@ -359,6 +359,7 @@ export const CHOOSE_BUILDING_ACTIONS = {
   festival: "tổ chức lễ hội",
   lostElectricity: "cắt điện",
   downgrade: "phá nhà",
+  fixElectricity: 'sửa điện'
 };
 
 export const REBUY_RATE = 1.5;
