@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { debounce, get, pick, random, range } from "lodash";
 import {
   Button,
@@ -8,6 +8,7 @@ import {
   Popconfirm,
   Switch,
   Popover,
+  Dropdown,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
@@ -17,6 +18,7 @@ import {
   CHOOSE_BUILDING_ACTIONS,
   COLORS,
   GAME_STATES,
+  MEME,
   REBUY_RATE,
   SOUND,
 } from "./constants";
@@ -35,6 +37,8 @@ const supabase = createClient(
 );
 
 const Dashboard = () => {
+  const [msg, setMsg] = useState("");
+
   const gameState = MainStore.gameState;
 
   useEffect(() => {
@@ -904,26 +908,29 @@ const Dashboard = () => {
   const sendChat = (e) => {
     e.preventDefault();
     if (e.target[0]?.value) {
-      const message = e.target[0].value
+      const message = e.target[0].value;
       MainStore.addChat(
         MainStore.myName,
         message + "--" + new Date().toISOString()
       );
-      MainStore.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            chat: { [MainStore.myName]: e.target[0]?.value },
+      MainStore.channel
+        .send({
+          type: "broadcast",
+          event: "updateStore",
+          payload: {
+            data: {
+              chat: { [MainStore.myName]: e.target[0]?.value },
+            },
           },
-        },
-      }).then(() => {
-        if (message.startsWith('/mm')) {
-          SOUND['meme'+message.split('/mm ')[1]]?.play()
-        } else {
-          SOUND.chat.play()
-        }
-      });
+        })
+        .then(() => {
+          if (message.startsWith("/mm")) {
+            SOUND["meme" + message.split("/mm ")[1]]?.play();
+          } else {
+            SOUND.chat.play();
+          }
+        });
+      setMsg('')
     }
     MainStore.closeChat();
   };
@@ -1072,14 +1079,31 @@ const Dashboard = () => {
               </div>
             )}
             {MainStore.showChat && (
-              <Input
-                style={{
-                  width: "100%",
+              <Dropdown
+                trigger="click"
+                menu={{
+                  items: msg.startsWith("/mm")
+                    ? range(1, MEME.length + 1).map((numb, id) => ({
+                        key: id,
+                        label: `/mm ${numb} (${MEME[id]})`,
+                      }))
+                    : [],
                 }}
-                autoFocus
-                placeholder="Nhập nội dung chat"
-                name="chat"
-              />
+                placement="bottomLeft"
+                arrow
+                open={msg.startsWith("/mm")}
+              >
+                <Input
+                  style={{
+                    width: "100%",
+                  }}
+                  autoFocus
+                  placeholder="Nhập nội dung chat hoặc gửi meme sound bằng cú pháp /mm <số 1 - 9>"
+                  name="chat"
+                  value={msg}
+                  onChange={(e) => setMsg(e.target.value)}
+                />
+              </Dropdown>
             )}
           </form>
         )}
