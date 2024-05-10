@@ -918,8 +918,8 @@ const Dashboard = () => {
           },
         },
       }).then(() => {
-        if (message.startsWith('/meme')) {
-          SOUND['meme'+message.split('/meme ')[1]]?.play()
+        if (message.startsWith('/mm')) {
+          SOUND['meme'+message.split('/mm ')[1]]?.play()
         } else {
           SOUND.chat.play()
         }
