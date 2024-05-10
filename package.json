@@ -1,6 +1,6 @@
 {
   "name": "my-chat-app",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "homepage": "https://phongnguyenhh1996.github.io/chat-react-fe",
   "private": true,
   "dependencies": {

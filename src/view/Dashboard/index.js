@@ -742,8 +742,8 @@ const Dashboard = () => {
     }, 150);
     await delay(2000);
     clearInterval(roll);
-    // movingPlayer();
-    movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
+    movingPlayer();
+    // movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
   };
 
   const buyingProperty = BLOCKS.find(
