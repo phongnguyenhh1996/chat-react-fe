@@ -829,7 +829,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
