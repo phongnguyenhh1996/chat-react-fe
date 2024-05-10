@@ -318,11 +318,17 @@ class MainStore {
   updateStore(data) {
     Object.keys(data).forEach((key) => {
       if (key === "chat") {
-        SOUND.chat.play();
         Object.keys(data[key]).forEach(
-          (name) =>
-            (this.chat[name] =
-              data[key][name] + "--" + new Date().toISOString())
+          (name) => {
+            const message = data[key][name];
+            if (message.startsWith('/meme')) {
+              SOUND['meme'+message.split('/meme ')[1]]?.play()
+            } else {
+              SOUND.chat.play()
+            }
+            this.chat[name] =
+              data[key][name] + "--" + new Date().toISOString()
+          }
         );
       } else {
         this[key] = data[key];
@@ -342,7 +348,6 @@ class MainStore {
   }
 
   sendDataToChannel(keys = []) {
-    SOUND.chat.play();
     const data = keys.reduce((fullData, key) => {
       fullData[key] = this[key];
       return fullData;

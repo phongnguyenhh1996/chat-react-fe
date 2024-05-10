@@ -904,9 +904,10 @@ const Dashboard = () => {
   const sendChat = (e) => {
     e.preventDefault();
     if (e.target[0]?.value) {
+      const message = e.target[0].value
       MainStore.addChat(
         MainStore.myName,
-        e.target[0]?.value + "--" + new Date().toISOString()
+        message + "--" + new Date().toISOString()
       );
       MainStore.channel.send({
         type: "broadcast",
@@ -916,6 +917,12 @@ const Dashboard = () => {
             chat: { [MainStore.myName]: e.target[0]?.value },
           },
         },
+      }).then(() => {
+        if (message.startsWith('/meme')) {
+          SOUND['meme'+message.split('/meme ')[1]]?.play()
+        } else {
+          SOUND.chat.play()
+        }
       });
     }
     MainStore.closeChat();

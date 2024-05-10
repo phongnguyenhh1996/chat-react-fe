@@ -277,11 +277,13 @@ export const GAME_STATES = {
   END: "end",
 };
 
-const createSound = (url, rate = 1.0) =>
-  new Howl({
-    src: [url],
+const createSound = (url, rate = 1.0, isMeme) => {
+  return new Howl({
+    src: [(isMeme ? "https://www.myinstants.com/media/sounds/" : "") + url],
     rate,
   });
+}
+ 
 
 const cash = createSound(
   "https://res.cloudinary.com/easy-toeic/video/upload/v1715217235/cash-register-purchase.wav"
@@ -336,6 +338,15 @@ export const SOUND = {
   chat: createSound(
     "https://res.cloudinary.com/easy-toeic/video/upload/v1715314170/chat_tp6kqo.wav"
   ),
+  meme1: createSound("cai-gi-do-ba-noi.mp3", 1, true),
+  meme2: createSound("thay-huan-oi-gioi-oi.mp3", 1, true),
+  meme3: createSound("goi-goi-toi-cong-chuyen.mp3", 1, true),
+  meme4: createSound("troi-oi-cuu-tui-troi-oi.mp3", 1, true),
+  meme5: createSound("huh_37bAoRo.mp3", 1, true),
+  meme6: createSound("ghe-chua-ghe-chua.mp3", 1, true),
+  meme7: createSound("kha-banh-ao-that-day.mp3", 1, true),
+  meme8: createSound("xin-vinh-biet-cu.mp3", 1, true),
+  meme9: createSound("suiiiiiiiiiii.mp3", 1, true),
 };
 
 export const CHOOSE_BUILDING_ACTIONS = {
