@@ -837,7 +837,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 4 &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
@@ -864,7 +864,7 @@ const Dashboard = () => {
       return currentSellingProperty.price[0];
     const price =
       currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
-    return parseInt(price / 2);
+    return parseInt(price / 1.5);
   };
 
   const sellProperty = async () => {
