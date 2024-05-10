@@ -565,7 +565,7 @@ const Dashboard = () => {
           nextPlayerTurn();
           return;
         },
-      ][random(0, 9)]();
+      ][random(0, 11)]();
       return;
     }
 
