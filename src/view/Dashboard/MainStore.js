@@ -4,6 +4,19 @@ import { v4 as uuidv4 } from "uuid";
 import { BLOCKS, GAME_STATES } from "./constants";
 import { delay } from "./utils";
 
+const randomPropertyIndex = () =>
+  [
+    random(2, 7),
+    10,
+    random(12, 13),
+    random(16, 17),
+    19,
+    random(21, 23),
+    random(25, 27),
+    random(30, 31),
+    random(34, 35),
+  ][random(0, 7)];
+
 class Reset {
   gameState = GAME_STATES.ROLL_DICE;
   dice = [6, 6];
@@ -12,39 +25,16 @@ class Reset {
   sellingProperty = "";
   priceNeedToPay = null;
   endGame = false;
-  flightDestination = [
-    random(2, 7),
-    10,
-    random(12, 14),
-    random(16, 17),
-    19,
-    random(21, 23),
-    random(25, 27),
-    random(30, 32),
-    random(34, 35),
-  ][random(0, 7)];
+  flightDestination = randomPropertyIndex();
   samePlayerRolling = 1;
-  festivalProperty =
-    BLOCKS[
-      [
-        random(2, 7),
-        10,
-        random(12, 14),
-        random(16, 17),
-        19,
-        random(21, 23),
-        random(25, 27),
-        random(30, 32),
-        random(34, 35),
-      ][random(0, 7)]
-    ].name;
+  festivalProperty = [BLOCKS[randomPropertyIndex()].name];
 }
 
 class MainStore {
   online = false;
   isHost = true;
   myName = localStorage.getItem("myName") || "Player 1";
-  roomId = uuidv4();
+  roomId = random(1000, 9999).toString();
   channel = null;
   showChat = false;
 
@@ -59,17 +49,7 @@ class MainStore {
   sellingProperty = "";
   priceNeedToPay = null;
   endGame = false;
-  flightDestination = [
-    random(2, 7),
-    10,
-    random(12, 14),
-    random(16, 17),
-    19,
-    random(21, 23),
-    random(25, 27),
-    random(30, 32),
-    random(34, 35),
-  ][random(0, 7)];
+  flightDestination = randomPropertyIndex();
   players = [
     {
       name: "Player 1",
@@ -85,20 +65,7 @@ class MainStore {
     },
   ];
   samePlayerRolling = 1;
-  festivalProperty =
-    BLOCKS[
-      [
-        random(2, 7),
-        10,
-        random(12, 14),
-        random(16, 17),
-        19,
-        random(21, 23),
-        random(25, 27),
-        random(30, 32),
-        random(34, 35),
-      ][random(0, 7)]
-    ].name;
+  festivalProperty = [BLOCKS[randomPropertyIndex()].name];
 
   constructor() {
     makeAutoObservable(this, null, { autoBind: true });
@@ -196,27 +163,9 @@ class MainStore {
   }
 
   randomFlightDestination() {
-    this.flightDestination = [
-      random(2, 7),
-      10,
-      random(12, 14),
-      random(16, 17),
-      19,
-      random(21, 23),
-      random(25, 27),
-      random(30, 32),
-      random(34, 35),
-    ][random(0, 7)];
+    this.flightDestination = randomPropertyIndex();
     if (this.myName === this.playingId) {
-      this.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            flightDestination: this.flightDestination,
-          },
-        },
-      });
+      this.sendDataToChannel(["flightDestination"]);
     }
   }
 
@@ -230,7 +179,7 @@ class MainStore {
     let totalPrice =
       prices[level - 1] *
       rate[level - 1] *
-      (this.festivalProperty === block.name ? 2 : 1);
+      (this.festivalProperty.includes(block.name) ? 2 : 1);
 
     if (block.type === "public") {
       const allOwnedPublicBlock = BLOCKS.filter(
@@ -285,40 +234,32 @@ class MainStore {
   }
 
   handleChooseBlock(block, isHide, callback) {
-    if (isHide) return;
+    if (isHide || (this.online && this.playingId !== this.myName)) return;
 
-    if (
-      this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-      (!this.online || (this.online && this.playingId === this.myName))
-    ) {
+    if (this.gameState.startsWith(GAME_STATES.NEED_MONEY)) {
       this.sellingProperty = block.name;
-      this.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            sellingProperty: this.sellingProperty,
-          },
-        },
-      });
+      this.sendDataToChannel(["sellingProperty"]);
       return;
     }
-    if (
-      this.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING) &&
-      this.gameState.split("--")[2] === "festival" &&
-      (!this.online || (this.online && this.playingId === this.myName))
-    ) {
-      this.festivalProperty = block.name;
-      this.channel.send({
-        type: "broadcast",
-        event: "updateStore",
-        payload: {
-          data: {
-            festivalProperty: this.festivalProperty,
-          },
-        },
-      });
+    if (this.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)) {
+      if (this.gameState.split("--")[2] === "festival") {
+        this.festivalProperty.unshift(block.name);
+        this.festivalProperty.length = 2;
+        this.sendDataToChannel(["festivalProperty"]);
+      }
+
+      if (this.gameState.split("--")[2] === "lostElectricity") {
+        this.updateOwnedBlockElectricity(block.name, 1);
+        this.sendDataToChannel(["ownedBlocks"]);
+      }
+
+      if (this.gameState.split("--")[2] === "downgrade") {
+        this.updateOwnedBlockLevel(block.name);
+        this.sendDataToChannel(["ownedBlocks"]);
+      }
+
       if (callback) callback();
+
       return;
     }
   }
@@ -326,16 +267,7 @@ class MainStore {
   resetSellingState() {
     this.sellingProperty = "";
     this.priceNeedToPay = null;
-    this.channel.send({
-      type: "broadcast",
-      event: "updateStore",
-      payload: {
-        data: {
-          sellingProperty: this.sellingProperty,
-          priceNeedToPay: this.priceNeedToPay,
-        },
-      },
-    });
+    this.sendDataToChannel(["sellingProperty", "priceNeedToPay"]);
   }
 
   setPriceNeedToPay(price) {

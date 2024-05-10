@@ -14,6 +14,7 @@ import MainStore from "./MainStore";
 import {
   AVATARS,
   BLOCKS,
+  CHOOSE_BUILDING_ACTIONS,
   COLORS,
   GAME_STATES,
   REBUY_RATE,
@@ -431,7 +432,49 @@ const Dashboard = () => {
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
-              GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING
+              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--festival"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
+            await delay(2000);
+            nextPlayerTurn();
+            return;
+          }
+        },
+        async () => {
+          const allOtherOwnedBlockKeys = Object.keys(
+            MainStore.ownedBlocks
+          ).filter(
+            (key) => MainStore.ownedBlocks[key].playerId !== currentPlayer.id
+          );
+          if (allOtherOwnedBlockKeys.length > 0) {
+            MainStore.updateGameState(
+              GAME_STATES.CHOOSE_BUILDING + "--other-building--lostElectricity"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
+          } else {
+            MainStore.updateGameState(
+              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--lostElectricity"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
+            await delay(2000);
+            nextPlayerTurn();
+            return;
+          }
+        },
+        async () => {
+          const allOtherOwnedBlockKeys = Object.keys(
+            MainStore.ownedBlocks
+          ).filter(
+            (key) => MainStore.ownedBlocks[key].playerId !== currentPlayer.id
+          );
+          if (allOtherOwnedBlockKeys.length > 0) {
+            MainStore.updateGameState(
+              GAME_STATES.CHOOSE_BUILDING + "--other-building--downgrade"
+            );
+            MainStore.sendDataToChannel(["gameState"]);
+          } else {
+            MainStore.updateGameState(
+              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--downgrade"
             );
             MainStore.sendDataToChannel(["gameState"]);
             await delay(2000);
@@ -700,7 +743,7 @@ const Dashboard = () => {
     await delay(2000);
     clearInterval(roll);
     // movingPlayer();
-    movingPlayer(()=>{}, [2, 3, 4, 5, 10, 11, 13, 15, 17, 18, 21, 22, 23, 29, 33][random(0, 14)])
+    movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
   };
 
   const buyingProperty = BLOCKS.find(
@@ -749,7 +792,7 @@ const Dashboard = () => {
             total += buyingProperty.price[currentIdx];
             return total;
           }, 0) * REBUY_RATE
-        ) * (buyingProperty.name === MainStore.festivalProperty ? 2 : 1);
+        ) * (MainStore.festivalProperty.includes(buyingProperty.name) ? 2 : 1);
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -908,9 +951,11 @@ const Dashboard = () => {
             <div
               style={{
                 ...getBlockPositionStyle(player.position - 1),
-                opacity: MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY)
-                  ? 0.5
-                  : 1,
+                opacity:
+                  MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
+                  MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
+                    ? 0.5
+                    : 1,
                 pointerEvents: "none",
               }}
               className="player"
@@ -940,7 +985,11 @@ const Dashboard = () => {
                   MainStore.chat[player.id] &&
                   moment(MainStore.chat[player.id].split("--")[1])
                     .add("5", "second")
-                    .isAfter(moment())
+                    .isAfter(moment()) &&
+                  !(
+                    MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
+                    MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
+                  )
                 }
                 key={
                   player.id +
@@ -975,11 +1024,11 @@ const Dashboard = () => {
       )}
       <div
         style={{
-          backgroundColor: MainStore.gameState.startsWith(
-            GAME_STATES.NEED_MONEY
-          )
-            ? "#d8eeeb80"
-            : "#d8eeeb",
+          backgroundColor:
+            MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
+            MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
+              ? "#d8eeeb80"
+              : "#d8eeeb",
         }}
         className="center-space"
       >
@@ -1132,7 +1181,9 @@ const Dashboard = () => {
                                 0
                               ) * REBUY_RATE
                             ) *
-                            (buyingProperty.name === MainStore.festivalProperty
+                            (MainStore.festivalProperty.includes(
+                              buyingProperty.name
+                            )
                               ? 2
                               : 1)
                           : buyingProperty.price[0]}
@@ -1323,11 +1374,13 @@ const Dashboard = () => {
                 GAME_STATES.FIXING_ELECTRIC_BUILDING
               ) && `Ô ${MainStore.gameState.split("--")[1]} đang được sửa điện`}
               {MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING) &&
-                MainStore.gameState.split("--")[2] === "festival" &&
-                "Vui lòng chọn một ô để tổ chức lễ hội"}
-              {MainStore.gameState ===
-                GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING &&
-                "Được chọn ô tổ chức lễ hội nhưng chưa có ô nào"}
+                `Chọn một ô để ${
+                  CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[2]]
+                }`}
+              {MainStore.gameState.startsWith(GAME_STATES.NO_BLOCK_TO_CHOOSE) &&
+                `Được chọn ô để ${
+                  CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[1]]
+                } nhưng chưa có ô nào`}
             </div>
             <div className="information__row">
               {MainStore.gameState === GAME_STATES.WAITING && (
@@ -1574,39 +1627,34 @@ const Dashboard = () => {
                             height="30px"
                           />
                         )}
-                        {player.broke && (
-                          <Popover
-                            content={
-                              <div style={{ color: COLORS[index] }}>
-                                {MainStore.chat[player.id]
-                                  ? MainStore.chat[player.id].split("--")[0]
-                                  : ""}
-                              </div>
-                            }
-                            open={
-                              MainStore.chat[player.id] &&
-                              moment(MainStore.chat[player.id].split("--")[1])
-                                .add("5", "second")
-                                .isAfter(moment())
-                            }
-                            key={
-                              player.id +
-                              BLOCKS[(player.position - 1) % 36]?.position +
-                              (MainStore.chat[player.id] || "no-message")
-                            }
-                          >
-                            <img
-                              style={{
-                                flex: "0 0 25px",
-                                height: 25,
-                                marginRight: 10,
-                              }}
-                              alt=""
-                              src={AVATARS[index]}
-                            />
-                          </Popover>
-                        )}
-                        {!player.broke && (
+                        <Popover
+                          placement="right"
+                          content={
+                            <div style={{ color: COLORS[index] }}>
+                              {MainStore.chat[player.id]
+                                ? MainStore.chat[player.id].split("--")[0]
+                                : ""}
+                            </div>
+                          }
+                          open={
+                            MainStore.chat[player.id] &&
+                            moment(MainStore.chat[player.id].split("--")[1])
+                              .add("5", "second")
+                              .isAfter(moment()) &&
+                            (player.broke ||
+                              MainStore.gameState.startsWith(
+                                GAME_STATES.NEED_MONEY
+                              ) ||
+                              MainStore.gameState.startsWith(
+                                GAME_STATES.CHOOSE_BUILDING
+                              ))
+                          }
+                          key={
+                            player.id +
+                            BLOCKS[(player.position - 1) % 36]?.position +
+                            (MainStore.chat[player.id] || "no-message")
+                          }
+                        >
                           <img
                             style={{
                               flex: "0 0 25px",
@@ -1616,7 +1664,7 @@ const Dashboard = () => {
                             alt=""
                             src={AVATARS[index]}
                           />
-                        )}
+                        </Popover>
                         <div
                           style={{
                             textDecoration: player.broke

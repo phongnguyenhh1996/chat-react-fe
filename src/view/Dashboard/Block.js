@@ -19,12 +19,12 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
     }
     if (MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)) {
       if (!MainStore.ownedBlocks[block.name]) return true;
-      if (MainStore.gameState.split("--")[2] === "my-bulding") {
+      if (MainStore.gameState.split("--")[1] === "my-building") {
         if (MainStore.ownedBlocks[block.name].playerId !== MainStore.playingId)
           return true;
       }
 
-      if (MainStore.gameState.split("--")[2] === "other-bulding") {
+      if (MainStore.gameState.split("--")[1] === "other-building") {
         if (MainStore.ownedBlocks[block.name].playerId === MainStore.playingId)
           return true;
       }
@@ -58,10 +58,9 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       <div
         className="diag"
         style={{
-          backgroundImage:
-            MainStore.festivalProperty === block.name
-              ? `url(${fettiSVG})`
-              : "none",
+          backgroundImage: MainStore.festivalProperty.includes(block.name)
+            ? `url(${fettiSVG})`
+            : "none",
           backgroundColor:
             MainStore.ownedBlocks[block.name]?.lostElectricity > 0
               ? "rgb(0 0 0 / 30%)"

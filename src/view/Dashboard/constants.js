@@ -270,37 +270,45 @@ export const GAME_STATES = {
   FIXING_ELECTRIC_BUILDING: "fixing_electric_building",
   RANDOM_TRAVELING: "random_traveling",
   CHOOSE_BUILDING: "choose_building",
-  NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING: "no_block_to_choose_festival_building",
+  NO_BLOCK_TO_CHOOSE: "no_block_to_choose",
   ASK_TO_PAY_TO_OUT_JAIL: "ask_to_pay_to_out_jail",
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
-  END: 'end'
+  END: "end",
 };
 
-const createSound = (url, rate = 1.0) => new Howl({
-  src: [
-    url
-  ],
-  rate
-})
+const createSound = (url, rate = 1.0) =>
+  new Howl({
+    src: [url],
+    rate,
+  });
 
-const cash = createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715217235/cash-register-purchase.wav")
-const success = createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715218482/success_ypjtyu.mp3")
+const cash = createSound(
+  "https://res.cloudinary.com/easy-toeic/video/upload/v1715217235/cash-register-purchase.wav"
+);
+const success = createSound(
+  "https://res.cloudinary.com/easy-toeic/video/upload/v1715218482/success_ypjtyu.mp3"
+);
 
 export const sound = {
-  [GAME_STATES.ROLL_DICE]: createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715238259/144319__fumiya112__decide_nfpyvk.mp3",1.5),
+  [GAME_STATES.ROLL_DICE]: createSound(
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715238259/144319__fumiya112__decide_nfpyvk.mp3",
+    1.5
+  ),
   [GAME_STATES.ROLLING_DICE]: createSound(
-      "https://res.cloudinary.com/easy-toeic/video/upload/v1715216197/220744__dermotte__dice_06_wa2vzk.wav",
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715216197/220744__dermotte__dice_06_wa2vzk.wav"
   ),
   [GAME_STATES.INC_MONEY]: cash,
   [GAME_STATES.DEC_MONEY]: cash,
   [GAME_STATES.END]: createSound(
-      "https://res.cloudinary.com/easy-toeic/video/upload/v1715217740/win.mp3",
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715217740/win.mp3"
   ),
   [GAME_STATES.GOING_JAIL]: createSound(
-      "https://res.cloudinary.com/easy-toeic/video/upload/v1715218009/jail_u1kfni.mp3",
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715218009/jail_u1kfni.mp3"
   ),
   [GAME_STATES.GOING_OUT_JAIL]: success,
-  [GAME_STATES.FLIGHT]: createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715219304/airplane_nfuuay.wav"),
+  [GAME_STATES.FLIGHT]: createSound(
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715219304/airplane_nfuuay.wav"
+  ),
   BUYING: "",
   UPDATING: "",
   SWITCH_TURN: "",
@@ -309,7 +317,9 @@ export const sound = {
   MAX_LEVEL_PROPERTY: "max_level_property",
   NOT_ENOUGH_MONEY_UPDATING_PROPERTY: "not_enough_money_updating_property",
   NOT_ENOUGH_MONEY_BUYING_PROPERTY: "not_enough_money_buying_property",
-  [GAME_STATES.NEED_MONEY]: createSound("https://res.cloudinary.com/easy-toeic/video/upload/v1715219530/fail_r2hrzi.mp3"),
+  [GAME_STATES.NEED_MONEY]: createSound(
+    "https://res.cloudinary.com/easy-toeic/video/upload/v1715219530/fail_r2hrzi.mp3"
+  ),
   GOING_BACK: "going_back",
   DOWN_GRADE_BUILDING: "down_grade_building",
   LOST_ELECTRIC_BUILDING: "lost_lectric_building",
@@ -324,5 +334,10 @@ export const sound = {
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
 };
 
+export const CHOOSE_BUILDING_ACTIONS = {
+  festival: "tổ chức lễ hội",
+  lostElectricity: "cắt điện",
+  downgrade: "phá nhà",
+};
 
-export const REBUY_RATE = 1.5
+export const REBUY_RATE = 1.5;
