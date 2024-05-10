@@ -425,7 +425,9 @@ const Dashboard = () => {
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
           if (allOwnedBlockKeys.length > 0) {
-            MainStore.updateGameState(GAME_STATES.CHOOSE_FESTIVAL_BUILDING);
+            MainStore.updateGameState(
+              GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
+            );
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
@@ -573,8 +575,11 @@ const Dashboard = () => {
       });
       isFourPublic = Object.values(rows).some((value) => value === 4);
       isThreeMonopoly =
-        Object.keys(rows).filter((key) => rows[key] === 3 && key !== "public")
-          .length === 3;
+        Object.keys(rows).filter(
+          (key) =>
+            rows[key] === BLOCKS.filter((b) => b.row === key).length &&
+            key !== "public"
+        ).length === 3;
       if (isFourPublic || isThreeMonopoly) {
         MainStore.updatePlayerData(p, "winner", true);
         MainStore.updatePlayerData(
@@ -694,7 +699,8 @@ const Dashboard = () => {
     }, 150);
     await delay(2000);
     clearInterval(roll);
-    movingPlayer();
+    // movingPlayer();
+    movingPlayer(()=>{}, [2, 3, 4, 5, 10, 11, 13, 15, 17, 18, 21, 22, 23, 29, 33][random(0, 14)])
   };
 
   const buyingProperty = BLOCKS.find(
@@ -788,7 +794,7 @@ const Dashboard = () => {
     await delay(2000);
     checkEndGame();
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 4 &&
+      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 3 &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
@@ -1316,7 +1322,8 @@ const Dashboard = () => {
               {MainStore.gameState.startsWith(
                 GAME_STATES.FIXING_ELECTRIC_BUILDING
               ) && `Ô ${MainStore.gameState.split("--")[1]} đang được sửa điện`}
-              {MainStore.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
+              {MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING) &&
+                MainStore.gameState.split("--")[2] === "festival" &&
                 "Vui lòng chọn một ô để tổ chức lễ hội"}
               {MainStore.gameState ===
                 GAME_STATES.NO_BLOCK_TO_CHOOSE_FESTIVAL_BUILDING &&

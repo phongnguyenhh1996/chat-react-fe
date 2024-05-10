@@ -8,6 +8,31 @@ import fettiSVG from "../../asset/img/confetti.svg";
 
 const Block = ({ block, idx, nextPlayerTurn }) => {
   const price = MainStore.getPrice(block);
+
+  const checkNeedToHide = () => {
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+      MainStore.gameState.split("--")[2] !==
+        MainStore.ownedBlocks[block.name]?.playerId
+    ) {
+      return true;
+    }
+    if (MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)) {
+      if (!MainStore.ownedBlocks[block.name]) return true;
+      if (MainStore.gameState.split("--")[2] === "my-bulding") {
+        if (MainStore.ownedBlocks[block.name].playerId !== MainStore.playingId)
+          return true;
+      }
+
+      if (MainStore.gameState.split("--")[2] === "other-bulding") {
+        if (MainStore.ownedBlocks[block.name].playerId === MainStore.playingId)
+          return true;
+      }
+    }
+
+    return false;
+  };
+
   return (
     <div
       style={{
@@ -17,17 +42,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
           : block.position === "left"
           ? "row"
           : "row-reverse",
-        opacity:
-          (MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-            MainStore.gameState.split("--")[2] !==
-              MainStore.ownedBlocks[block.name]?.playerId) ||
-          (MainStore.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
-            (!MainStore.ownedBlocks[block.name]?.playerId ||
-              (MainStore.ownedBlocks[block.name] &&
-                MainStore.ownedBlocks[block.name]?.playerId !==
-                  MainStore.playingId)))
-            ? 0.5
-            : 1,
+        opacity: checkNeedToHide() ? 0.5 : 1,
         outline:
           MainStore.sellingProperty === block.name
             ? "4px solid red"
@@ -36,7 +51,9 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       }}
       className="block"
       id={`block-${idx}`}
-      onClick={() => MainStore.handleChooseBlock(block, nextPlayerTurn)}
+      onClick={() =>
+        MainStore.handleChooseBlock(block, checkNeedToHide(), nextPlayerTurn)
+      }
     >
       <div
         className="diag"
@@ -65,7 +82,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
         {block.type === "plane" ||
         block.type === "jail" ||
         block.type === "jail-visit" ||
-        block.type === "start" || block.type === "chance"? (
+        block.type === "start" ||
+        block.type === "chance" ? (
           <Icon
             style={{ margin: "auto" }}
             symbol={block.type}

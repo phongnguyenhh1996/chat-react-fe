@@ -179,7 +179,6 @@ class MainStore {
         this.sellingProperty = "";
       }
     } else {
-      this.ownedBlocks[name].price -= this.getPrice(this.ownedBlocks[name], '', true)
       this.ownedBlocks[name].level -= 1;
     }
   }
@@ -285,11 +284,11 @@ class MainStore {
     });
   }
 
-  handleChooseBlock(block, callback) {
+  handleChooseBlock(block, isHide, callback) {
+    if (isHide) return;
+
     if (
       this.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-      this.gameState.split("--")[2] ===
-        this.ownedBlocks[block.name]?.playerId &&
       (!this.online || (this.online && this.playingId === this.myName))
     ) {
       this.sellingProperty = block.name;
@@ -305,8 +304,8 @@ class MainStore {
       return;
     }
     if (
-      this.gameState === GAME_STATES.CHOOSE_FESTIVAL_BUILDING &&
-      this.ownedBlocks[block.name]?.playerId === this.playingId &&
+      this.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING) &&
+      this.gameState.split("--")[2] === "festival" &&
       (!this.online || (this.online && this.playingId === this.myName))
     ) {
       this.festivalProperty = block.name;
@@ -345,7 +344,7 @@ class MainStore {
 
   setEndGame(isEnd) {
     this.endGame = isEnd;
-    this.gameState = GAME_STATES.END
+    this.gameState = GAME_STATES.END;
   }
 
   resetGame() {
