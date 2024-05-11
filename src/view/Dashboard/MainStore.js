@@ -341,7 +341,7 @@ class MainStore {
       position: 1,
     });
     if (this.players.length > this.totalPlayers) {
-      this.players.length = this.totalPlayers
+      this.players.length = this.totalPlayers;
     }
   }
 
@@ -399,7 +399,8 @@ class MainStore {
         range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
           total += block.price[currentIdx];
           return total;
-        }, 0) * REBUY_RATE
+        }, 0) *
+          (REBUY_RATE + updatingPropertyInfo.level / 20)
       ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
     );
   }

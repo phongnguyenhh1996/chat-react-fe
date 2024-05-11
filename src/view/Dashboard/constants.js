@@ -362,7 +362,7 @@ export const CHOOSE_BUILDING_ACTIONS = {
   fixElectricity: "sửa điện",
 };
 
-export const REBUY_RATE = 1.5;
+export const REBUY_RATE = 1.4;
 
 export const randomPropertyIndex = () =>
   [
