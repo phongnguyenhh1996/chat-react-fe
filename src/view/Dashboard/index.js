@@ -778,13 +778,7 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price =
-        parseInt(
-          range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
-            total += buyingProperty.price[currentIdx];
-            return total;
-          }, 0) * REBUY_RATE
-        ) * (MainStore.festivalProperty.includes(buyingProperty.name) ? 2 : 1);
+      price = MainStore.getRebuyPrice(buyingProperty)
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -802,20 +796,15 @@ const Dashboard = () => {
           MainStore.players[
             MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
           ];
-        MainStore.deleteOwnedBlock(buyingProperty.name);
+        MainStore.updateOwnedBlockPlayerId(buyingProperty.name, currentPlayer.id)
         MainStore.updatePlayerData(
           receivePlayer,
           "money",
           receivePlayer.money + price
         );
-        MainStore.updateGameState(
-          GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
-        );
+      } else {
+        MainStore.updateOwnedBlocks(buyingProperty.name, price);
       }
-      MainStore.updateOwnedBlocks(buyingProperty.name, price);
-      MainStore.updateGameState(
-        GAME_STATES.DEC_MONEY + "--" + price + "--bank"
-      );
       MainStore.updateGameState(
         GAME_STATES.DEC_MONEY +
           "--" +
@@ -1207,20 +1196,7 @@ const Dashboard = () => {
                         )}{" "}
                         với giá là{" "}
                         {MainStore.gameState === GAME_STATES.REBUYING
-                          ? parseInt(
-                              range(0, updatingPropertyInfo.level).reduce(
-                                (total, currentIdx) => {
-                                  total += buyingProperty.price[currentIdx];
-                                  return total;
-                                },
-                                0
-                              ) * REBUY_RATE
-                            ) *
-                            (MainStore.festivalProperty.includes(
-                              buyingProperty.name
-                            )
-                              ? 2
-                              : 1)
+                          ? MainStore.getRebuyPrice(buyingProperty)
                           : buyingProperty.price[0]}
                         $ ?
                       </div>

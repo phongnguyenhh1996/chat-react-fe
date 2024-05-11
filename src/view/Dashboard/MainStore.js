@@ -1,7 +1,7 @@
 import { random } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
-import { BLOCKS, GAME_STATES, randomPropertyIndex, SOUND } from "./constants";
+import { BLOCKS, GAME_STATES, randomPropertyIndex, REBUY_RATE, SOUND } from "./constants";
 import { delay } from "./utils";
 
 class MainStore {
@@ -93,15 +93,13 @@ class MainStore {
     this.buyingProperty = name;
   }
 
-  updateOwnedBlocks(name, price) {
+  updateOwnedBlocks(name) {
     if (this.ownedBlocks[name]) {
       this.ownedBlocks[name].level += 1;
-      this.ownedBlocks[name].price += price;
     } else {
       this.ownedBlocks[name] = {
         playerId: this.playingId,
         level: 1,
-        price: price,
       };
     }
   }
@@ -122,6 +120,10 @@ class MainStore {
     } else {
       this.ownedBlocks[name].level -= 1;
     }
+  }
+
+  updateOwnedBlockPlayerId(name, playerId) {
+    this.ownedBlocks[name].playerId = playerId;
   }
 
   updateOwnedBlockElectricity(name, turn) {
@@ -364,6 +366,16 @@ class MainStore {
         data,
       },
     });
+  }
+
+  getRebuyPrice(block) {
+    const updatingPropertyInfo = this.ownedBlocks[block.name]
+    return parseInt(
+      range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
+        total += block.price[currentIdx];
+        return total;
+      }, 0) * REBUY_RATE
+    ) * (this.festivalProperty.includes(block.name) ? 2 : 1);
   }
 }
 
