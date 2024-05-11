@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/chat-react-fe/static/css/main.a2a91044.css",
-    "main.js": "/chat-react-fe/static/js/main.b1d7fb10.js",
+    "main.js": "/chat-react-fe/static/js/main.e83b9159.js",
     "static/js/952.de6738b3.chunk.js": "/chat-react-fe/static/js/952.de6738b3.chunk.js",
     "static/js/453.29f272d8.chunk.js": "/chat-react-fe/static/js/453.29f272d8.chunk.js",
     "static/media/icons.svg": "/chat-react-fe/static/media/icons.0bb46bb814b781628938e0c440c1e354.svg",
@@ -11,14 +11,15 @@
     "static/media/confetti.svg": "/chat-react-fe/static/media/confetti.f99e4e4d9adffc0b6cf8be9320398931.svg",
     "static/media/avatar2.svg": "/chat-react-fe/static/media/avatar2.d4e78093d66dece3a716ae8afcbd01c7.svg",
     "static/media/avatar3.svg": "/chat-react-fe/static/media/avatar3.6d497afd97497d93ac3b9b7f7d532a81.svg",
+    "static/media/lightning.svg": "/chat-react-fe/static/media/lightning.d4d4dbd578d7935ca28902e5ea80bb4d.svg",
     "index.html": "/chat-react-fe/index.html",
     "main.a2a91044.css.map": "/chat-react-fe/static/css/main.a2a91044.css.map",
-    "main.b1d7fb10.js.map": "/chat-react-fe/static/js/main.b1d7fb10.js.map",
+    "main.e83b9159.js.map": "/chat-react-fe/static/js/main.e83b9159.js.map",
     "952.de6738b3.chunk.js.map": "/chat-react-fe/static/js/952.de6738b3.chunk.js.map",
     "453.29f272d8.chunk.js.map": "/chat-react-fe/static/js/453.29f272d8.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.a2a91044.css",
-    "static/js/main.b1d7fb10.js"
+    "static/js/main.e83b9159.js"
   ]
 }
