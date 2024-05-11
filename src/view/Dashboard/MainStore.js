@@ -1,8 +1,32 @@
 import { random, range } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
-import { BLOCKS, GAME_STATES, randomPropertyIndex, REBUY_RATE, SOUND } from "./constants";
+import {
+  BLOCKS,
+  GAME_STATES,
+  randomPropertyIndex,
+  REBUY_RATE,
+  SOUND,
+} from "./constants";
 import { delay } from "./utils";
+
+export const SYNC_KEY = [
+  "roomId",
+  "totalPlayers",
+  "startMoney",
+  "gameState",
+  "playingId",
+  "dice",
+  "ownedBlocks",
+  "buyingProperty",
+  "sellingProperty",
+  "priceNeedToPay",
+  "endGame",
+  "flightDestination",
+  "players",
+  "samePlayerRolling",
+  "festivalProperty",
+];
 
 class MainStore {
   online = false;
@@ -325,18 +349,15 @@ class MainStore {
   updateStore(data) {
     Object.keys(data).forEach((key) => {
       if (key === "chat") {
-        Object.keys(data[key]).forEach(
-          (name) => {
-            const message = data[key][name];
-            if (message.startsWith('/mm')) {
-              SOUND['meme'+message.split('/mm ')[1]]?.play()
-            } else {
-              SOUND.chat.play()
-            }
-            this.chat[name] =
-              data[key][name] + "--" + new Date().toISOString()
+        Object.keys(data[key]).forEach((name) => {
+          const message = data[key][name];
+          if (message.startsWith("/mm")) {
+            SOUND["meme" + message.split("/mm ")[1]]?.play();
+          } else {
+            SOUND.chat.play();
           }
-        );
+          this.chat[name] = data[key][name] + "--" + new Date().toISOString();
+        });
       } else {
         this[key] = data[key];
       }
@@ -354,8 +375,8 @@ class MainStore {
     this.chat[playerId] = message;
   }
 
-  sendDataToChannel(keys = []) {
-    const data = keys.reduce((fullData, key) => {
+  sendDataToChannel() {
+    const data = SYNC_KEY.reduce((fullData, key) => {
       fullData[key] = this[key];
       return fullData;
     }, {});
@@ -369,13 +390,15 @@ class MainStore {
   }
 
   getRebuyPrice(block) {
-    const updatingPropertyInfo = this.ownedBlocks[block.name]
-    return parseInt(
-      range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
-        total += block.price[currentIdx];
-        return total;
-      }, 0) * REBUY_RATE
-    ) * (this.festivalProperty.includes(block.name) ? 2 : 1);
+    const updatingPropertyInfo = this.ownedBlocks[block.name];
+    return (
+      parseInt(
+        range(0, updatingPropertyInfo.level).reduce((total, currentIdx) => {
+          total += block.price[currentIdx];
+          return total;
+        }, 0) * REBUY_RATE
+      ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
+    );
   }
 }
 
@@ -392,6 +415,6 @@ class Reset {
   festivalProperty = [BLOCKS[randomPropertyIndex()].name];
 }
 
-const storeInstance = new MainStore()
+const storeInstance = new MainStore();
 
 export default storeInstance;

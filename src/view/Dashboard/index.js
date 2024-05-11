@@ -11,7 +11,7 @@ import {
   Dropdown,
 } from "antd";
 import { observer } from "mobx-react-lite";
-import MainStore from "./MainStore";
+import MainStore, { SYNC_KEY } from "./MainStore";
 import {
   AVATARS,
   BLOCKS,
@@ -84,14 +84,7 @@ const Dashboard = () => {
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
             }
             MainStore.channel.track({
-              data: pick(MainStore, [
-                "gameState",
-                "players",
-                "playingId",
-                "totalPlayers",
-                "festivalProperty",
-                "flightDestination",
-              ]),
+              data: pick(MainStore, SYNC_KEY),
             });
           })
           .subscribe(async (status) => {
@@ -100,14 +93,7 @@ const Dashboard = () => {
             }
 
             await MainStore.channel.track({
-              data: pick(MainStore, [
-                "totalPlayers",
-                "startMoney",
-                "gameState",
-                "flightDestination",
-                "players",
-                "festivalProperty",
-              ]),
+              data: pick(MainStore, SYNC_KEY),
             });
           });
       } else {
@@ -163,7 +149,7 @@ const Dashboard = () => {
 
   const goNextAvailablePlayer = () => {
     MainStore.setSamePlayerRolling(1);
-    let nextPlayerIndex = currentPlayerIndex + 1;
+    let nextPlayerIndex = MainStore.getPlayerIndexById(MainStore.playingId) + 1;
     if (nextPlayerIndex >= MainStore.players.length) {
       nextPlayerIndex = 0;
     }
