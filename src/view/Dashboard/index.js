@@ -77,7 +77,10 @@ const Dashboard = () => {
               return;
             }
             MainStore.addPlayer(key);
-            if (MainStore.players.length === MainStore.totalPlayers) {
+            if (
+              MainStore.players.length === MainStore.totalPlayers &&
+              MainStore.gameState === GAME_STATES.WAITING
+            ) {
               MainStore.updatePlayingId(
                 MainStore.players[random(0, MainStore.players.length - 1)].id
               );
