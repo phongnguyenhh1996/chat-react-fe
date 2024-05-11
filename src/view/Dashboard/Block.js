@@ -96,7 +96,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 8,
+              fontSize: window.innerWidth > 950 ? 12: 8,
             }}
           >
             {block?.name}
@@ -121,7 +121,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
 
         {price && (
           <span
-            key={price}
+            key={price+MainStore.ownedBlocks[block?.name].playerId}
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,

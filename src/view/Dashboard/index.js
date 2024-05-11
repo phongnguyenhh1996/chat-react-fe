@@ -19,7 +19,6 @@ import {
   COLORS,
   GAME_STATES,
   MEME,
-  REBUY_RATE,
   SOUND,
 } from "./constants";
 import { delay, getBlockPositionStyle } from "./utils";
@@ -365,7 +364,9 @@ const Dashboard = () => {
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+            (key) =>
+              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
+              MainStore.ownedBlocks[key].lostElectricity > 0
           );
           if (allOwnedBlockKeys.length > 0) {
             MainStore.updateGameState(
@@ -778,7 +779,7 @@ const Dashboard = () => {
     let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
     if (isRebuy) {
-      price = MainStore.getRebuyPrice(buyingProperty)
+      price = MainStore.getRebuyPrice(buyingProperty);
     }
     const priceBefore = price;
     let priceAfter = price;
@@ -796,7 +797,10 @@ const Dashboard = () => {
           MainStore.players[
             MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
           ];
-        MainStore.updateOwnedBlockPlayerId(buyingProperty.name, currentPlayer.id)
+        MainStore.updateOwnedBlockPlayerId(
+          buyingProperty.name,
+          currentPlayer.id
+        );
         MainStore.updatePlayerData(
           receivePlayer,
           "money",
@@ -1229,7 +1233,12 @@ const Dashboard = () => {
                       </Button>
                       <Button
                         type="primary"
-                        onClick={() => buyProperty(currentPlayer, MainStore.gameState === GAME_STATES.REBUYING)}
+                        onClick={() =>
+                          buyProperty(
+                            currentPlayer,
+                            MainStore.gameState === GAME_STATES.REBUYING
+                          )
+                        }
                       >
                         Có
                       </Button>

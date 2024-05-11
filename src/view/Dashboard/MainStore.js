@@ -1,4 +1,4 @@
-import { random } from "lodash";
+import { random, range } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import { BLOCKS, GAME_STATES, randomPropertyIndex, REBUY_RATE, SOUND } from "./constants";
