@@ -298,7 +298,15 @@ const Dashboard = () => {
     }
 
     if (block.type === "jail") {
-      goToJail();
+      if (currentPlayer.haveFreeCard) {
+        MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
+        MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
+        MainStore.sendDataToChannel(["players", "gameState"]);
+        await delay(2000);
+        nextPlayerTurn(true);
+      }else {
+        goToJail();
+      }
       return;
     }
 
@@ -630,15 +638,6 @@ const Dashboard = () => {
         await delay(2000);
         nextPlayerTurn(true);
       } else {
-        if (currentPlayer.haveFreeCard) {
-          MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
-          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
-          MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-          MainStore.sendDataToChannel(["players", "gameState"]);
-          await delay(2000);
-          nextPlayerTurn(true);
-          return;
-        }
         MainStore.updatePlayerData(
           currentPlayer,
           "onJail",
@@ -1339,9 +1338,9 @@ const Dashboard = () => {
               {MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC &&
                 "Không mất tiền vì ô hiện tại đang mất điện"}
               {MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD &&
-                "Được tặng thẻ ra tù miễn phí"}
+                "Được tặng thẻ miễn đi tù"}
               {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
-                "Đã sử dụng thẻ ra tù"}
+                "Đã sử dụng thẻ miễn đi tù"}
               {MainStore.gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL &&
                 (MainStore.playingId === MainStore.myName ||
                   !MainStore.online) && (

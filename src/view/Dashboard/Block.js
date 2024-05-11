@@ -5,6 +5,7 @@ import Icon from "../../components/Icon";
 import { BLOCKS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
 import fettiSVG from "../../asset/img/confetti.svg";
+import lightningSVG from "../../asset/img/lightning.svg";
 
 const Block = ({ block, idx, nextPlayerTurn }) => {
   const price = MainStore.getPrice(block);
@@ -60,6 +61,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
         style={{
           backgroundImage: MainStore.festivalProperty.includes(block.name)
             ? `url(${fettiSVG})`
+            : MainStore.ownedBlocks[block.name]?.lostElectricity
+            ? `url(${lightningSVG})`
             : "none",
           backgroundColor:
             MainStore.ownedBlocks[block.name]?.lostElectricity > 0
@@ -96,7 +99,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: window.innerWidth > 950 ? 12: 8,
+              fontSize: window.innerWidth > 950 ? 12 : 8,
             }}
           >
             {block?.name}
@@ -121,7 +124,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
 
         {price && (
           <span
-            key={price+MainStore.ownedBlocks[block?.name].playerId}
+            key={price + MainStore.ownedBlocks[block?.name].playerId}
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,
