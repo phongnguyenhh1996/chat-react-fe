@@ -140,6 +140,14 @@ const Dashboard = () => {
     MainStore.updateGameState(GAME_STATES.GOING_JAIL);
     MainStore.sendDataToChannel(["gameState"]);
     await delay(2000);
+    if (currentPlayer.haveFreeCard) {
+      MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
+      MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
+      MainStore.sendDataToChannel(["players", "gameState"]);
+      await delay(2000);
+      nextPlayerTurn(true);
+      return
+    }
     MainStore.updatePlayerData(
       currentPlayer,
       "position",
@@ -298,15 +306,7 @@ const Dashboard = () => {
     }
 
     if (block.type === "jail") {
-      if (currentPlayer.haveFreeCard) {
-        MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
-        MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
-        MainStore.sendDataToChannel(["players", "gameState"]);
-        await delay(2000);
-        nextPlayerTurn(true);
-      }else {
-        goToJail();
-      }
+      goToJail();
       return;
     }
 
