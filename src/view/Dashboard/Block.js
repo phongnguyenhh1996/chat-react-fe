@@ -50,7 +50,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             : undefined,
         zIndex: MainStore.sellingProperty === block.name ? 999 : undefined,
       }}
-      className="block"
+      className={"block block--" + block.type}
       id={`block-${idx}`}
       onClick={() =>
         MainStore.handleChooseBlock(block, checkNeedToHide(), nextPlayerTurn)
@@ -59,9 +59,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       <div
         className="diag"
         style={{
-          backgroundImage: MainStore.festivalProperty.includes(block.name)
-            ? `url(${fettiSVG})`
-            : MainStore.ownedBlocks[block.name]?.lostElectricity
+          backgroundImage: MainStore.ownedBlocks[block.name]?.lostElectricity
             ? `url(${lightningSVG})`
             : "none",
           backgroundColor:
@@ -81,6 +79,20 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             : undefined,
         }}
       >
+        {MainStore.festivalProperty.includes(block.name) && (
+          <div
+            className="diag"
+            style={{
+              backgroundImage: `url(${fettiSVG})`,
+              position: "absolute",
+              opacity: 0.5,
+              left: 0,
+              top: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          ></div>
+        )}
         {block.type === "plane" ||
         block.type === "jail" ||
         block.type === "jail-visit" ||
