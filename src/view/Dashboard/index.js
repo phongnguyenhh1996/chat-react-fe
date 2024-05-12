@@ -108,7 +108,8 @@ const Dashboard = () => {
           .on("presence", { event: "sync" }, ({ key }) => {
             if (
               key === MainStore.myName ||
-              MainStore.playingId === MainStore.myName
+              MainStore.playingId === MainStore.myName ||
+              MainStore.gameState !== GAME_STATES.WAITING
             ) {
               return;
             }
@@ -269,7 +270,7 @@ const Dashboard = () => {
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
               MainStore.sendDataToChannel(["gameState", "players"]);
-              if (block.type === "property" && !currentPlayer.broke) {
+              if (block.type === "property" && !currentPlayer.broke && ownedBlock.level <= 5) {
                 await delay(2000);
                 MainStore.updateBuyingProperty(block.name);
                 MainStore.updateGameState(GAME_STATES.REBUYING);
@@ -810,8 +811,9 @@ const Dashboard = () => {
 
     await delay(2000);
     checkEndGame();
+
     if (
-      MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 &&
+      (MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 || isRebuy) &&
       buyingProperty.type === "property" &&
       !currentPlayer.broke
     ) {
@@ -1061,7 +1063,7 @@ const Dashboard = () => {
           )}
           <div
             style={{
-              backgroundColor: "transparent"
+              backgroundColor: "transparent",
             }}
             className="center-space"
           >

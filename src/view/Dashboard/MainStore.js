@@ -288,7 +288,7 @@ class MainStore {
   }
 
   resetGame() {
-    if (!this.isHost) return;
+    if (!this.isHost || this.gameState !== GAME_STATES.END) return;
     const newData = new Reset();
     Object.keys(newData).forEach((key) => (this[key] = newData[key]));
     this.players = this.players.map((p) => ({
