@@ -146,7 +146,7 @@ const Dashboard = () => {
       MainStore.sendDataToChannel(["players", "gameState"]);
       await delay(2000);
       nextPlayerTurn(true);
-      return
+      return;
     }
     MainStore.updatePlayerData(
       currentPlayer,
