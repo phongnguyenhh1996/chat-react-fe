@@ -950,12 +950,20 @@ const Dashboard = () => {
   return (
     <TransformWrapper
       minScale={0.5}
-      initialScale={window.innerWidth > 950 ? 0.8 : 0.6}
+      initialScale={window.innerWidth > 950 ? 0.95 : 0.95}
       centerOnInit
       limitToBounds={false}
     >
       <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
-        <div className="container-page">
+        <div
+          className="container-page"
+          style={{
+            gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
+            gridAutoColumns: `minmax(${parseInt(
+              window.innerWidth / 12
+            )}px, 1fr)`,
+          }}
+        >
           {BLOCKS.map((block, index) => (
             <Block
               nextPlayerTurn={nextPlayerTurn}
@@ -1055,7 +1063,7 @@ const Dashboard = () => {
                 MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
                 MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
                   ? "#d8eeeb80"
-                  : "transparent",
+                  : "#d8eeeb",
             }}
             className="center-space"
           >
@@ -1068,7 +1076,7 @@ const Dashboard = () => {
                 alignItems: "center",
                 justifyContent: "end",
                 fontSize: 14,
-                color: 'white'
+                color: "white",
               }}
             >
               Version: {packageJson.version}
@@ -1153,6 +1161,7 @@ const Dashboard = () => {
                     minHeight: 50,
                     padding: 5,
                     marginTop: 10,
+                    backgroundColor: "gray",
                     color: "white",
                     fontWeight: "bold",
                   }}

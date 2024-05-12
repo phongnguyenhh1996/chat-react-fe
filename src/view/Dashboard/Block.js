@@ -9,6 +9,10 @@ import lightningSVG from "../../asset/img/lightning.svg";
 
 const Block = ({ block, idx, nextPlayerTurn }) => {
   const price = MainStore.getPrice(block);
+  const color =
+    COLORS[
+      MainStore.getPlayerIndexById(MainStore.ownedBlocks[block?.name]?.playerId)
+    ];
 
   const checkNeedToHide = () => {
     if (
@@ -88,8 +92,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               opacity: 0.5,
               left: 0,
               top: 0,
-              width: '100%',
-              height: '100%',
+              width: "100%",
+              height: "100%",
             }}
           ></div>
         )}
@@ -111,7 +115,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: window.innerWidth > 950 ? 12 : 8,
+              fontSize: window.innerWidth > 950 ? 15 : 9,
             }}
           >
             {block?.name}
@@ -143,12 +147,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               fontSize: price ? (window.innerWidth > 950 ? 13 : 10) : 11,
               width: "100%",
               animationDelay: "0.5s",
-              color:
-                COLORS[
-                  MainStore.getPlayerIndexById(
-                    MainStore.ownedBlocks[block?.name].playerId
-                  )
-                ],
+              color,
             }}
             className="fade-in-top"
           >
@@ -191,11 +190,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             gap: 5,
             background:
               block.type === "public" && MainStore.ownedBlocks[block?.name]
-                ? COLORS[
-                    MainStore.getPlayerIndexById(
-                      MainStore.ownedBlocks[block?.name].playerId
-                    )
-                  ]
+                ? color
                 : block?.row,
             borderTop: block.position === "top" ? "1px solid black" : undefined,
             borderBottom:
@@ -225,12 +220,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                   <Icon
                     symbol="flag"
                     style={{
-                      color:
-                        COLORS[
-                          MainStore.getPlayerIndexById(
-                            MainStore.ownedBlocks[block?.name].playerId
-                          )
-                        ],
+                      color,
                       transform: `rotate(${
                         ["bottom", "left", "", "right", "top"].indexOf(
                           block.position
@@ -269,12 +259,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                           className="fade-in-top"
                           symbol="bulding"
                           style={{
-                            color:
-                              COLORS[
-                                MainStore.getPlayerIndexById(
-                                  MainStore.ownedBlocks[block?.name].playerId
-                                )
-                              ],
+                            color,
                             transform: `rotate(${
                               ["bottom", "left", "", "right", "top"].indexOf(
                                 block.position
@@ -302,12 +287,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                       ? "80%"
                       : 10,
                     margin: "auto",
-                    backgroundColor:
-                      COLORS[
-                        MainStore.getPlayerIndexById(
-                          MainStore.ownedBlocks[block?.name].playerId
-                        )
-                      ],
+                    backgroundColor: color,
                   }}
                 />
               )}
