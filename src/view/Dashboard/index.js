@@ -953,15 +953,17 @@ const Dashboard = () => {
       initialScale={window.innerWidth > 950 ? 0.95 : 0.95}
       centerOnInit
       limitToBounds={false}
+      panning={{ excluded: ["input"] }}
     >
       <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
         <div
           className="container-page"
           style={{
             gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
-            gridAutoColumns: `minmax(${parseInt(
-              window.innerWidth / 12
-            )}px, 1fr)`,
+            gridAutoColumns: `minmax(${
+              parseInt(window.innerWidth / 12) +
+              (window.innerWidth > 950 ? 0 : 10)
+            }px, 1fr)`,
           }}
         >
           {BLOCKS.map((block, index) => (
@@ -983,7 +985,7 @@ const Dashboard = () => {
                       MainStore.gameState.startsWith(
                         GAME_STATES.CHOOSE_BUILDING
                       )
-                        ? 0.5
+                        ? 0.2
                         : 1,
                     pointerEvents: "none",
                   }}
@@ -1058,13 +1060,6 @@ const Dashboard = () => {
               )
           )}
           <div
-            style={{
-              backgroundColor:
-                MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
-                MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
-                  ? "#d8eeeb80"
-                  : "transparent",
-            }}
             className="center-space"
           >
             <div

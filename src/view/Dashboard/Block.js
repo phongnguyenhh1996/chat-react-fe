@@ -47,7 +47,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
           : block.position === "left"
           ? "row"
           : "row-reverse",
-        opacity: checkNeedToHide() ? 0.5 : 1,
+        opacity: checkNeedToHide() ? 0.2 : 1,
         outline:
           MainStore.sellingProperty === block.name
             ? "4px solid red"
@@ -67,8 +67,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             ? `url(${lightningSVG})`
             : "none",
           backgroundColor:
-            MainStore.ownedBlocks[block.name]?.lostElectricity > 0
-              ? "rgb(0 0 0 / 30%)"
+            MainStore.ownedBlocks[block.name]?.lostElectricity
+              ? "rgb(0 0 0 / 60%)"
               : undefined,
           position: "relative",
           display: "flex",
@@ -89,7 +89,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             style={{
               backgroundImage: `url(${fettiSVG})`,
               position: "absolute",
-              opacity: 0.5,
+              opacity: 0.7,
               left: 0,
               top: 0,
               width: "100%",
@@ -139,21 +139,20 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
         )}
 
         {price && (
-          <span
+          <div
             key={price + MainStore.ownedBlocks[block?.name].playerId}
             style={{
               position: "absolute",
               bottom: window.innerWidth > 950 ? 5 : 2,
-              fontSize: price ? (window.innerWidth > 950 ? 13 : 10) : 11,
+              fontSize: price ? (window.innerWidth > 950 ? 15 : 11) : 11,
               width: "100%",
               animationDelay: "0.5s",
-              color,
-              filter: 'brightness(200%)'
+              "--playerColor": color,
             }}
             className="fade-in-top"
           >
-            {price + "$"}
-          </span>
+            <span className={!MainStore.ownedBlocks[block.name]?.lostElectricity ? "glow" : ""}>{price + "$"}</span>
+          </div>
         )}
 
         {BLOCKS[MainStore.flightDestination] && block.type === "plane" && (
@@ -193,7 +192,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               block.type === "public" && MainStore.ownedBlocks[block?.name]
                 ? color
                 : block?.row,
-              opacity: 0.7,
+            opacity: 0.7,
             // borderTop: block.position === "top" ? "1px solid black" : undefined,
             // borderBottom:
             //   block.position === "bottom" ? "1px solid black" : undefined,

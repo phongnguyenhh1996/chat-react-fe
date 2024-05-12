@@ -400,7 +400,7 @@ class MainStore {
           total += block.price[currentIdx];
           return total;
         }, 0) *
-          (REBUY_RATE + updatingPropertyInfo.level / 20)
+          (REBUY_RATE + updatingPropertyInfo.level / 10)
       ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
     );
   }
