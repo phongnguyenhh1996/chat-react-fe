@@ -148,6 +148,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               width: "100%",
               animationDelay: "0.5s",
               color,
+              filter: 'brightness(200%)'
             }}
             className="fade-in-top"
           >
@@ -192,13 +193,15 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
               block.type === "public" && MainStore.ownedBlocks[block?.name]
                 ? color
                 : block?.row,
-            borderTop: block.position === "top" ? "1px solid black" : undefined,
-            borderBottom:
-              block.position === "bottom" ? "1px solid black" : undefined,
-            borderLeft:
-              block.position === "left" ? "1px solid black" : undefined,
-            borderRight:
-              block.position === "right" ? "1px solid black" : undefined,
+              opacity: 0.7,
+            // borderTop: block.position === "top" ? "1px solid black" : undefined,
+            // borderBottom:
+            //   block.position === "bottom" ? "1px solid black" : undefined,
+            // borderLeft:
+            //   block.position === "left" ? "1px solid black" : undefined,
+            // borderRight:
+            //   block.position === "right" ? "1px solid black" : undefined,
+            // borderColor: 'rgba(255, 255, 255, 0.541)',
             position: "relative",
             order: block.position === "bottom" ? "-1" : "initial",
           }}
@@ -228,7 +231,6 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
                       }deg)`,
                       margin: "auto",
                       flex: "0 0 10px",
-
                       position: "relative",
                     }}
                     width="10px"

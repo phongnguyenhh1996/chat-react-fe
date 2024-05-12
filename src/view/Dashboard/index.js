@@ -1063,7 +1063,7 @@ const Dashboard = () => {
                 MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
                 MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
                   ? "#d8eeeb80"
-                  : "#d8eeeb",
+                  : "transparent",
             }}
             className="center-space"
           >
@@ -1161,7 +1161,6 @@ const Dashboard = () => {
                     minHeight: 50,
                     padding: 5,
                     marginTop: 10,
-                    backgroundColor: "gray",
                     color: "white",
                     fontWeight: "bold",
                   }}
