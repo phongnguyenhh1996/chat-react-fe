@@ -1060,6 +1060,9 @@ const Dashboard = () => {
               )
           )}
           <div
+            style={{
+              backgroundColor: "transparent"
+            }}
             className="center-space"
           >
             <div
