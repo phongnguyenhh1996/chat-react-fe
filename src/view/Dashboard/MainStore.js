@@ -251,25 +251,22 @@ class MainStore {
       if (this.gameState.split("--")[2] === "festival") {
         this.festivalProperty.unshift(block.name);
         this.festivalProperty.length = 2;
-        this.sendDataToChannel(["festivalProperty"]);
       }
 
       if (this.gameState.split("--")[2] === "lostElectricity") {
         this.updateOwnedBlockElectricity(block.name, 1);
-        this.sendDataToChannel(["ownedBlocks"]);
       }
 
       if (this.gameState.split("--")[2] === "downgrade") {
         this.updateOwnedBlockLevel(block.name);
-        this.sendDataToChannel(["ownedBlocks"]);
       }
 
       if (this.gameState.split("--")[2] === "fixElectricity") {
         this.updateOwnedBlockElectricity(block.name, 0);
-        this.sendDataToChannel(["ownedBlocks"]);
       }
-
-      this.setCameraKey('block-' + BLOCKS.findIndex(b => b.name = block.name));
+      
+      this.setCameraKey('block-' + BLOCKS.findIndex(b => b.name === block.name));
+      this.sendDataToChannel(["ownedBlocks"]);
 
       delay(1000).then(() => {
         if (callback) callback();
