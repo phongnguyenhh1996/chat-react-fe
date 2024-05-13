@@ -558,6 +558,9 @@ const Dashboard = () => {
             const randomKey =
               allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
             MainStore.updateOwnedBlockElectricity(randomKey, 1);
+            MainStore.updateGameState(
+              GAME_STATES.LOST_ELECTRIC_BUILDING + "--" + randomKey
+            );
             MainStore.sendDataToChannel(["ownedBlocks"]);
             await delay(1000);
           }
@@ -1380,7 +1383,14 @@ const Dashboard = () => {
                   )}
                   {MainStore.gameState.startsWith(
                     GAME_STATES.LOST_ELECTRIC_BUILDING
-                  ) && "Một ô ngẫu nhiên sẽ bị cắt điện"}
+                  ) &&
+                    !MainStore.gameState.split("--")[1] &&
+                    "Một ô ngẫu nhiên sẽ bị cắt điện"}
+                  {MainStore.gameState.startsWith(
+                    GAME_STATES.LOST_ELECTRIC_BUILDING
+                  ) &&
+                    MainStore.gameState.split("--")[1] &&
+                    `Ô ${MainStore.gameState.split("--")[1]} bị cắt điện`}
                   {MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC &&
                     "Không mất tiền vì ô hiện tại đang mất điện"}
                   {MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD &&
@@ -1434,6 +1444,14 @@ const Dashboard = () => {
                     GAME_STATES.CHOOSE_BUILDING
                   ) &&
                     `Chọn một ô để ${
+                      CHOOSE_BUILDING_ACTIONS[
+                        MainStore.gameState.split("--")[2]
+                      ]
+                    }`}
+                  {MainStore.gameState.startsWith(
+                    GAME_STATES.CHOOSEN_BUILDING
+                  ) &&
+                    `Đã chon ô ${MainStore.gameState.split("--")[1]} để ${
                       CHOOSE_BUILDING_ACTIONS[
                         MainStore.gameState.split("--")[2]
                       ]

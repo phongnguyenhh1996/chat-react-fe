@@ -115,7 +115,7 @@ img {
     align-items: center;
     justify-content: center;
     text-align: center;
-    transition: left 0.3s ease, top 0.3s ease;
+    transition: all 0.3s ease;
   }
   .block {
     position: relative;
@@ -276,10 +276,9 @@ img {
 
 .glow {
   color: #fff;
-  text-shadow: 0 0 5px #fff, 0 0 15px var(--playerColor),
-    0 0 20px var(--playerColor), 0 0 25px var(--playerColor),
-    0 0 30px var(--playerColor), 0 0 35px var(--playerColor),
-    0 0 40px var(--playerColor);
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--playerColor),
+  0 0 20px var(--playerColor), 0 0 25px var(--playerColor),
+  0 0 30px var(--playerColor), 0 0 35px var(--playerColor);
 
   @media only screen and (max-width: 920px) {
     text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--playerColor),

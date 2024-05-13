@@ -49,10 +49,20 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
           : "row-reverse",
         opacity: checkNeedToHide() ? 0.2 : 1,
         outline:
-          MainStore.sellingProperty === block.name
+          MainStore.sellingProperty === block.name ||
+          ((MainStore.gameState.startsWith(GAME_STATES.CHOOSEN_BUILDING) ||
+            MainStore.gameState.startsWith(GAME_STATES.DOWN_GRADE_BUILDING) ||
+            MainStore.gameState.startsWith(
+              GAME_STATES.LOST_ELECTRIC_BUILDING
+            )) &&
+            MainStore.gameState.split("--")[1] === block.name)
             ? "4px solid red"
             : undefined,
-        zIndex: MainStore.sellingProperty === block.name ? 999 : undefined,
+        zIndex:
+          MainStore.sellingProperty === block.name ||
+          MainStore.gameState.split("--")[1] === block.name
+            ? 999
+            : undefined,
       }}
       className={"block block--" + block.type}
       id={`block-${idx}`}
@@ -84,11 +94,11 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       >
         {MainStore.festivalProperty.includes(block.name) && (
           <div
-            className="diag fade-in-top"
+            className="diag"
             style={{
               backgroundImage: `url(${fettiSVG})`,
               position: "absolute",
-              opacity: 0.7,
+              opacity: 0.6,
               left: 0,
               top: 0,
               width: "100%",

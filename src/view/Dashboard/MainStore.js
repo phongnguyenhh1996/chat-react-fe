@@ -47,6 +47,7 @@ class MainStore {
   ownedBlocks = {};
   buyingProperty = "";
   sellingProperty = "";
+  targetedProperty = "";
   priceNeedToPay = null;
   endGame = false;
   flightDestination = randomPropertyIndex();
@@ -264,11 +265,10 @@ class MainStore {
       if (this.gameState.split("--")[2] === "fixElectricity") {
         this.updateOwnedBlockElectricity(block.name, 0);
       }
-      
-      this.setCameraKey('block-' + BLOCKS.findIndex(b => b.name === block.name));
-      this.sendDataToChannel(["ownedBlocks"]);
+      this.gameState = GAME_STATES.CHOOSEN_BUILDING + '--' + block.name + '--' + this.gameState.split("--")[2]
+      this.sendDataToChannel();
 
-      delay(1000).then(() => {
+      delay(2000).then(() => {
         if (callback) callback();
       });
 

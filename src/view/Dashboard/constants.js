@@ -271,6 +271,7 @@ export const GAME_STATES = {
   FIXING_ELECTRIC_BUILDING: "fixing_electric_building",
   RANDOM_TRAVELING: "random_traveling",
   CHOOSE_BUILDING: "choose_building",
+  CHOOSEN_BUILDING: "choosen_building",
   NO_BLOCK_TO_CHOOSE: "no_block_to_choose",
   ASK_TO_PAY_TO_OUT_JAIL: "ask_to_pay_to_out_jail",
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
