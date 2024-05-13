@@ -2054,12 +2054,14 @@ const Dashboard = () => {
         MainStore.gameState !== GAME_STATES.MOVING && (
           <div
             style={{
-              backgroundColor: "rgba(0,0,0, 0.3)",
+              backgroundColor: "rgba(0,0,0, 0.6)",
+              padding: 20,
               position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
               bottom: 0,
+              left: '50%',
+              transform: "translateX(-50%)",
+              width: 700,
+              height: 300,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
