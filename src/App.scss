@@ -115,7 +115,7 @@ img {
     align-items: center;
     justify-content: center;
     text-align: center;
-    transition: all 0.3s ease;
+    transition: left 0.3s ease, top 0.3s ease;
   }
   .block {
     position: relative;

@@ -51,9 +51,10 @@ const Dashboard = () => {
   const handleOk = async () => {
     if (!MainStore.online) {
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-      MainStore.updatePlayingId(
-        MainStore.players[random(0, MainStore.players.length - 1)].id
-      );
+      const randomPlayerId =
+        MainStore.players[random(0, MainStore.players.length - 1)].id;
+      MainStore.updatePlayingId(randomPlayerId);
+      MainStore.setCameraKey("player--" + randomPlayerId);
       MainStore.setChannel(supabase.channel("nothing"));
     } else {
       MainStore.setChannel(
@@ -82,10 +83,11 @@ const Dashboard = () => {
               MainStore.players.length === MainStore.totalPlayers &&
               MainStore.gameState === GAME_STATES.WAITING
             ) {
-              MainStore.updatePlayingId(
-                MainStore.players[random(0, MainStore.players.length - 1)].id
-              );
+              const randomPlayerId =
+                MainStore.players[random(0, MainStore.players.length - 1)].id;
+              MainStore.updatePlayingId(randomPlayerId);
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+              MainStore.setCameraKey("player--" + randomPlayerId);
             }
             MainStore.channel.track({
               data: pick(MainStore, SYNC_KEY),
@@ -134,6 +136,17 @@ const Dashboard = () => {
   );
   const currentPlayer = MainStore.players[currentPlayerIndex];
 
+  const cameraKey = MainStore.cameraKey;
+
+  useEffect(() => {
+    let key = cameraKey.split("__")[0] || cameraKey;
+    if (key === "reset") {
+      MainStore.cameraRef?.resetTransform(200);
+    } else {
+      MainStore.cameraRef?.zoomToElement(key, 1.45);
+    }
+  }, [cameraKey]);
+
   const getJailPosition = (player) => {
     return Math.floor(player.position / 36) * 36 + 12;
   };
@@ -177,6 +190,7 @@ const Dashboard = () => {
     }
     MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+    MainStore.setCameraKey("player--" + MainStore.players[nextPlayerIndex].id);
     MainStore.sendDataToChannel([
       "playingId",
       "samePlayerRolling",
@@ -270,7 +284,11 @@ const Dashboard = () => {
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
               MainStore.sendDataToChannel(["gameState", "players"]);
-              if (block.type === "property" && !currentPlayer.broke && ownedBlock.level <= 5) {
+              if (
+                block.type === "property" &&
+                !currentPlayer.broke &&
+                ownedBlock.level <= 5
+              ) {
                 await delay(2000);
                 MainStore.updateBuyingProperty(block.name);
                 MainStore.updateGameState(GAME_STATES.REBUYING);
@@ -371,6 +389,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
             );
+            MainStore.setCameraKey("reset");
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
@@ -423,6 +442,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
             );
+            MainStore.setCameraKey("reset");
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
@@ -444,6 +464,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.CHOOSE_BUILDING + "--other-building--lostElectricity"
             );
+            MainStore.setCameraKey("reset");
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
@@ -465,6 +486,7 @@ const Dashboard = () => {
             MainStore.updateGameState(
               GAME_STATES.CHOOSE_BUILDING + "--other-building--downgrade"
             );
+            MainStore.setCameraKey("reset");
             MainStore.sendDataToChannel(["gameState"]);
           } else {
             MainStore.updateGameState(
@@ -688,30 +710,34 @@ const Dashboard = () => {
     const newPosition = planeDestinationPostion
       ? planeDestinationPostion
       : currentPlayer.position + MainStore.dice[0] + MainStore.dice[1];
-    if (!planeDestinationPostion) {
+
+    if (planeDestinationPostion) {
+      MainStore.updatePlayerData(currentPlayer, "position", newPosition);
+      await delay(1000)
+      MainStore.setCameraKey("player--" + currentPlayer.id);
+      MainStore.sendDataToChannel(["players", "gameState"]);
+    } else {
       MainStore.updateGameState(GAME_STATES.MOVING);
-      await delay(1000);
     }
-    const moving = setInterval(
-      () => {
-        if (currentPlayer.position === newPosition) {
-          clearInterval(moving);
-          checkNewRound();
-          if (callback) {
-            callback();
-          }
-        } else {
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "position",
-            currentPlayer.position +
-              (newPosition > currentPlayer.position ? 1 : -1)
-          );
-          MainStore.sendDataToChannel(["players", "gameState"]);
+
+    const moving = setInterval(() => {
+      if (currentPlayer.position === newPosition) {
+        clearInterval(moving);
+        checkNewRound();
+        if (callback) {
+          callback();
         }
-      },
-      planeDestinationPostion ? 100 : 200
-    );
+      } else {
+        MainStore.updatePlayerData(
+          currentPlayer,
+          "position",
+          currentPlayer.position +
+            (newPosition > currentPlayer.position ? 1 : -1)
+        );
+        MainStore.setCameraKey("player--" + currentPlayer.id);
+        MainStore.sendDataToChannel(["players", "gameState"]);
+      }
+    }, 400);
   };
 
   const rollDice = async () => {
@@ -727,6 +753,7 @@ const Dashboard = () => {
     }, 150);
     await delay(2000);
     clearInterval(roll);
+    await delay(1000);
     movingPlayer();
     // movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
   };
@@ -740,6 +767,7 @@ const Dashboard = () => {
 
   const handleNotEnoughMoney = async (player, price) => {
     MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
+    MainStore.setCameraKey("reset");
     MainStore.setPriceNeedToPay(price);
     MainStore.sendDataToChannel(["priceNeedToPay", "gameState"]);
     const playerStillHaveMoney = await MainStore.ensureMoneyIsEnough(
@@ -950,120 +978,1089 @@ const Dashboard = () => {
   };
 
   return (
-    <TransformWrapper
-      minScale={0.5}
-      initialScale={window.innerWidth > 950 ? 0.95 : 0.95}
-      centerOnInit
-      limitToBounds={false}
-      panning={{ excluded: ["input"] }}
-    >
-      <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
-        <div
-          className="container-page"
-          style={{
-            gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
-            gridAutoColumns: `minmax(${
-              parseInt(window.innerWidth / 12) +
-              (window.innerWidth > 950 ? 0 : 10)
-            }px, 1fr)`,
-          }}
-        >
-          {BLOCKS.map((block, index) => (
-            <Block
-              nextPlayerTurn={nextPlayerTurn}
-              key={block.name + index}
-              block={block}
-              idx={index}
-            />
-          ))}
-          {MainStore.players.map(
-            (player, index) =>
-              !player.broke && (
-                <div
-                  style={{
-                    ...getBlockPositionStyle(player.position - 1),
-                    opacity:
-                      MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) ||
-                      MainStore.gameState.startsWith(
-                        GAME_STATES.CHOOSE_BUILDING
-                      )
-                        ? 0.2
-                        : 1,
-                    pointerEvents: "none",
-                  }}
-                  className="player"
-                  key={player.id}
-                  id={player.id + "avatar"}
-                >
-                  <Popover
-                    zIndex={
-                      [...Object.values(MainStore.chat)]
-                        .sort(
-                          (a, b) =>
-                            new Date(a.split("--")[1]) -
-                            new Date(b.split("--")[1])
-                        )
-                        .indexOf(MainStore.chat[player.id]) + 1
-                    }
-                    getPopupContainer={() =>
-                      document.getElementById(player.id + "avatar")
-                    }
-                    content={
-                      <div style={{ color: COLORS[index] }}>
-                        {MainStore.chat[player.id]
-                          ? MainStore.chat[player.id].split("--")[0]
-                          : ""}
-                      </div>
-                    }
-                    open={
-                      MainStore.chat[player.id] &&
-                      moment(MainStore.chat[player.id].split("--")[1])
-                        .add("5", "second")
-                        .isAfter(moment()) &&
-                      !(
+    <>
+      <TransformWrapper
+        minScale={0.5}
+        initialScale={window.innerWidth > 950 ? 0.95 : 0.85}
+        centerOnInit
+        limitToBounds={false}
+        panning={{
+          excluded: ["input", "button"],
+          allowMiddleClickPan: false,
+          allowRightClickPan: false,
+        }}
+        doubleClick={{ disabled: true }}
+        onInit={(ref) => MainStore.setCameraRef(ref)}
+      >
+        <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
+          <div
+            className="container-page"
+            style={{
+              gridAutoRows: `minmax(${parseInt(
+                window.innerHeight / 8
+              )}px, 1fr)`,
+              gridAutoColumns: `minmax(${
+                parseInt(window.innerWidth / 12) +
+                (window.innerWidth > 950 ? 0 : 10)
+              }px, 1fr)`,
+            }}
+          >
+            {BLOCKS.map((block, index) => (
+              <Block
+                nextPlayerTurn={nextPlayerTurn}
+                key={block.name + index}
+                block={block}
+                idx={index}
+              />
+            ))}
+            {MainStore.players.map(
+              (player, index) =>
+                !player.broke && (
+                  <div
+                    style={{
+                      ...getBlockPositionStyle(player.position - 1),
+                      opacity:
                         MainStore.gameState.startsWith(
                           GAME_STATES.NEED_MONEY
                         ) ||
                         MainStore.gameState.startsWith(
                           GAME_STATES.CHOOSE_BUILDING
                         )
-                      )
-                    }
-                    key={
-                      player.id +
-                      BLOCKS[(player.position - 1) % 36]?.position +
-                      (MainStore.chat[player.id] || "no-message")
-                    }
+                          ? 0.2
+                          : 1,
+                      pointerEvents: "none",
+                    }}
+                    className="player"
+                    key={player.id}
+                    id={"player--" + player.id}
                   >
-                    <img
+                    <Popover
+                      zIndex={
+                        [...Object.values(MainStore.chat)]
+                          .sort(
+                            (a, b) =>
+                              new Date(a.split("--")[1]) -
+                              new Date(b.split("--")[1])
+                          )
+                          .indexOf(MainStore.chat[player.id]) + 1
+                      }
+                      getPopupContainer={() =>
+                        document.getElementById(player.id + "avatar")
+                      }
+                      content={
+                        <div style={{ color: COLORS[index] }}>
+                          {MainStore.chat[player.id]
+                            ? MainStore.chat[player.id].split("--")[0]
+                            : ""}
+                        </div>
+                      }
+                      open={
+                        MainStore.chat[player.id] &&
+                        moment(MainStore.chat[player.id].split("--")[1])
+                          .add("5", "second")
+                          .isAfter(moment()) &&
+                        !(
+                          MainStore.gameState.startsWith(
+                            GAME_STATES.NEED_MONEY
+                          ) ||
+                          MainStore.gameState.startsWith(
+                            GAME_STATES.CHOOSE_BUILDING
+                          )
+                        )
+                      }
+                      key={
+                        player.id +
+                        BLOCKS[(player.position - 1) % 36]?.position +
+                        (MainStore.chat[player.id] || "no-message")
+                      }
+                    >
+                      <img
+                        style={{
+                          flex:
+                            window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
+                          height: window.innerWidth > 950 ? 25 : 15,
+                          position: "relative",
+                          left: index === 0 || index === 2 ? -15 : undefined,
+                          top:
+                            index === 0 || index === 1
+                              ? window.innerWidth > 950
+                                ? -20
+                                : -10
+                              : undefined,
+                          right: index === 1 || index === 3 ? -15 : undefined,
+                          bottom:
+                            (index === 2 || index === 3) &&
+                            MainStore.totalPlayers > 2
+                              ? -15
+                              : undefined,
+                        }}
+                        alt=""
+                        src={AVATARS[index]}
+                      />
+                    </Popover>
+                  </div>
+                )
+            )}
+            <div
+              style={{
+                backgroundColor: "transparent",
+              }}
+              className="center-space"
+            >
+              {MainStore.cameraKey.startsWith("reset") && (
+                <>
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 10,
+                      right: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "end",
+                      fontSize: 14,
+                      color: "white",
+                    }}
+                  >
+                    Version: {packageJson.version}
+                  </div>
+                  {MainStore.online && window.innerWidth > 950 && (
+                    <form
                       style={{
-                        flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
-                        height: window.innerWidth > 950 ? 25 : 15,
-                        position: "relative",
-                        left: index === 0 || index === 2 ? -15 : undefined,
-                        top:
-                          index === 0 || index === 1
-                            ? window.innerWidth > 950
-                              ? -20
-                              : -10
-                            : undefined,
-                        right: index === 1 || index === 3 ? -15 : undefined,
-                        bottom:
-                          (index === 2 || index === 3) &&
-                          MainStore.totalPlayers > 2
-                            ? -15
-                            : undefined,
+                        position: "absolute",
+                        bottom: 30,
+                        width: "50%",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
-                      alt=""
-                      src={AVATARS[index]}
-                    />
-                  </Popover>
+                      onSubmit={sendChat}
+                    >
+                      {!MainStore.showChat && (
+                        <div style={{ textAlign: "center", marginBottom: 6 }}>
+                          Nhấn <strong>Enter</strong> để chat
+                        </div>
+                      )}
+                      {MainStore.showChat && chatInput}
+                    </form>
+                  )}
+                  {MainStore.online && window.innerWidth <= 950 && (
+                    <Popover
+                      content={<form onSubmit={sendChat}>{chatInput}</form>}
+                    >
+                      <Button
+                        onClick={MainStore.openChat}
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: 120,
+                        }}
+                      >
+                        Chat
+                      </Button>
+                    </Popover>
+                  )}
+                  {(!MainStore.online ||
+                    (MainStore.online &&
+                      MainStore.gameState !== GAME_STATES.WAITING &&
+                      !MainStore.players[
+                        MainStore.getPlayerIndexById(MainStore.myName)
+                      ]?.broke)) && (
+                    <Popconfirm
+                      title={!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+                      description={`Bạn muốn ${
+                        !MainStore.online
+                          ? "hủy ván hiện tại và chơi lại"
+                          : "đầu hàng"
+                      } không?`}
+                      onConfirm={
+                        !MainStore.online ? MainStore.resetGame : surrender
+                      }
+                      okText={!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+                      cancelText="Không"
+                    >
+                      <Button
+                        style={{
+                          position: "absolute",
+                          top: 10,
+                          right: 10,
+                          opacity: MainStore.gameState.startsWith(
+                            GAME_STATES.NEED_MONEY
+                          )
+                            ? 0.5
+                            : 1,
+                        }}
+                      >
+                        {!MainStore.online ? "Chơi lại" : "Đầu hàng"}
+                      </Button>
+                    </Popconfirm>
+                  )}
+
+                  {MainStore.gameState !== GAME_STATES.INIT && (
+                    <div className="information" onClick={rollDice}>
+                      <div
+                        className="information__row"
+                        style={{
+                          border: "2px solid rgba(255, 255, 255, 0.541)",
+                          width: "100%",
+                          minHeight: 50,
+                          padding: 5,
+                          marginTop: 10,
+                          color: "white",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {MainStore.gameState === GAME_STATES.ROLL_DICE &&
+                          MainStore.samePlayerRolling === 1 &&
+                          (MainStore.playingId === MainStore.myName ||
+                            !MainStore.online) &&
+                          "Chạm để tung xúc xắc"}
+                        {MainStore.gameState === GAME_STATES.ROLL_DICE &&
+                          MainStore.samePlayerRolling > 1 &&
+                          `Được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`}
+                        {(MainStore.gameState === GAME_STATES.BUYING ||
+                          MainStore.gameState === GAME_STATES.UPDATING ||
+                          MainStore.gameState === GAME_STATES.REBUYING) &&
+                          buyingProperty &&
+                          (MainStore.playingId === MainStore.myName ||
+                            !MainStore.online) && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                flex: 1,
+                              }}
+                            >
+                              {(MainStore.gameState === GAME_STATES.BUYING ||
+                                MainStore.gameState ===
+                                  GAME_STATES.REBUYING) && (
+                                <div>
+                                  Bạn có muốn mua {buyingProperty.name}{" "}
+                                  {MainStore.gameState ===
+                                  GAME_STATES.REBUYING ? (
+                                    <>
+                                      của{" "}
+                                      <span
+                                        style={{
+                                          color:
+                                            COLORS[
+                                              MainStore.getPlayerIndexById(
+                                                updatingPropertyInfo.playerId
+                                              )
+                                            ],
+                                        }}
+                                      >
+                                        {
+                                          MainStore.players[
+                                            MainStore.getPlayerIndexById(
+                                              updatingPropertyInfo.playerId
+                                            )
+                                          ].name
+                                        }
+                                      </span>
+                                    </>
+                                  ) : (
+                                    ""
+                                  )}{" "}
+                                  với giá là{" "}
+                                  {MainStore.gameState === GAME_STATES.REBUYING
+                                    ? MainStore.getRebuyPrice(buyingProperty)
+                                    : buyingProperty.price[0]}
+                                  $ ?
+                                </div>
+                              )}
+                              {MainStore.gameState === GAME_STATES.UPDATING && (
+                                <div>
+                                  Bạn có muốn nâng cấp {buyingProperty.name} lên{" "}
+                                  {updatingPropertyInfo.level === 5
+                                    ? "biệt thự"
+                                    : `nhà cấp ${updatingPropertyInfo.level}`}{" "}
+                                  với giá là{" "}
+                                  {
+                                    buyingProperty.price[
+                                      updatingPropertyInfo.level
+                                    ]
+                                  }
+                                  $ ?
+                                </div>
+                              )}
+
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 10,
+                                  justifyContent: "flex-end",
+                                  marginTop: 10,
+                                }}
+                              >
+                                <Button
+                                  onClick={() => nextPlayerTurn()}
+                                  type="primary"
+                                  danger
+                                >
+                                  Không
+                                </Button>
+                                <Button
+                                  type="primary"
+                                  onClick={() =>
+                                    buyProperty(
+                                      currentPlayer,
+                                      MainStore.gameState ===
+                                        GAME_STATES.REBUYING
+                                    )
+                                  }
+                                >
+                                  Có
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.NEED_MONEY
+                        ) &&
+                          MainStore.sellingProperty &&
+                          (MainStore.playingId === MainStore.myName ||
+                            !MainStore.online) && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                flex: 1,
+                              }}
+                            >
+                              <div style={{ display: "flex" }}>
+                                <span>
+                                  Bạn muốn bán:{" "}
+                                  {sellingPropertyInfor?.level === 6 &&
+                                    "Biệt thự"}
+                                  {sellingPropertyInfor?.level === 1 && "Ô đất"}
+                                  {[2, 3, 4, 5].includes(
+                                    sellingPropertyInfor.level
+                                  ) &&
+                                    `nhà cấp ${
+                                      sellingPropertyInfor?.level - 1
+                                    }`}{" "}
+                                  {sellingProperty.name}
+                                </span>{" "}
+                              </div>
+                              <div>Tổng bán được: {getSellingPrice()}$</div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 10,
+                                  justifyContent: "flex-end",
+                                  marginTop: 10,
+                                }}
+                              >
+                                <Button type="primary" onClick={sellProperty}>
+                                  OK
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[2] !== "bank" && (
+                            <div>
+                              Mất {MainStore.gameState.split("--")[1]}$ khi đi
+                              vào ô này
+                            </div>
+                          )}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[2] === "bank" &&
+                          !MainStore.gameState.split("--")[3] && (
+                            <div>
+                              Đã thanh toán {MainStore.gameState.split("--")[1]}
+                              $
+                            </div>
+                          )}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.INC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] === "new-round" &&
+                          "Nhận được 2000$ vì qua vòng mới"}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] ===
+                            "pay-out-jail" &&
+                          "Phải trả 500$ để ra tù"}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] ===
+                            "fixElectric" &&
+                          "Mất 200$ phí sửa điện"}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] === "tax" &&
+                          `Phải nộp thuế ${
+                            MainStore.gameState.split("--")[1]
+                          }$`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DEC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] === "jail-visit" &&
+                          `Đi thăm tù hết ${
+                            MainStore.gameState.split("--")[1]
+                          }$`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.INC_MONEY
+                        ) &&
+                          MainStore.gameState.split("--")[3] === "gift" &&
+                          `Nhận được ${
+                            MainStore.gameState.split("--")[1]
+                          }$ quà sinh nhật`}
+                        {MainStore.gameState === GAME_STATES.GOING_JAIL &&
+                          "Bị đưa vào tù"}
+                        {MainStore.gameState === GAME_STATES.GOING_OUT_JAIL &&
+                          "Được ra tù do xúc xắc ra đôi"}
+                        {MainStore.gameState === GAME_STATES.DOUBLE_TO_OUT &&
+                          `Cần xúc xắc ra đôi để ra tù!`}
+                        {MainStore.gameState === GAME_STATES.RECEIVER_ON_JAIL &&
+                          `Không mất tiền do chủ nhà đang ở tù`}
+                        {MainStore.gameState ===
+                          GAME_STATES.MAX_LEVEL_PROPERTY &&
+                          `Không thể nâng cấp thêm do ô này đã đạt cấp độ tối đa`}
+                        {MainStore.gameState.startsWith(GAME_STATES.FLIGHT) &&
+                          `Được bay tới ô ${
+                            BLOCKS[MainStore.gameState.split("--")[1]].name
+                          }`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.NEED_MONEY
+                        ) &&
+                          !MainStore.sellingProperty &&
+                          "Chọn ô đất muốn bán"}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.GOING_BACK
+                        ) &&
+                          `Bị đi lùi ${
+                            MainStore.gameState.split("--")[1]
+                          } bước`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.DOWN_GRADE_BUILDING
+                        ) && (
+                          <div>
+                            Người chơi bị buộc bán 1 căn nhà.
+                            <br />
+                            {MainStore.gameState.split("--")[1] !==
+                            "no-property"
+                              ? `Bị buộc bán 1 căn nhà ở ${
+                                  MainStore.gameState.split("--")[1]
+                                }`
+                              : "Không sỡ hữu căn nhà nào"}
+                          </div>
+                        )}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.LOST_ELECTRIC_BUILDING
+                        ) && "Một ô ngẫu nhiên sẽ bị cắt điện"}
+                        {MainStore.gameState ===
+                          GAME_STATES.CURRENT_LOST_ELECTRIC &&
+                          "Không mất tiền vì ô hiện tại đang mất điện"}
+                        {MainStore.gameState ===
+                          GAME_STATES.FREE_OUT_FAIL_CARD &&
+                          "Được tặng thẻ miễn đi tù"}
+                        {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
+                          "Đã sử dụng thẻ miễn đi tù"}
+                        {MainStore.gameState ===
+                          GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL &&
+                          (MainStore.playingId === MainStore.myName ||
+                            !MainStore.online) && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                flex: 1,
+                              }}
+                            >
+                              <div>Bạn có muốn trả 500$ để ra tù không?</div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 10,
+                                  justifyContent: "flex-end",
+                                  marginTop: 10,
+                                }}
+                              >
+                                <Button
+                                  onClick={() => updatePayToOutJail(false)}
+                                  type="primary"
+                                  danger
+                                >
+                                  Không
+                                </Button>
+                                <Button
+                                  type="primary"
+                                  onClick={() => updatePayToOutJail(true)}
+                                >
+                                  Có
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
+                          "Đi tới 1 ô của bạn ngẫu nhiên hoặc được tặng 500$ đi du lịch"}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.FIXING_ELECTRIC_BUILDING
+                        ) &&
+                          `Ô ${
+                            MainStore.gameState.split("--")[1]
+                          } đang được sửa điện`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.CHOOSE_BUILDING
+                        ) &&
+                          `Chọn một ô để ${
+                            CHOOSE_BUILDING_ACTIONS[
+                              MainStore.gameState.split("--")[2]
+                            ]
+                          }`}
+                        {MainStore.gameState.startsWith(
+                          GAME_STATES.NO_BLOCK_TO_CHOOSE
+                        ) &&
+                          `Được chọn ô để ${
+                            CHOOSE_BUILDING_ACTIONS[
+                              MainStore.gameState.split("--")[1]
+                            ]
+                          } nhưng chưa có ô nào`}
+                      </div>
+                      <div className="information__row">
+                        {MainStore.gameState === GAME_STATES.WAITING && (
+                          <>
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: -45,
+                                userSelect: "auto",
+                                display: "flex",
+                                alignItems: "center",
+                                left: 0,
+                                right: 0,
+                                columnGap: 10,
+                              }}
+                            >
+                              <span style={{ flexShrink: 0 }}>ID phòng:</span>{" "}
+                              <Input readOnly defaultValue={MainStore.roomId} />
+                            </div>
+                            {range(0, MainStore.totalPlayers).map(
+                              (idx, index) => (
+                                <PlayerInfor
+                                  key={
+                                    (MainStore.players[idx]?.id || "noname-") +
+                                    index
+                                  }
+                                  playerId={MainStore.players[idx]?.id}
+                                />
+                              )
+                            )}
+                          </>
+                        )}
+                        {MainStore.gameState !== GAME_STATES.WAITING && (
+                          <PlayerInfor playerId={MainStore.playingId} />
+                        )}
+
+                        {(MainStore.gameState.startsWith(
+                          GAME_STATES.INC_MONEY
+                        ) ||
+                          MainStore.gameState.startsWith(
+                            GAME_STATES.DEC_MONEY
+                          )) && (
+                          <>
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: 0,
+                                bottom: 0,
+                                width: "100%",
+                                display: "flex",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <div
+                                className={
+                                  MainStore.gameState.startsWith(
+                                    GAME_STATES.DEC_MONEY
+                                  )
+                                    ? "fade-in-left"
+                                    : "fade-in-right"
+                                }
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "row-reverse",
+                                  maxWidth: 60,
+                                  flexWrap: "wrap-reverse",
+                                  position: "relative",
+                                  top: -30,
+                                  alignSelf: "end",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: 30,
+                                    height: 30,
+                                    position: "relative",
+                                  }}
+                                >
+                                  <Icon
+                                    symbol="money"
+                                    style={{
+                                      position: "absolute",
+                                      width: 50,
+                                      height: 50,
+                                      maxWidth: 50,
+                                    }}
+                                    width="50px"
+                                    height="50px"
+                                  />
+                                </div>
+                                {parseInt(MainStore.gameState.split("--")[1]) >=
+                                  2000 &&
+                                  parseInt(MainStore.gameState.split("--")[1]) <
+                                    3000 && (
+                                    <div
+                                      style={{
+                                        width: 30,
+                                        height: 30,
+                                        position: "relative",
+                                      }}
+                                    >
+                                      <Icon
+                                        style={{
+                                          position: "absolute",
+                                          width: 50,
+                                          height: 50,
+                                          maxWidth: 50,
+                                          top: -16,
+                                          left: 30,
+                                        }}
+                                        width={"50px"}
+                                        height={"50px"}
+                                        symbol="money"
+                                      />
+                                    </div>
+                                  )}
+                                {parseInt(MainStore.gameState.split("--")[1]) >=
+                                  3000 &&
+                                  range(
+                                    1,
+                                    Math.floor(
+                                      parseInt(
+                                        MainStore.gameState.split("--")[1]
+                                      ) / 1000
+                                    ) > 25
+                                      ? 25
+                                      : Math.floor(
+                                          parseInt(
+                                            MainStore.gameState.split("--")[1]
+                                          ) / 1000
+                                        )
+                                  ).map((numb) => (
+                                    <div
+                                      key={numb}
+                                      style={{
+                                        width: 30,
+                                        height: 30,
+                                        position: "relative",
+                                      }}
+                                    >
+                                      <Icon
+                                        style={{
+                                          position: "absolute",
+                                          width: 50,
+                                          height: 50,
+                                          maxWidth: 50,
+                                          top:
+                                            14 *
+                                            ((numb % 2 !== 0
+                                              ? numb + 1
+                                              : numb) /
+                                              2),
+                                        }}
+                                        width={"50px"}
+                                        height={"50px"}
+                                        symbol="money"
+                                      />
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>{" "}
+                            {MainStore.gameState.split("--")[2] &&
+                              MainStore.gameState.split("--")[2] !== "bank" && (
+                                <PlayerInfor
+                                  playerId={MainStore.gameState.split("--")[2]}
+                                  rightSide
+                                />
+                              )}
+                            {MainStore.gameState.split("--")[2] === "bank" && (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <Icon
+                                  symbol="bank"
+                                  width={"120px"}
+                                  height={"80px"}
+                                />
+                                <div
+                                  style={{
+                                    fontWeight: "bold",
+                                    textAlign: "center",
+                                    textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                    color: "white",
+                                    marginTop: 10,
+                                  }}
+                                >
+                                  {MainStore.gameState.startsWith(
+                                    GAME_STATES.INC_MONEY
+                                  )
+                                    ? "-"
+                                    : "+"}
+                                  {MainStore.gameState.split("--")[1]}$
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {![
+                          GAME_STATES.INC_MONEY,
+                          GAME_STATES.DEC_MONEY,
+                          GAME_STATES.WAITING,
+                        ].includes(MainStore.gameState.split("--")[0]) && (
+                          <>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                position: "relative",
+                              }}
+                            >
+                              <Die value={MainStore.dice[0]} />
+                              <Die value={MainStore.dice[1]} />
+                              {MainStore.gameState.startsWith(
+                                GAME_STATES.NEED_MONEY
+                              ) && (
+                                <div
+                                  style={{
+                                    padding: "10px 0",
+                                    color: "red",
+                                    position: "absolute",
+                                    bottom: -20,
+                                    left: "50%",
+                                    width: "160%",
+                                    transform: "translateX(-50%)",
+                                    textAlign: "center",
+                                    background:
+                                      "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
+                                  }}
+                                >
+                                  <span style={{ color: "white" }}>
+                                    Bạn cần thanh toán
+                                  </span>{" "}
+                                  <br />{" "}
+                                  <strong style={{ color: "red" }}>
+                                    {MainStore.priceNeedToPay &&
+                                      MainStore.priceNeedToPay
+                                        .toString()
+                                        .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                                    $
+                                  </strong>
+                                </div>
+                              )}
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                rowGap: 5,
+                              }}
+                            >
+                              {MainStore.players.map((player, index) => (
+                                <div
+                                  key={player.id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    position: "relative",
+                                  }}
+                                >
+                                  {player.haveFreeCard && (
+                                    <Icon
+                                      style={{
+                                        position: "absolute",
+                                        left: -20,
+                                      }}
+                                      symbol="card"
+                                      width="20px"
+                                      height="20px"
+                                    />
+                                  )}
+                                  {player.broke && (
+                                    <Icon
+                                      style={{ position: "absolute", left: -3 }}
+                                      symbol="stop"
+                                      width="30px"
+                                      height="30px"
+                                    />
+                                  )}
+                                  <Popover
+                                    placement="right"
+                                    content={
+                                      <div style={{ color: COLORS[index] }}>
+                                        {MainStore.chat[player.id]
+                                          ? MainStore.chat[player.id].split(
+                                              "--"
+                                            )[0]
+                                          : ""}
+                                      </div>
+                                    }
+                                    open={
+                                      MainStore.chat[player.id] &&
+                                      moment(
+                                        MainStore.chat[player.id].split("--")[1]
+                                      )
+                                        .add("5", "second")
+                                        .isAfter(moment()) &&
+                                      (player.broke ||
+                                        MainStore.gameState.startsWith(
+                                          GAME_STATES.NEED_MONEY
+                                        ) ||
+                                        MainStore.gameState.startsWith(
+                                          GAME_STATES.CHOOSE_BUILDING
+                                        ))
+                                    }
+                                    key={
+                                      player.id +
+                                      BLOCKS[(player.position - 1) % 36]
+                                        ?.position +
+                                      (MainStore.chat[player.id] ||
+                                        "no-message")
+                                    }
+                                  >
+                                    <img
+                                      style={{
+                                        flex: "0 0 25px",
+                                        height: 25,
+                                        marginRight: 10,
+                                      }}
+                                      alt=""
+                                      src={AVATARS[index]}
+                                    />
+                                  </Popover>
+                                  <div
+                                    style={{
+                                      textDecoration: player.broke
+                                        ? "line-through"
+                                        : undefined,
+                                      fontWeight: "bold",
+                                      color: "white",
+                                      textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                    }}
+                                  >
+                                    {player.money}$
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <Modal
+              centered
+              closable={false}
+              open={MainStore.gameState === "init"}
+              footer={[
+                <Button key="submit" onClick={handleOk}>
+                  {!MainStore.online && "Bắt đầu"}
+                  {MainStore.online && MainStore.isHost && "Tạo phòng"}
+                  {MainStore.online && !MainStore.isHost && "Tham gia"}
+                </Button>,
+              ]}
+              maskClosable={false}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                    Chơi online:
+                  </p>
+                  <Switch
+                    value={MainStore.online}
+                    onChange={MainStore.setOnline}
+                  />
                 </div>
-              )
-          )}
+                {MainStore.online && (
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                      Tạo phòng mới:
+                    </p>
+                    <Switch
+                      value={MainStore.isHost}
+                      onChange={MainStore.setHost}
+                    />
+                  </div>
+                )}
+              </div>
+              {MainStore.online && (
+                <>
+                  {!MainStore.isHost && (
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                        Nhập Id phòng:
+                      </p>
+                      <Input
+                        onChange={(e) => MainStore.setRoomId(e.target.value)}
+                        placeholder="Nhập Id phòng"
+                      />
+                    </div>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                      Nhập tên:
+                    </p>
+                    <Input
+                      value={MainStore.myName}
+                      onChange={(e) => MainStore.setMyName(e.target.value)}
+                      placeholder="Nhập tên của bạn"
+                    />
+                  </div>
+                </>
+              )}
+
+              {!MainStore.online && (
+                <>
+                  {range(0, MainStore.totalPlayers).map((numb) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: 10,
+                      }}
+                      key={numb}
+                    >
+                      <img
+                        style={{ flex: "0 0 40px", height: 40 }}
+                        alt=""
+                        src={AVATARS[numb]}
+                      />
+                      <Input
+                        value={MainStore.players[numb]?.name}
+                        onChange={(e) =>
+                          MainStore.updatePlayerData(
+                            MainStore.players[numb],
+                            "name",
+                            e.target.value
+                          )
+                        }
+                      />
+                      <div
+                        style={{
+                          flex: "0 0 20px",
+                          height: 20,
+                          borderRadius: "50%",
+                          marginLeft: 10,
+                          background: COLORS[numb],
+                        }}
+                      ></div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {(!MainStore.online ||
+                (MainStore.online && MainStore.isHost)) && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                      Số tiền ban đầu:
+                    </p>
+                    <InputNumber
+                      suffix="$"
+                      min={5000}
+                      value={MainStore.startMoney}
+                      onChange={MainStore.updateStartMoney}
+                    />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                      Tổng số người chơi:
+                    </p>
+                    <InputNumber
+                      min={2}
+                      max={4}
+                      value={MainStore.totalPlayers}
+                      onChange={MainStore.updateTotalPlayers}
+                    />
+                  </div>
+                </>
+              )}
+            </Modal>
+            <Modal
+              centered
+              closable={false}
+              open={MainStore.endGame}
+              footer={[
+                <Button
+                  key="submit"
+                  disabled={!MainStore.isHost}
+                  onClick={MainStore.resetGame}
+                >
+                  {MainStore.isHost ? "Chơi lại" : "Xin chờ"}
+                </Button>,
+              ]}
+              maskClosable={false}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
+                    Người chiến thắng là :
+                  </p>
+                </div>
+                <PlayerInfor
+                  playerId={MainStore.players.find((p) => p.winner)?.id}
+                />
+                <div>
+                  {MainStore.players.find((p) => p.winner)?.name} đã thắng vì{" "}
+                  {MainStore.players.find((p) => p.winner)?.winReason ===
+                    "not-broke" && "là người chơi tồn tại cuối cùng"}
+                  {MainStore.players.find((p) => p.winner)?.winReason ===
+                    "four-public" && "sỡ hữu 4 ô công cộng"}
+                  {MainStore.players.find((p) => p.winner)?.winReason ===
+                    "three-monopoly" && "sỡ hữu 3 monopoly"}
+                </div>
+              </div>
+            </Modal>
+          </div>
+        </TransformComponent>
+      </TransformWrapper>
+      {!MainStore.cameraKey.startsWith("reset") &&
+        MainStore.gameState !== GAME_STATES.MOVING && (
           <div
             style={{
-              backgroundColor: "transparent",
+              backgroundColor: "rgba(0,0,0, 0.3)",
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
             className="center-space"
           >
@@ -1758,175 +2755,8 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-          <Modal
-            centered
-            closable={false}
-            open={MainStore.gameState === "init"}
-            footer={[
-              <Button key="submit" onClick={handleOk}>
-                {!MainStore.online && "Bắt đầu"}
-                {MainStore.online && MainStore.isHost && "Tạo phòng"}
-                {MainStore.online && !MainStore.isHost && "Tham gia"}
-              </Button>,
-            ]}
-            maskClosable={false}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                  Chơi online:
-                </p>
-                <Switch
-                  value={MainStore.online}
-                  onChange={MainStore.setOnline}
-                />
-              </div>
-              {MainStore.online && (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                    Tạo phòng mới:
-                  </p>
-                  <Switch
-                    value={MainStore.isHost}
-                    onChange={MainStore.setHost}
-                  />
-                </div>
-              )}
-            </div>
-            {MainStore.online && (
-              <>
-                {!MainStore.isHost && (
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                      Nhập Id phòng:
-                    </p>
-                    <Input
-                      onChange={(e) => MainStore.setRoomId(e.target.value)}
-                      placeholder="Nhập Id phòng"
-                    />
-                  </div>
-                )}
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>Nhập tên:</p>
-                  <Input
-                    value={MainStore.myName}
-                    onChange={(e) => MainStore.setMyName(e.target.value)}
-                    placeholder="Nhập tên của bạn"
-                  />
-                </div>
-              </>
-            )}
-
-            {!MainStore.online && (
-              <>
-                {range(0, MainStore.totalPlayers).map((numb) => (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                    key={numb}
-                  >
-                    <img
-                      style={{ flex: "0 0 40px", height: 40 }}
-                      alt=""
-                      src={AVATARS[numb]}
-                    />
-                    <Input
-                      value={MainStore.players[numb]?.name}
-                      onChange={(e) =>
-                        MainStore.updatePlayerData(
-                          MainStore.players[numb],
-                          "name",
-                          e.target.value
-                        )
-                      }
-                    />
-                    <div
-                      style={{
-                        flex: "0 0 20px",
-                        height: 20,
-                        borderRadius: "50%",
-                        marginLeft: 10,
-                        background: COLORS[numb],
-                      }}
-                    ></div>
-                  </div>
-                ))}
-              </>
-            )}
-            {(!MainStore.online || (MainStore.online && MainStore.isHost)) && (
-              <>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                    Số tiền ban đầu:
-                  </p>
-                  <InputNumber
-                    suffix="$"
-                    min={5000}
-                    value={MainStore.startMoney}
-                    onChange={MainStore.updateStartMoney}
-                  />
-                </div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                    Tổng số người chơi:
-                  </p>
-                  <InputNumber
-                    min={2}
-                    max={4}
-                    value={MainStore.totalPlayers}
-                    onChange={MainStore.updateTotalPlayers}
-                  />
-                </div>
-              </>
-            )}
-          </Modal>
-          <Modal
-            centered
-            closable={false}
-            open={MainStore.endGame}
-            footer={[
-              <Button
-                key="submit"
-                disabled={!MainStore.isHost}
-                onClick={MainStore.resetGame}
-              >
-                {MainStore.isHost ? "Chơi lại" : "Xin chờ"}
-              </Button>,
-            ]}
-            maskClosable={false}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                  Người chiến thắng là :
-                </p>
-              </div>
-              <PlayerInfor
-                playerId={MainStore.players.find((p) => p.winner)?.id}
-              />
-              <div>
-                {MainStore.players.find((p) => p.winner)?.name} đã thắng vì{" "}
-                {MainStore.players.find((p) => p.winner)?.winReason ===
-                  "not-broke" && "là người chơi tồn tại cuối cùng"}
-                {MainStore.players.find((p) => p.winner)?.winReason ===
-                  "four-public" && "sỡ hữu 4 ô công cộng"}
-                {MainStore.players.find((p) => p.winner)?.winReason ===
-                  "three-monopoly" && "sỡ hữu 3 monopoly"}
-              </div>
-            </div>
-          </Modal>
-        </div>
-      </TransformComponent>
-    </TransformWrapper>
+        )}
+    </>
   );
 };
 

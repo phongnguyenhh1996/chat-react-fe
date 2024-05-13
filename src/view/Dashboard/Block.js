@@ -66,10 +66,9 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
           backgroundImage: MainStore.ownedBlocks[block.name]?.lostElectricity
             ? `url(${lightningSVG})`
             : "none",
-          backgroundColor:
-            MainStore.ownedBlocks[block.name]?.lostElectricity
-              ? "rgb(0 0 0 / 60%)"
-              : undefined,
+          backgroundColor: MainStore.ownedBlocks[block.name]?.lostElectricity
+            ? "rgb(0 0 0 / 60%)"
+            : undefined,
           position: "relative",
           display: "flex",
           flexDirection: "column",
@@ -151,7 +150,20 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             }}
             className="fade-in-top"
           >
-            <span className={!MainStore.ownedBlocks[block.name]?.lostElectricity ? "glow" : ""}>{price + "$"}</span>
+            <span
+              style={{
+                opacity: MainStore.ownedBlocks[block.name]?.lostElectricity
+                  ? 0.5
+                  : 1,
+              }}
+              className={
+                !MainStore.ownedBlocks[block.name]?.lostElectricity
+                  ? "glow"
+                  : ""
+              }
+            >
+              {price + "$"}
+            </span>
           </div>
         )}
 

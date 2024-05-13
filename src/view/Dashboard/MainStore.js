@@ -26,6 +26,7 @@ export const SYNC_KEY = [
   "players",
   "samePlayerRolling",
   "festivalProperty",
+  "cameraKey",
 ];
 
 class MainStore {
@@ -35,6 +36,7 @@ class MainStore {
   roomId = random(1000, 9999).toString();
   channel = null;
   showChat = false;
+  cameraRef = null;
 
   chat = {};
   totalPlayers = 2;
@@ -64,6 +66,7 @@ class MainStore {
   ];
   samePlayerRolling = 1;
   festivalProperty = [BLOCKS[randomPropertyIndex()].name];
+  cameraKey = "reset";
 
   constructor() {
     makeAutoObservable(this, null, { autoBind: true });
@@ -266,7 +269,11 @@ class MainStore {
         this.sendDataToChannel(["ownedBlocks"]);
       }
 
-      if (callback) callback();
+      this.setCameraKey('block-' + BLOCKS.findIndex(b => b.name = block.name));
+
+      delay(1000).then(() => {
+        if (callback) callback();
+      });
 
       return;
     }
@@ -404,6 +411,14 @@ class MainStore {
       ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
     );
   }
+
+  setCameraRef(ref) {
+    this.cameraRef = ref;
+  }
+
+  setCameraKey(key) {
+    this.cameraKey = key + "__" + uuidv4();
+  }
 }
 
 class Reset {
@@ -417,6 +432,7 @@ class Reset {
   flightDestination = randomPropertyIndex();
   samePlayerRolling = 1;
   festivalProperty = [BLOCKS[randomPropertyIndex()].name];
+  cameraKey = "reset";
 }
 
 const storeInstance = new MainStore();
