@@ -84,7 +84,7 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
       >
         {MainStore.festivalProperty.includes(block.name) && (
           <div
-            className="diag"
+            className="diag fade-in-top"
             style={{
               backgroundImage: `url(${fettiSVG})`,
               position: "absolute",

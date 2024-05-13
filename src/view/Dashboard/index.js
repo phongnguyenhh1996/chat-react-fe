@@ -576,7 +576,9 @@ const Dashboard = () => {
             const randomKey =
               allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
             MainStore.updateOwnedBlockElectricity(randomKey, 1);
+            MainStore.setCameraKey('block-'+ BLOCKS.findIndex(b => b.name === randomKey))
             MainStore.sendDataToChannel(["ownedBlocks"]);
+            await delay(1000);
           }
           nextPlayerTurn();
           return;
