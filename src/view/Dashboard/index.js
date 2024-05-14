@@ -730,12 +730,9 @@ const Dashboard = () => {
     )
       return;
     MainStore.updateGameState(GAME_STATES.ROLLING_DICE);
-    const roll = setInterval(() => {
-      MainStore.randomDice();
-      MainStore.sendDataToChannel(["dice"]);
-    }, 150);
-    await delay(2000);
-    clearInterval(roll);
+    MainStore.randomDice();
+    MainStore.sendDataToChannel(["dice"]);
+    await delay(1000);
     movingPlayer();
     // movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
   };
@@ -976,10 +973,9 @@ const Dashboard = () => {
           className="container-page"
           style={{
             gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
-            gridAutoColumns: `minmax(${
-              parseInt(window.innerWidth / 12) +
-              (window.innerWidth > 950 ? 0 : 10)
-            }px, 1fr)`,
+            gridAutoColumns: `minmax(${parseInt(
+              window.innerWidth / 12
+            )}px, 1fr)`,
           }}
         >
           {BLOCKS.map((block, index) => (
@@ -1085,16 +1081,44 @@ const Dashboard = () => {
               style={{
                 position: "absolute",
                 bottom: 10,
-                right: 20,
+                left: "50%",
+                transform: "translateX(-50%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "end",
-                fontSize: 14,
+                fontSize: 12,
                 color: "white",
               }}
             >
               Version: {packageJson.version}
             </div>
+            {MainStore.players.map((player, index) => {
+              let position = {};
+              if ([0, 1].includes(index)) {
+                position.top = 0;
+              }
+              if ([0, 2].includes(index)) {
+                position.left = 0;
+              }
+              if ([1, 3].includes(index)) {
+                position.right = 0;
+              }
+              if ([2, 3].includes(index)) {
+                position.bottom = 0;
+              }
+              return (
+                <div
+                  style={{
+                    position: "absolute",
+                    width: 120,
+                    height: 80,
+                    // backgroundColor: COLORS[index],
+                    ...position,
+                  }}
+                  key={player.id}
+                ></div>
+              );
+            })}
             {MainStore.online && window.innerWidth > 950 && (
               <form
                 style={{
@@ -1110,7 +1134,13 @@ const Dashboard = () => {
                 onSubmit={sendChat}
               >
                 {!MainStore.showChat && (
-                  <div style={{ textAlign: "center", marginBottom: 6 }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      marginBottom: 6,
+                      color: "white",
+                    }}
+                  >
                     Nhấn <strong>Enter</strong> để chat
                   </div>
                 )}
@@ -1131,7 +1161,7 @@ const Dashboard = () => {
                 </Button>
               </Popover>
             )}
-            {(!MainStore.online ||
+            {(MainStore.online ||
               (MainStore.online &&
                 MainStore.gameState !== GAME_STATES.WAITING &&
                 !MainStore.players[
@@ -1663,8 +1693,21 @@ const Dashboard = () => {
                           position: "relative",
                         }}
                       >
-                        <Die value={MainStore.dice[0]} />
-                        <Die value={MainStore.dice[1]} />
+                        <div
+                          style={{ display: "flex" }}
+                          className={
+                            MainStore.gameState === GAME_STATES.ROLLING_DICE
+                              ? "bounce-top"
+                              : ""
+                          }
+                        >
+                          <Die value={MainStore.dice[0]} />
+                          <Die
+                            style={{ marginLeft: -20 }}
+                            value={MainStore.dice[1]}
+                          />
+                        </div>
+
                         {MainStore.gameState.startsWith(
                           GAME_STATES.NEED_MONEY
                         ) && (
