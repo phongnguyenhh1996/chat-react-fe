@@ -236,7 +236,7 @@ export const BLOCKS = [
   },
 ];
 
-export const COLORS = ["darkred", "darkblue", "#FF5722", "darkgreen"];
+export const COLORS = ["darkred", "darkblue", "yellow", "darkgreen"];
 
 export const AVATARS = [avatar1, avatar2, avatar3, avatar4];
 
