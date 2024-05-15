@@ -5,7 +5,6 @@ import {
   Modal,
   InputNumber,
   Input,
-  Popconfirm,
   Switch,
   Popover,
   Dropdown,
@@ -47,6 +46,288 @@ const Dashboard = () => {
       SOUND[state].play();
     }
   }, [gameState]);
+
+  const getMessageFromGameState = () => {
+    if (
+      MainStore.gameState === GAME_STATES.ROLL_DICE &&
+      MainStore.samePlayerRolling === 1 &&
+      (MainStore.playingId === MainStore.myName || !MainStore.online)
+    )
+      return "Chạm để tung xúc xắc";
+    if (
+      MainStore.gameState === GAME_STATES.ROLL_DICE &&
+      MainStore.samePlayerRolling > 1
+    )
+      return `Được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`;
+    if (
+      (MainStore.gameState === GAME_STATES.BUYING ||
+        MainStore.gameState === GAME_STATES.UPDATING ||
+        MainStore.gameState === GAME_STATES.REBUYING) &&
+      buyingProperty &&
+      (MainStore.playingId === MainStore.myName || !MainStore.online)
+    )
+      return (
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
+          {(MainStore.gameState === GAME_STATES.BUYING ||
+            MainStore.gameState === GAME_STATES.REBUYING) && (
+            <div>
+              Bạn có muốn mua {buyingProperty.name}{" "}
+              {MainStore.gameState === GAME_STATES.REBUYING ? (
+                <>
+                  của{" "}
+                  <span
+                    style={{
+                      color:
+                        COLORS[
+                          MainStore.getPlayerIndexById(
+                            updatingPropertyInfo.playerId
+                          )
+                        ],
+                      filter: "brightness(2)",
+                    }}
+                  >
+                    {
+                      MainStore.players[
+                        MainStore.getPlayerIndexById(
+                          updatingPropertyInfo.playerId
+                        )
+                      ].name
+                    }
+                  </span>
+                </>
+              ) : (
+                ""
+              )}{" "}
+              với giá là{" "}
+              {MainStore.gameState === GAME_STATES.REBUYING
+                ? MainStore.getRebuyPrice(buyingProperty)
+                : buyingProperty.price[0]}
+              $ ?
+            </div>
+          )}
+          {MainStore.gameState === GAME_STATES.UPDATING && (
+            <div>
+              Bạn có muốn nâng cấp {buyingProperty.name} lên{" "}
+              {updatingPropertyInfo.level === 5
+                ? "biệt thự"
+                : `nhà cấp ${updatingPropertyInfo.level}`}{" "}
+              với giá là {buyingProperty.price[updatingPropertyInfo.level]}$ ?
+            </div>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 15,
+            }}
+          >
+            <Button onClick={() => nextPlayerTurn()} type="primary" danger>
+              Không
+            </Button>
+            <Button
+              type="primary"
+              onClick={() =>
+                buyProperty(
+                  currentPlayer,
+                  MainStore.gameState === GAME_STATES.REBUYING
+                )
+              }
+            >
+              Có
+            </Button>
+          </div>
+        </div>
+      );
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+      MainStore.sellingProperty &&
+      (MainStore.playingId === MainStore.myName || !MainStore.online)
+    )
+      return (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+          }}
+        >
+          <div style={{ display: "flex" }}>
+            <span>
+              Bạn muốn bán: {sellingPropertyInfor?.level === 6 && "Biệt thự"}
+              {sellingPropertyInfor?.level === 1 && "Ô đất"}
+              {[2, 3, 4, 5].includes(sellingPropertyInfor.level) &&
+                `nhà cấp ${sellingPropertyInfor?.level - 1}`}{" "}
+              {sellingProperty.name}
+            </span>{" "}
+          </div>
+          <div>Tổng bán được: {getSellingPrice()}$</div>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              justifyContent: "flex-end",
+              marginTop: 10,
+            }}
+          >
+            <Button type="primary" onClick={sellProperty}>
+              OK
+            </Button>
+          </div>
+        </div>
+      );
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[2] !== "bank"
+    )
+      return (
+        <div>Mất {MainStore.gameState.split("--")[1]}$ khi đi vào ô này</div>
+      );
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[2] === "bank" &&
+      !MainStore.gameState.split("--")[3]
+    )
+      return <div>Đã thanh toán {MainStore.gameState.split("--")[1]}$</div>;
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "new-round"
+    )
+      return "Nhận được 2000$ vì qua vòng mới";
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "pay-out-jail"
+    )
+      return "Phải trả 500$ để ra tù";
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "fixElectric"
+    )
+      return "Mất 200$ phí sửa điện";
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "tax"
+    )
+      return `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$`;
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "jail-visit"
+    )
+      return `Đi thăm tù hết ${MainStore.gameState.split("--")[1]}$`;
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
+      MainStore.gameState.split("--")[3] === "gift"
+    )
+      return `Nhận được ${MainStore.gameState.split("--")[1]}$ quà sinh nhật`;
+    if (MainStore.gameState === GAME_STATES.GOING_JAIL) return "Bị đưa vào tù";
+    if (MainStore.gameState === GAME_STATES.GOING_OUT_JAIL)
+      return "Được ra tù do xúc xắc ra đôi";
+    if (MainStore.gameState === GAME_STATES.DOUBLE_TO_OUT)
+      return `Cần xúc xắc ra đôi để ra tù!`;
+    if (MainStore.gameState === GAME_STATES.RECEIVER_ON_JAIL)
+      return `Không mất tiền do chủ nhà đang ở tù`;
+    if (MainStore.gameState === GAME_STATES.MAX_LEVEL_PROPERTY)
+      return `Không thể nâng cấp thêm do ô này đã đạt cấp độ tối đa`;
+    if (MainStore.gameState.startsWith(GAME_STATES.FLIGHT))
+      return `Được bay tới ô ${
+        BLOCKS[MainStore.gameState.split("--")[1]].name
+      }`;
+
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+      !MainStore.sellingProperty
+    )
+      return "Chọn ô đất muốn bán";
+    if (MainStore.gameState.startsWith(GAME_STATES.GOING_BACK))
+      return `Bị đi lùi ${MainStore.gameState.split("--")[1]} bước`;
+    if (MainStore.gameState.startsWith(GAME_STATES.DOWN_GRADE_BUILDING))
+      return (
+        <div>
+          Người chơi bị buộc bán 1 căn nhà.
+          <br />
+          {MainStore.gameState.split("--")[1] !== "no-property"
+            ? `Bị buộc bán 1 căn nhà ở ${MainStore.gameState.split("--")[1]}`
+            : "Không sỡ hữu căn nhà nào"}
+        </div>
+      );
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.LOST_ELECTRIC_BUILDING) &&
+      !MainStore.gameState.split("--")[1]
+    )
+      return "Một ô ngẫu nhiên sẽ bị cắt điện";
+    if (
+      MainStore.gameState.startsWith(GAME_STATES.LOST_ELECTRIC_BUILDING) &&
+      MainStore.gameState.split("--")[1]
+    )
+      return `Ô ${MainStore.gameState.split("--")[1]} bị cắt điện`;
+    if (MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC)
+      return "Không mất tiền vì ô hiện tại đang mất điện";
+    if (MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD)
+      return "Được tặng thẻ miễn đi tù";
+    if (MainStore.gameState === GAME_STATES.USE_FREE_CARD)
+      return "Đã sử dụng thẻ miễn đi tù";
+    if (
+      MainStore.gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL &&
+      (MainStore.playingId === MainStore.myName || !MainStore.online)
+    )
+      return (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+          }}
+        >
+          <div>Bạn có muốn trả 500$ để ra tù không?</div>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              justifyContent: "flex-end",
+              marginTop: 10,
+            }}
+          >
+            <Button
+              onClick={() => updatePayToOutJail(false)}
+              type="primary"
+              danger
+            >
+              Không
+            </Button>
+            <Button type="primary" onClick={() => updatePayToOutJail(true)}>
+              Có
+            </Button>
+          </div>
+        </div>
+      );
+    if (MainStore.gameState === GAME_STATES.RANDOM_TRAVELING)
+      return "Đi tới 1 ô của bạn ngẫu nhiên hoặc được tặng 500$ đi du lịch";
+    if (MainStore.gameState.startsWith(GAME_STATES.FIXING_ELECTRIC_BUILDING))
+      return `Ô ${MainStore.gameState.split("--")[1]} đang được sửa điện`;
+
+    if (MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING))
+      return `Chọn một ô để ${
+        CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[2]]
+      }`;
+
+    if (MainStore.gameState.startsWith(GAME_STATES.CHOOSEN_BUILDING))
+      return `Đã chon ô ${MainStore.gameState.split("--")[1]} để ${
+        CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[2]]
+      }`;
+
+    if (MainStore.gameState.startsWith(GAME_STATES.NO_BLOCK_TO_CHOOSE))
+      return `Được chọn ô để ${
+        CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[1]]
+      } nhưng chưa có ô nào`;
+    return "";
+  };
 
   const handleOk = async () => {
     if (!MainStore.online) {
@@ -699,7 +980,7 @@ const Dashboard = () => {
 
     if (!planeDestinationPostion) {
       MainStore.updateGameState(GAME_STATES.MOVING);
-      await delay(1000);
+      await delay(500);
     }
     const moving = setInterval(
       () => {
@@ -732,7 +1013,10 @@ const Dashboard = () => {
     MainStore.updateGameState(GAME_STATES.ROLLING_DICE);
     MainStore.randomDice();
     MainStore.sendDataToChannel(["dice"]);
-    await delay(1000);
+    await delay(200);
+    MainStore.randomDice();
+    MainStore.sendDataToChannel(["dice"]);
+    await delay(500);
     movingPlayer();
     // movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
   };
@@ -1005,69 +1289,28 @@ const Dashboard = () => {
                   key={player.id}
                   id={"player--" + player.id}
                 >
-                  <Popover
-                    zIndex={
-                      [...Object.values(MainStore.chat)]
-                        .sort(
-                          (a, b) =>
-                            new Date(a.split("--")[1]) -
-                            new Date(b.split("--")[1])
-                        )
-                        .indexOf(MainStore.chat[player.id]) + 1
-                    }
-                    getPopupContainer={() =>
-                      document.getElementById(player.id + "avatar")
-                    }
-                    content={
-                      <div style={{ color: COLORS[index] }}>
-                        {MainStore.chat[player.id]
-                          ? MainStore.chat[player.id].split("--")[0]
-                          : ""}
-                      </div>
-                    }
-                    open={
-                      MainStore.chat[player.id] &&
-                      moment(MainStore.chat[player.id].split("--")[1])
-                        .add("5", "second")
-                        .isAfter(moment()) &&
-                      !(
-                        MainStore.gameState.startsWith(
-                          GAME_STATES.NEED_MONEY
-                        ) ||
-                        MainStore.gameState.startsWith(
-                          GAME_STATES.CHOOSE_BUILDING
-                        )
-                      )
-                    }
-                    key={
-                      player.id +
-                      BLOCKS[(player.position - 1) % 36]?.position +
-                      (MainStore.chat[player.id] || "no-message")
-                    }
-                  >
-                    <img
-                      style={{
-                        flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
-                        height: window.innerWidth > 950 ? 25 : 15,
-                        position: "relative",
-                        left: index === 0 || index === 2 ? -15 : undefined,
-                        top:
-                          index === 0 || index === 1
-                            ? window.innerWidth > 950
-                              ? -20
-                              : -10
-                            : undefined,
-                        right: index === 1 || index === 3 ? -15 : undefined,
-                        bottom:
-                          (index === 2 || index === 3) &&
-                          MainStore.totalPlayers > 2
-                            ? -15
-                            : undefined,
-                      }}
-                      alt=""
-                      src={AVATARS[index]}
-                    />
-                  </Popover>
+                  <img
+                    style={{
+                      flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
+                      height: window.innerWidth > 950 ? 25 : 15,
+                      position: "relative",
+                      left: index === 0 || index === 2 ? -15 : undefined,
+                      top:
+                        index === 0 || index === 1
+                          ? window.innerWidth > 950
+                            ? -20
+                            : -10
+                          : undefined,
+                      right: index === 1 || index === 3 ? -15 : undefined,
+                      bottom:
+                        (index === 2 || index === 3) &&
+                        MainStore.totalPlayers > 2
+                          ? -15
+                          : undefined,
+                    }}
+                    alt=""
+                    src={AVATARS[index]}
+                  />
                 </div>
               )
           )}
@@ -1110,13 +1353,114 @@ const Dashboard = () => {
                 <div
                   style={{
                     position: "absolute",
-                    width: 120,
-                    height: 80,
-                    // backgroundColor: COLORS[index],
+                    maxWidth: 200,
+                    border: "1px solid",
+                    borderColor: COLORS[index],
+                    borderRadius: 5,
+                    display: "flex",
+                    flexDirection: index > 1 ? "column-reverse" : "column",
+                    overflow: "hidden",
+                    background: "rgba(0,0,0,0.2)",
                     ...position,
                   }}
                   key={player.id}
-                ></div>
+                >
+                  <Popover
+                    placement={[0, 2].includes(index) ?"right" : 'left'}
+                    content={
+                      <div
+                        style={{
+                          color: COLORS[index],
+                          fontWeight: "bold",
+                          fontSize: 15,
+                        }}
+                      >
+                        {MainStore.chat[player.id]
+                          ? MainStore.chat[player.id].split("--")[0]
+                          : ""}
+                      </div>
+                    }
+                    open={
+                      MainStore.chat[player.id] &&
+                      moment(MainStore.chat[player.id].split("--")[1])
+                        .add("5", "second")
+                        .isAfter(moment())
+                    }
+                    key={
+                      player.id +
+                      BLOCKS[(player.position - 1) % 36]?.position +
+                      (MainStore.chat[player.id] || "no-message")
+                    }
+                  >
+                    {" "}
+                    <div
+                      style={{
+                        color: "white",
+                        backgroundColor: COLORS[index],
+                        padding: 10,
+                        display: "flex",
+                        justifyContent: "center",
+                        fontSize: 14,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {player.name}
+                    </div>
+                  </Popover>
+
+                  <div
+                    key={player.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      position: "relative",
+                      padding: 10,
+                    }}
+                  >
+                    {player.haveFreeCard && (
+                      <Icon
+                        style={{
+                          position: "absolute",
+                          left: -20,
+                        }}
+                        symbol="card"
+                        width="20px"
+                        height="20px"
+                      />
+                    )}
+                    {player.broke && (
+                      <Icon
+                        style={{ position: "absolute", left: -3 }}
+                        symbol="stop"
+                        width="30px"
+                        height="30px"
+                      />
+                    )}
+
+                    <img
+                      style={{
+                        flex: "0 0 25px",
+                        height: 25,
+                        marginRight: 10,
+                      }}
+                      alt=""
+                      src={AVATARS[index]}
+                    />
+
+                    <div
+                      style={{
+                        fontSize: 17,
+                        textDecoration: player.broke
+                          ? "line-through"
+                          : undefined,
+                        fontWeight: "bold",
+                        color: "white",
+                      }}
+                    >
+                      {player.money}$
+                    </div>
+                  </div>
+                </div>
               );
             })}
             {MainStore.online && window.innerWidth > 950 && (
@@ -1161,7 +1505,7 @@ const Dashboard = () => {
                 </Button>
               </Popover>
             )}
-            {(MainStore.online ||
+            {/* {(MainStore.online ||
               (MainStore.online &&
                 MainStore.gameState !== GAME_STATES.WAITING &&
                 !MainStore.players[
@@ -1193,308 +1537,38 @@ const Dashboard = () => {
                   {!MainStore.online ? "Chơi lại" : "Đầu hàng"}
                 </Button>
               </Popconfirm>
-            )}
+            )} */}
 
             {MainStore.gameState !== GAME_STATES.INIT && (
               <div className="information" onClick={rollDice}>
                 <div
                   className="information__row"
                   style={{
-                    border: "2px solid rgba(255, 255, 255, 0.541)",
                     width: "100%",
                     minHeight: 50,
                     padding: 5,
                     marginTop: 10,
                     color: "white",
                     fontWeight: "bold",
+                    borderRadius: 10,
+                    background: "rgba(0,0,0,0.2)",
                   }}
                 >
-                  {MainStore.gameState === GAME_STATES.ROLL_DICE &&
-                    MainStore.samePlayerRolling === 1 &&
-                    (MainStore.playingId === MainStore.myName ||
-                      !MainStore.online) &&
-                    "Chạm để tung xúc xắc"}
-                  {MainStore.gameState === GAME_STATES.ROLL_DICE &&
-                    MainStore.samePlayerRolling > 1 &&
-                    `Được tung lần ${MainStore.samePlayerRolling} do xúc xắc ra đôi`}
-                  {(MainStore.gameState === GAME_STATES.BUYING ||
-                    MainStore.gameState === GAME_STATES.UPDATING ||
-                    MainStore.gameState === GAME_STATES.REBUYING) &&
-                    buyingProperty &&
-                    (MainStore.playingId === MainStore.myName ||
-                      !MainStore.online) && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          flex: 1,
-                        }}
-                      >
-                        {(MainStore.gameState === GAME_STATES.BUYING ||
-                          MainStore.gameState === GAME_STATES.REBUYING) && (
-                          <div>
-                            Bạn có muốn mua {buyingProperty.name}{" "}
-                            {MainStore.gameState === GAME_STATES.REBUYING ? (
-                              <>
-                                của{" "}
-                                <span
-                                  style={{
-                                    color:
-                                      COLORS[
-                                        MainStore.getPlayerIndexById(
-                                          updatingPropertyInfo.playerId
-                                        )
-                                      ],
-                                  }}
-                                >
-                                  {
-                                    MainStore.players[
-                                      MainStore.getPlayerIndexById(
-                                        updatingPropertyInfo.playerId
-                                      )
-                                    ].name
-                                  }
-                                </span>
-                              </>
-                            ) : (
-                              ""
-                            )}{" "}
-                            với giá là{" "}
-                            {MainStore.gameState === GAME_STATES.REBUYING
-                              ? MainStore.getRebuyPrice(buyingProperty)
-                              : buyingProperty.price[0]}
-                            $ ?
-                          </div>
-                        )}
-                        {MainStore.gameState === GAME_STATES.UPDATING && (
-                          <div>
-                            Bạn có muốn nâng cấp {buyingProperty.name} lên{" "}
-                            {updatingPropertyInfo.level === 5
-                              ? "biệt thự"
-                              : `nhà cấp ${updatingPropertyInfo.level}`}{" "}
-                            với giá là{" "}
-                            {buyingProperty.price[updatingPropertyInfo.level]}$
-                            ?
-                          </div>
-                        )}
-
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            justifyContent: "flex-end",
-                            marginTop: 10,
-                          }}
-                        >
-                          <Button
-                            onClick={() => nextPlayerTurn()}
-                            type="primary"
-                            danger
-                          >
-                            Không
-                          </Button>
-                          <Button
-                            type="primary"
-                            onClick={() =>
-                              buyProperty(
-                                currentPlayer,
-                                MainStore.gameState === GAME_STATES.REBUYING
-                              )
-                            }
-                          >
-                            Có
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-                    MainStore.sellingProperty &&
-                    (MainStore.playingId === MainStore.myName ||
-                      !MainStore.online) && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          flex: 1,
-                        }}
-                      >
-                        <div style={{ display: "flex" }}>
-                          <span>
-                            Bạn muốn bán:{" "}
-                            {sellingPropertyInfor?.level === 6 && "Biệt thự"}
-                            {sellingPropertyInfor?.level === 1 && "Ô đất"}
-                            {[2, 3, 4, 5].includes(
-                              sellingPropertyInfor.level
-                            ) &&
-                              `nhà cấp ${sellingPropertyInfor?.level - 1}`}{" "}
-                            {sellingProperty.name}
-                          </span>{" "}
-                        </div>
-                        <div>Tổng bán được: {getSellingPrice()}$</div>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            justifyContent: "flex-end",
-                            marginTop: 10,
-                          }}
-                        >
-                          <Button type="primary" onClick={sellProperty}>
-                            OK
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[2] !== "bank" && (
-                      <div>
-                        Mất {MainStore.gameState.split("--")[1]}$ khi đi vào ô
-                        này
-                      </div>
-                    )}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[2] === "bank" &&
-                    !MainStore.gameState.split("--")[3] && (
-                      <div>
-                        Đã thanh toán {MainStore.gameState.split("--")[1]}$
-                      </div>
-                    )}
-                  {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "new-round" &&
-                    "Nhận được 2000$ vì qua vòng mới"}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "pay-out-jail" &&
-                    "Phải trả 500$ để ra tù"}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "fixElectric" &&
-                    "Mất 200$ phí sửa điện"}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "tax" &&
-                    `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$`}
-                  {MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "jail-visit" &&
-                    `Đi thăm tù hết ${MainStore.gameState.split("--")[1]}$`}
-                  {MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) &&
-                    MainStore.gameState.split("--")[3] === "gift" &&
-                    `Nhận được ${
-                      MainStore.gameState.split("--")[1]
-                    }$ quà sinh nhật`}
-                  {MainStore.gameState === GAME_STATES.GOING_JAIL &&
-                    "Bị đưa vào tù"}
-                  {MainStore.gameState === GAME_STATES.GOING_OUT_JAIL &&
-                    "Được ra tù do xúc xắc ra đôi"}
-                  {MainStore.gameState === GAME_STATES.DOUBLE_TO_OUT &&
-                    `Cần xúc xắc ra đôi để ra tù!`}
-                  {MainStore.gameState === GAME_STATES.RECEIVER_ON_JAIL &&
-                    `Không mất tiền do chủ nhà đang ở tù`}
-                  {MainStore.gameState === GAME_STATES.MAX_LEVEL_PROPERTY &&
-                    `Không thể nâng cấp thêm do ô này đã đạt cấp độ tối đa`}
-                  {MainStore.gameState.startsWith(GAME_STATES.FLIGHT) &&
-                    `Được bay tới ô ${
-                      BLOCKS[MainStore.gameState.split("--")[1]].name
-                    }`}
-                  {MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
-                    !MainStore.sellingProperty &&
-                    "Chọn ô đất muốn bán"}
-                  {MainStore.gameState.startsWith(GAME_STATES.GOING_BACK) &&
-                    `Bị đi lùi ${MainStore.gameState.split("--")[1]} bước`}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.DOWN_GRADE_BUILDING
-                  ) && (
-                    <div>
-                      Người chơi bị buộc bán 1 căn nhà.
-                      <br />
-                      {MainStore.gameState.split("--")[1] !== "no-property"
-                        ? `Bị buộc bán 1 căn nhà ở ${
-                            MainStore.gameState.split("--")[1]
-                          }`
-                        : "Không sỡ hữu căn nhà nào"}
+                  {getMessageFromGameState() && (
+                    <div
+                      style={{
+                        padding: 15,
+                        textAlign: "center",
+                        width: "100%",
+                      }}
+                      className=" fade-in-top "
+                      key={MainStore.gameState}
+                    >
+                      {getMessageFromGameState()}
                     </div>
                   )}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.LOST_ELECTRIC_BUILDING
-                  ) &&
-                    !MainStore.gameState.split("--")[1] &&
-                    "Một ô ngẫu nhiên sẽ bị cắt điện"}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.LOST_ELECTRIC_BUILDING
-                  ) &&
-                    MainStore.gameState.split("--")[1] &&
-                    `Ô ${MainStore.gameState.split("--")[1]} bị cắt điện`}
-                  {MainStore.gameState === GAME_STATES.CURRENT_LOST_ELECTRIC &&
-                    "Không mất tiền vì ô hiện tại đang mất điện"}
-                  {MainStore.gameState === GAME_STATES.FREE_OUT_FAIL_CARD &&
-                    "Được tặng thẻ miễn đi tù"}
-                  {MainStore.gameState === GAME_STATES.USE_FREE_CARD &&
-                    "Đã sử dụng thẻ miễn đi tù"}
-                  {MainStore.gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL &&
-                    (MainStore.playingId === MainStore.myName ||
-                      !MainStore.online) && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          flex: 1,
-                        }}
-                      >
-                        <div>Bạn có muốn trả 500$ để ra tù không?</div>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            justifyContent: "flex-end",
-                            marginTop: 10,
-                          }}
-                        >
-                          <Button
-                            onClick={() => updatePayToOutJail(false)}
-                            type="primary"
-                            danger
-                          >
-                            Không
-                          </Button>
-                          <Button
-                            type="primary"
-                            onClick={() => updatePayToOutJail(true)}
-                          >
-                            Có
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  {MainStore.gameState === GAME_STATES.RANDOM_TRAVELING &&
-                    "Đi tới 1 ô của bạn ngẫu nhiên hoặc được tặng 500$ đi du lịch"}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.FIXING_ELECTRIC_BUILDING
-                  ) &&
-                    `Ô ${
-                      MainStore.gameState.split("--")[1]
-                    } đang được sửa điện`}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.CHOOSE_BUILDING
-                  ) &&
-                    `Chọn một ô để ${
-                      CHOOSE_BUILDING_ACTIONS[
-                        MainStore.gameState.split("--")[2]
-                      ]
-                    }`}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.CHOOSEN_BUILDING
-                  ) &&
-                    `Đã chon ô ${MainStore.gameState.split("--")[1]} để ${
-                      CHOOSE_BUILDING_ACTIONS[
-                        MainStore.gameState.split("--")[2]
-                      ]
-                    }`}
-                  {MainStore.gameState.startsWith(
-                    GAME_STATES.NO_BLOCK_TO_CHOOSE
-                  ) &&
-                    `Được chọn ô để ${
-                      CHOOSE_BUILDING_ACTIONS[
-                        MainStore.gameState.split("--")[1]
-                      ]
-                    } nhưng chưa có ô nào`}
                 </div>
+
                 <div className="information__row">
                   {MainStore.gameState === GAME_STATES.WAITING && (
                     <>
@@ -1774,34 +1848,7 @@ const Dashboard = () => {
                                 height="30px"
                               />
                             )}
-                            <Popover
-                              placement="right"
-                              content={
-                                <div style={{ color: COLORS[index] }}>
-                                  {MainStore.chat[player.id]
-                                    ? MainStore.chat[player.id].split("--")[0]
-                                    : ""}
-                                </div>
-                              }
-                              open={
-                                MainStore.chat[player.id] &&
-                                moment(MainStore.chat[player.id].split("--")[1])
-                                  .add("5", "second")
-                                  .isAfter(moment()) &&
-                                (player.broke ||
-                                  MainStore.gameState.startsWith(
-                                    GAME_STATES.NEED_MONEY
-                                  ) ||
-                                  MainStore.gameState.startsWith(
-                                    GAME_STATES.CHOOSE_BUILDING
-                                  ))
-                              }
-                              key={
-                                player.id +
-                                BLOCKS[(player.position - 1) % 36]?.position +
-                                (MainStore.chat[player.id] || "no-message")
-                              }
-                            >
+
                               <img
                                 style={{
                                   flex: "0 0 25px",
@@ -1811,7 +1858,6 @@ const Dashboard = () => {
                                 alt=""
                                 src={AVATARS[index]}
                               />
-                            </Popover>
                             <div
                               style={{
                                 textDecoration: player.broke

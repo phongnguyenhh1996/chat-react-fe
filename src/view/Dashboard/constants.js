@@ -236,9 +236,9 @@ export const BLOCKS = [
   },
 ];
 
-export const COLORS = ["darkred", "darkblue", "yellow", "darkgreen"];
+export const COLORS = ["darkred", "darkblue", "darkgreen", "darkgoldenrod"];
 
-export const AVATARS = [avatar1, avatar2, avatar3, avatar4];
+export const AVATARS = [avatar1, avatar2, avatar4, avatar3];
 
 export const GAME_STATES = {
   INIT: "init",
