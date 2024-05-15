@@ -176,7 +176,9 @@ const Dashboard = () => {
               {sellingProperty.name}
             </span>{" "}
           </div>
-          <div>Tổng bán được: {getSellingPrice()}$</div>
+          <div style={{ textAlign: "left" }}>
+            Tổng bán được: {getSellingPrice()}$
+          </div>
           <div
             style={{
               display: "flex",
@@ -1433,7 +1435,7 @@ const Dashboard = () => {
                     )}
                     {player.broke && (
                       <Icon
-                        style={{ position: "absolute", left: -3 }}
+                        style={{ position: "absolute", left: 8 }}
                         symbol="stop"
                         width="30px"
                         height="30px"
