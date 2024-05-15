@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { debounce, get, pick, random, range } from "lodash";
 import {
   Button,
@@ -37,6 +37,7 @@ const supabase = createClient(
 
 const Dashboard = () => {
   const [msg, setMsg] = useState("");
+  const timerRef = useRef();
 
   const gameState = MainStore.gameState;
 
@@ -44,6 +45,13 @@ const Dashboard = () => {
     const state = gameState?.split("--")[0] || gameState;
     if (SOUND[state]?.play) {
       SOUND[state].play();
+    }
+    if (MainStore.isHost) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      } else {
+        timerRef.current = setTimeout(MainStore.sendDataToChannel, 1000 * 30);
+      }
     }
   }, [gameState]);
 
@@ -1366,7 +1374,7 @@ const Dashboard = () => {
                   key={player.id}
                 >
                   <Popover
-                    placement={[0, 2].includes(index) ?"right" : 'left'}
+                    placement={[0, 2].includes(index) ? "right" : "left"}
                     content={
                       <div
                         style={{
@@ -1385,11 +1393,6 @@ const Dashboard = () => {
                       moment(MainStore.chat[player.id].split("--")[1])
                         .add("5", "second")
                         .isAfter(moment())
-                    }
-                    key={
-                      player.id +
-                      BLOCKS[(player.position - 1) % 36]?.position +
-                      (MainStore.chat[player.id] || "no-message")
                     }
                   >
                     {" "}
@@ -1584,7 +1587,9 @@ const Dashboard = () => {
                           columnGap: 10,
                         }}
                       >
-                        <span style={{ flexShrink: 0 }}>ID phòng:</span>{" "}
+                        <span style={{ flexShrink: 0, color: "white" }}>
+                          ID phòng:
+                        </span>{" "}
                         <Input readOnly defaultValue={MainStore.roomId} />
                       </div>
                       {range(0, MainStore.totalPlayers).map((idx, index) => (
@@ -1849,15 +1854,15 @@ const Dashboard = () => {
                               />
                             )}
 
-                              <img
-                                style={{
-                                  flex: "0 0 25px",
-                                  height: 25,
-                                  marginRight: 10,
-                                }}
-                                alt=""
-                                src={AVATARS[index]}
-                              />
+                            <img
+                              style={{
+                                flex: "0 0 25px",
+                                height: 25,
+                                marginRight: 10,
+                              }}
+                              alt=""
+                              src={AVATARS[index]}
+                            />
                             <div
                               style={{
                                 textDecoration: player.broke
