@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { debounce, get, pick, random, range } from "lodash";
 import {
   Button,
@@ -365,18 +366,17 @@ const Dashboard = () => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
           })
           .on("presence", { event: "join" }, ({ key }) => {
-            if (key === "host" || MainStore.gameState !== GAME_STATES.WAITING) {
+            if (key === "host") {
               return;
             }
-            MainStore.addPlayer(key);
-            if (
-              MainStore.players.length === MainStore.totalPlayers &&
-              MainStore.gameState === GAME_STATES.WAITING
-            ) {
-              const randomPlayerId =
-                MainStore.players[random(0, MainStore.players.length - 1)].id;
-              MainStore.updatePlayingId(randomPlayerId);
-              MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+            if (MainStore.players.length + 1 <= MainStore.totalPlayers) {
+              MainStore.addPlayer(key);
+              if (MainStore.gameState === GAME_STATES.WAITING) {
+                const randomPlayerId =
+                  MainStore.players[random(0, MainStore.players.length - 1)].id;
+                MainStore.updatePlayingId(randomPlayerId);
+                MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+              }
             }
             MainStore.channel.track({
               data: pick(MainStore, SYNC_KEY),
@@ -396,14 +396,7 @@ const Dashboard = () => {
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
           })
-          .on("presence", { event: "sync" }, ({ key }) => {
-            if (
-              key === MainStore.myName ||
-              MainStore.playingId === MainStore.myName ||
-              MainStore.gameState !== GAME_STATES.WAITING
-            ) {
-              return;
-            }
+          .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
             MainStore.updateStore(get(newState, ["host", "0", "data"], {}));
           })
@@ -415,6 +408,7 @@ const Dashboard = () => {
             await MainStore.channel.track({
               online_at: new Date().toISOString(),
             });
+            MainStore.updateGameState(GAME_STATES.WAITING);
           });
       }
     }
@@ -1235,6 +1229,23 @@ const Dashboard = () => {
     MainStore.closeChat();
   };
 
+  const requestLoan = (myId, playerId) => {
+    MainStore.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        data: {
+          loans: {
+            id: uuidv4(),
+            from: myId,
+            to: playerId,
+            status: "request",
+          },
+        },
+      },
+    });
+  };
+
   const surrender = () => {
     const player =
       MainStore.players[MainStore.getPlayerIndexById(MainStore.myName)];
@@ -1364,13 +1375,13 @@ const Dashboard = () => {
                   style={{
                     position: "absolute",
                     maxWidth: 200,
+                    minWidth: 150,
                     border: "1px solid",
                     borderColor: COLORS[index],
                     borderRadius: 5,
                     display: "flex",
-                    flexDirection: index > 1 ? "column-reverse" : "column",
-                    overflow: "hidden",
                     background: "rgba(0,0,0,0.2)",
+                    flexDirection: "column",
                     ...position,
                   }}
                   key={player.id}
@@ -1397,7 +1408,6 @@ const Dashboard = () => {
                         .isAfter(moment())
                     }
                   >
-                    {" "}
                     <div
                       style={{
                         color: "white",
@@ -1407,6 +1417,8 @@ const Dashboard = () => {
                         justifyContent: "center",
                         fontSize: 14,
                         fontWeight: "bold",
+                        borderTopLeftRadius: 5,
+                        borderTopRightRadius: 5,
                       }}
                     >
                       {player.name}
@@ -1422,17 +1434,6 @@ const Dashboard = () => {
                       padding: 10,
                     }}
                   >
-                    {player.haveFreeCard && (
-                      <Icon
-                        style={{
-                          position: "absolute",
-                          left: -20,
-                        }}
-                        symbol="card"
-                        width="20px"
-                        height="20px"
-                      />
-                    )}
                     {player.broke && (
                       <Icon
                         style={{ position: "absolute", left: 8 }}
@@ -1447,6 +1448,7 @@ const Dashboard = () => {
                         flex: "0 0 25px",
                         height: 25,
                         marginRight: 10,
+                        order: 0,
                       }}
                       alt=""
                       src={AVATARS[index]}
