@@ -48,9 +48,9 @@ const Dashboard = () => {
     }
     if (MainStore.isHost) {
       if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        clearInterval(timerRef.current);
       } else {
-        timerRef.current = setTimeout(MainStore.sendDataToChannel, 1000 * 30);
+        timerRef.current = setInterval(MainStore.sendDataToChannel, 1000 * 30);
       }
     }
   }, [gameState]);
