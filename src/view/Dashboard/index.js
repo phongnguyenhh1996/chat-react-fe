@@ -1486,6 +1486,8 @@ const Dashboard = () => {
                       player.money >= 2000 &&
                       !player.loan &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
+                      !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
+                      !currentPlayer.onJail &&
                       !currentPlayer?.loan && (
                         <Button
                           ghost

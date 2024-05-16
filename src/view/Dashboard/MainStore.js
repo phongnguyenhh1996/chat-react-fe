@@ -495,32 +495,18 @@ class MainStore {
                       "loan",
                       { turnLeft: 9, price: 2500, to: newLoan.to }
                     );
-                    const savedState = this.gameState;
-                    this.updateGameState(
-                      GAME_STATES.INC_MONEY + "--" + 2000 + "--" + newLoan.to
-                    );
-                    this.channel.send({
-                      type: "broadcast",
-                      event: "updateStore",
-                      payload: {
-                        data: {
-                          loans: newLoan,
-                          players: this.players,
-                          gameState: this.gameState,
+                    this.channel
+                      .send({
+                        type: "broadcast",
+                        event: "updateStore",
+                        payload: {
+                          data: {
+                            loans: newLoan,
+                            players: this.players,
+                          },
                         },
-                      },
-                    });
-                    await delay(2000);
-                    this.updateGameState(savedState);
-                    this.channel.send({
-                      type: "broadcast",
-                      event: "updateStore",
-                      payload: {
-                        data: {
-                          gameState: this.gameState,
-                        },
-                      },
-                    });
+                      })
+                      .then(() => SOUND[GAME_STATES.INC_MONEY].play());
                   }}
                   type="primary"
                   style={{ marginLeft: 15 }}
@@ -575,6 +561,7 @@ class MainStore {
         })
         .then(() => this.messageApi.destroy(loan.id));
     } else if (loan.status === "success") {
+      SOUND[GAME_STATES.INC_MONEY].play();
       this.messageApi
         .open({
           type: "success",
@@ -595,7 +582,7 @@ class MainStore {
                 >
                   {loan.to !== this.myName ? loan.to : "bạn"}
                 </strong>
-                đã đồng ý cho
+                đã cho
                 <strong
                   style={{
                     color: COLORS[this.getPlayerIndexById(loan.from)],
@@ -604,7 +591,7 @@ class MainStore {
                 >
                   {loan.from}
                 </strong>
-                mượn tiền
+                mượn 2000$
               </div>
             </div>
           ),
