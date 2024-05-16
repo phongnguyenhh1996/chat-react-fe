@@ -10,6 +10,7 @@ import {
   Popover,
   Dropdown,
   message,
+  Popconfirm,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -1463,13 +1464,22 @@ const Dashboard = () => {
                       </Button>
                     )}
                     {player.id === MainStore.myName && (
-                      <Button
-                        ghost
-                        size="large"
-                        shape="circle"
-                        icon={<Icon symbol="flag" width="20px" height="20px" />}
-                        onClick={surrender}
-                      />
+                      <Popconfirm
+                        title={"Đầu hàng"}
+                        description={"Bạn muốn đầu hàng không?"}
+                        onConfirm={surrender}
+                        okText={"Đầu hàng"}
+                        cancelText="Không"
+                      >
+                        <Button
+                          ghost
+                          size="large"
+                          shape="circle"
+                          icon={
+                            <Icon symbol="flag" width="20px" height="20px" />
+                          }
+                        />
+                      </Popconfirm>
                     )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
