@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { debounce, get, pick, random, range } from "lodash";
 import {
@@ -42,7 +42,6 @@ const supabase = createClient(
 const Dashboard = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [msg, setMsg] = useState("");
-  const timerRef = useRef();
 
   const gameState = MainStore.gameState;
 
@@ -63,13 +62,6 @@ const Dashboard = () => {
     if (SOUND[state]?.play) {
       SOUND[state].play();
     }
-    if (MainStore.isHost) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      } else {
-        timerRef.current = setInterval(MainStore.sendDataToChannel, 1000 * 30);
-      }
-    }
   }, [gameState]);
 
   const getMessageFromGameState = () => {
@@ -82,12 +74,13 @@ const Dashboard = () => {
         <div>
           <Button
             type="primary"
-            onClick={() => {
+            onClick={async () => {
+              await delay(200);
               const randomPlayerId =
                 MainStore.players[random(0, MainStore.players.length - 1)].id;
               MainStore.updatePlayingId(randomPlayerId);
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-              MainStore.sendDataToChannel()
+              MainStore.sendDataToChannel();
             }}
           >
             Bắt đầu
@@ -95,6 +88,7 @@ const Dashboard = () => {
         </div>
       );
     }
+    console.log(MainStore.gameState, MainStore.playingId, MainStore.myName);
     if (
       MainStore.gameState === GAME_STATES.ROLL_DICE &&
       MainStore.samePlayerRolling === 1 &&
@@ -1256,13 +1250,15 @@ const Dashboard = () => {
     MainStore.sendDataToChannel(["gameState", "players"]);
   };
 
+  const openChat = debounce(MainStore.openChat, 100)
+
   useEffect(() => {
     document.addEventListener("keydown", (e) => {
       if (e.code === "Enter" && !MainStore.showChat) {
-        debounce(MainStore.openChat, 100)();
+        openChat();
       }
     });
-  }, []);
+  }, [openChat]);
 
   const chatInput = (
     <Dropdown
@@ -1643,7 +1639,7 @@ const Dashboard = () => {
                 </div>
               );
             })}
-            {MainStore.online && window.innerWidth > 950 && (
+            {MainStore.online && (
               <form
                 style={{
                   position: "absolute",
@@ -1664,26 +1660,13 @@ const Dashboard = () => {
                       marginBottom: 6,
                       color: "white",
                     }}
+                    onClick={openChat}
                   >
-                    Nhấn <strong>Enter</strong> để chat
+                    Nhấn <strong>Enter/chạm</strong> để chat
                   </div>
                 )}
                 {MainStore.showChat && chatInput}
               </form>
-            )}
-            {MainStore.online && window.innerWidth <= 950 && (
-              <Popover content={<form onSubmit={sendChat}>{chatInput}</form>}>
-                <Button
-                  onClick={MainStore.openChat}
-                  style={{
-                    position: "absolute",
-                    top: 10,
-                    right: 120,
-                  }}
-                >
-                  Chat
-                </Button>
-              </Popover>
             )}
             {/* {(MainStore.online ||
               (MainStore.online &&
