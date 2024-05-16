@@ -1,8 +1,10 @@
+import { Button } from "antd";
 import { random, range } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
   BLOCKS,
+  COLORS,
   GAME_STATES,
   randomPropertyIndex,
   REBUY_RATE,
@@ -37,7 +39,9 @@ class MainStore {
   channel = null;
   showChat = false;
   cameraRef = null;
+  messageApi = null;
 
+  loans = {};
   chat = {};
   totalPlayers = 2;
   startMoney = 20000;
@@ -265,7 +269,12 @@ class MainStore {
       if (this.gameState.split("--")[2] === "fixElectricity") {
         this.updateOwnedBlockElectricity(block.name, 0);
       }
-      this.gameState = GAME_STATES.CHOOSEN_BUILDING + '--' + block.name + '--' + this.gameState.split("--")[2]
+      this.gameState =
+        GAME_STATES.CHOOSEN_BUILDING +
+        "--" +
+        block.name +
+        "--" +
+        this.gameState.split("--")[2];
       this.sendDataToChannel();
 
       delay(2000).then(() => {
@@ -365,6 +374,8 @@ class MainStore {
           }
           this.chat[name] = data[key][name] + "--" + new Date().toISOString();
         });
+      } else if (key === "loans") {
+        this.updateLoans(data[key]);
       } else {
         this[key] = data[key];
       }
@@ -396,6 +407,215 @@ class MainStore {
     });
   }
 
+  updateLoans(loan) {
+    this.loans[loan.from] = loan;
+    if (loan.status === "request") {
+      this.messageApi.open({
+        key: loan.id,
+        type: "loading",
+        content: (
+          <div
+            style={{
+              display: "inline-flex",
+              flexDirection: "column",
+              alignItems: "end",
+            }}
+          >
+            <div style={{ display: "flex" }}>
+              <strong
+                style={{
+                  color: COLORS[this.getPlayerIndexById(loan.from)],
+                  padding: "0 4px",
+                }}
+              >
+                {loan.from}
+              </strong>
+              muốn mượn
+              <strong
+                style={{
+                  color: COLORS[this.getPlayerIndexById(loan.to)],
+                  padding: "0 4px",
+                }}
+              >
+                {loan.to !== this.myName ? loan.to : "bạn"}
+              </strong>
+              số tiền <strong style={{ padding: "0 4px" }}>2000$</strong> và sẽ
+              trả <strong style={{ padding: "0 4px" }}>2500$</strong> sau
+              <strong style={{ padding: "0 4px" }}>10</strong> lượt đi
+            </div>
+            {loan.to === this.myName && (
+              <div>
+                <Button
+                  onClick={() => {
+                    const newLoan = {
+                      ...loan,
+                      status: "fail",
+                    };
+                    this.loans[loan.from] = newLoan;
+                    this.channel.send({
+                      type: "broadcast",
+                      event: "updateStore",
+                      payload: {
+                        data: {
+                          loans: newLoan,
+                        },
+                      },
+                    });
+                    this.messageApi.destroy(loan.id);
+                  }}
+                  type="primary"
+                  danger
+                >
+                  Từ chối
+                </Button>
+                <Button
+                  onClick={async () => {
+                    this.messageApi.destroy(loan.id);
+                    const newLoan = {
+                      ...loan,
+                      status: "success",
+                    };
+                    this.loans[loan.from] = newLoan;
+
+                    this.updatePlayerData(
+                      this.players[this.getPlayerIndexById(newLoan.to)],
+                      "money",
+                      this.players[this.getPlayerIndexById(newLoan.to)].money -
+                        2000
+                    );
+
+                    this.updatePlayerData(
+                      this.players[this.getPlayerIndexById(newLoan.from)],
+                      "money",
+                      this.players[this.getPlayerIndexById(newLoan.from)]
+                        .money + 2000
+                    );
+                    this.updatePlayerData(
+                      this.players[this.getPlayerIndexById(newLoan.from)],
+                      "loan",
+                      { turnLeft: 9, price: 2500, to: newLoan.to }
+                    );
+                    const savedState = this.gameState;
+                    this.updateGameState(
+                      GAME_STATES.INC_MONEY + "--" + 2000 + "--" + newLoan.to
+                    );
+                    this.channel.send({
+                      type: "broadcast",
+                      event: "updateStore",
+                      payload: {
+                        data: {
+                          loans: newLoan,
+                          players: this.players,
+                          gameState: this.gameState,
+                        },
+                      },
+                    });
+                    await delay(2000);
+                    this.updateGameState(savedState);
+                    this.channel.send({
+                      type: "broadcast",
+                      event: "updateStore",
+                      payload: {
+                        data: {
+                          gameState: this.gameState,
+                        },
+                      },
+                    });
+                  }}
+                  type="primary"
+                  style={{ marginLeft: 15 }}
+                >
+                  Cho mượn
+                </Button>
+              </div>
+            )}
+          </div>
+        ),
+        duration: 0,
+        style: {
+          marginTop: "45vh",
+          backgroundColor: "transparent",
+        },
+      });
+    } else if (loan.status === "fail") {
+      this.messageApi
+        .open({
+          type: "error",
+          content: (
+            <div
+              style={{
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "end",
+              }}
+            >
+              <div style={{ display: "flex" }}>
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.to)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.to !== this.myName ? loan.to : "bạn"}
+                </strong>
+                đã từ chối cho
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.from)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.from}
+                </strong>
+                mượn tiền
+              </div>
+            </div>
+          ),
+          duration: 1,
+        })
+        .then(() => this.messageApi.destroy(loan.id));
+    } else if (loan.status === "success") {
+      this.messageApi
+        .open({
+          type: "success",
+          content: (
+            <div
+              style={{
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "end",
+              }}
+            >
+              <div style={{ display: "flex" }}>
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.to)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.to !== this.myName ? loan.to : "bạn"}
+                </strong>
+                đã đồng ý cho
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.from)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.from}
+                </strong>
+                mượn tiền
+              </div>
+            </div>
+          ),
+          duration: 1,
+        })
+        .then(() => {
+          this.messageApi.destroy(loan.id);
+        });
+    }
+  }
+
   getRebuyPrice(block) {
     const updatingPropertyInfo = this.ownedBlocks[block.name];
     return (
@@ -415,6 +635,10 @@ class MainStore {
 
   setCameraKey(key) {
     this.cameraKey = key + "__" + uuidv4();
+  }
+
+  setMessageApi(api) {
+    this.messageApi = api;
   }
 }
 

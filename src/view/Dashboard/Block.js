@@ -15,6 +15,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
     ];
 
   const checkNeedToHide = () => {
+    if (MainStore.loans[MainStore.myName]?.status === "request") return true;
+
     if (
       MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
       MainStore.gameState.split("--")[2] !==

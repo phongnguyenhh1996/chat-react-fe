@@ -9,6 +9,7 @@ import {
   Switch,
   Popover,
   Dropdown,
+  message,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -37,6 +38,7 @@ const supabase = createClient(
 );
 
 const Dashboard = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [msg, setMsg] = useState("");
   const timerRef = useRef();
 
@@ -198,9 +200,7 @@ const Dashboard = () => {
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[2] !== "bank"
     )
-      return (
-        <div>Mất {MainStore.gameState.split("--")[1]}$ khi đi vào ô này</div>
-      );
+      return <div>Đã thanh toán {MainStore.gameState.split("--")[1]}$</div>;
     if (
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[2] === "bank" &&
@@ -341,6 +341,7 @@ const Dashboard = () => {
   };
 
   const handleOk = async () => {
+    MainStore.setMessageApi(messageApi);
     if (!MainStore.online) {
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
       const randomPlayerId =
@@ -379,7 +380,7 @@ const Dashboard = () => {
               }
             }
             MainStore.channel.track({
-              data: pick(MainStore, SYNC_KEY),
+              data: pick(MainStore, [...SYNC_KEY, "loans"]),
             });
           })
           .subscribe(async (status) => {
@@ -445,7 +446,7 @@ const Dashboard = () => {
     nextPlayerTurn(true);
   };
 
-  const goNextAvailablePlayer = () => {
+  const goNextAvailablePlayer = async () => {
     MainStore.setSamePlayerRolling(1);
     let nextPlayerIndex = MainStore.getPlayerIndexById(MainStore.playingId) + 1;
     if (nextPlayerIndex >= MainStore.players.length) {
@@ -461,6 +462,40 @@ const Dashboard = () => {
       }
     }
     MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
+    const playerCheckLoan = MainStore.players[nextPlayerIndex];
+    if (playerCheckLoan.loan?.turnLeft > 0) {
+      MainStore.updatePlayerData(playerCheckLoan, "loan", {
+        ...playerCheckLoan.loan,
+        turnLeft: playerCheckLoan.loan.turnLeft - 1,
+      });
+    } else if (playerCheckLoan.loan?.turnLeft === 0) {
+      await delay(1000);
+      const receivePlayer =
+        MainStore.players[
+          MainStore.getPlayerIndexById(playerCheckLoan.loan?.to)
+        ];
+      let price = playerCheckLoan?.loan?.price;
+      if (playerCheckLoan.money - price < 0) {
+        price = await handleNotEnoughMoney(playerCheckLoan, price);
+      }
+      MainStore.updatePlayerData(
+        playerCheckLoan,
+        "money",
+        playerCheckLoan.money - price
+      );
+
+      MainStore.updatePlayerData(
+        receivePlayer,
+        "money",
+        receivePlayer.money + price
+      );
+      MainStore.updatePlayerData(playerCheckLoan, "loan", undefined);
+      MainStore.updateGameState(
+        GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+      );
+      MainStore.sendDataToChannel(["gameState", "players"]);
+      await delay(2000);
+    }
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
     MainStore.sendDataToChannel([
       "playingId",
@@ -1230,17 +1265,19 @@ const Dashboard = () => {
   };
 
   const requestLoan = (myId, playerId) => {
+    const newLoan = {
+      id: uuidv4(),
+      from: myId,
+      to: playerId,
+      status: "request",
+    };
+    MainStore.updateLoans(newLoan, messageApi);
     MainStore.channel.send({
       type: "broadcast",
       event: "updateStore",
       payload: {
         data: {
-          loans: {
-            id: uuidv4(),
-            from: myId,
-            to: playerId,
-            status: "request",
-          },
+          loans: newLoan,
         },
       },
     });
@@ -1386,6 +1423,71 @@ const Dashboard = () => {
                   }}
                   key={player.id}
                 >
+                  <div
+                    style={{
+                      position: "absolute",
+                      [[0, 1].includes(index) ? "bottom" : "top"]: -50,
+                      width: "100%",
+                      textAlign: "center",
+                    }}
+                  >
+                    {contextHolder}
+                    {player.loan?.turnLeft !== undefined && (
+                      <Button
+                        disabled
+                        ghost
+                        size="large"
+                        icon={
+                          <Icon
+                            symbol="request-money"
+                            width="20px"
+                            height="20px"
+                          />
+                        }
+                        iconPosition="end"
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "bold",
+                          marginRight: 5,
+                          color: "white",
+                        }}
+                      >
+                        {player.loan?.turnLeft + 1}
+                      </Button>
+                    )}
+                    {player.id === MainStore.myName && (
+                      <Button
+                        ghost
+                        size="large"
+                        shape="circle"
+                        icon={<Icon symbol="flag" width="20px" height="20px" />}
+                        onClick={surrender}
+                      />
+                    )}
+                    {player.id !== MainStore.myName &&
+                      MainStore.playingId === MainStore.myName &&
+                      player.money >= 2000 &&
+                      !player.loan &&
+                      !currentPlayer?.loan && (
+                        <Button
+                          ghost
+                          size="large"
+                          icon={
+                            <Icon
+                              symbol="request-money"
+                              width="20px"
+                              height="20px"
+                            />
+                          }
+                          iconPosition="end"
+                          shape="circle"
+                          onClick={() =>
+                            requestLoan(currentPlayer.id, player.id)
+                          }
+                        ></Button>
+                      )}
+                  </div>
+
                   <Popover
                     placement={[0, 2].includes(index) ? "right" : "left"}
                     content={
@@ -1546,347 +1648,355 @@ const Dashboard = () => {
               </Popconfirm>
             )} */}
 
-            {MainStore.gameState !== GAME_STATES.INIT && (
-              <div className="information" onClick={rollDice}>
-                <div
-                  className="information__row"
-                  style={{
-                    width: "100%",
-                    minHeight: 50,
-                    padding: 5,
-                    marginTop: 10,
-                    color: "white",
-                    fontWeight: "bold",
-                    borderRadius: 10,
-                    background: "rgba(0,0,0,0.2)",
-                  }}
-                >
-                  {getMessageFromGameState() && (
-                    <div
-                      style={{
-                        padding: 15,
-                        textAlign: "center",
-                        width: "100%",
-                      }}
-                      className=" fade-in-top "
-                      key={MainStore.gameState}
-                    >
-                      {getMessageFromGameState()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="information__row">
-                  {MainStore.gameState === GAME_STATES.WAITING && (
-                    <>
+            {MainStore.gameState !== GAME_STATES.INIT &&
+              MainStore.loans[MainStore.myName]?.status !== "request" && (
+                <div className="information" onClick={rollDice}>
+                  <div
+                    className="information__row"
+                    style={{
+                      width: "100%",
+                      minHeight: 50,
+                      padding: 5,
+                      marginTop: 10,
+                      color: "white",
+                      fontWeight: "bold",
+                      borderRadius: 10,
+                      background: "rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {getMessageFromGameState() && (
                       <div
                         style={{
-                          position: "absolute",
-                          top: -45,
-                          userSelect: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          left: 0,
-                          right: 0,
-                          columnGap: 10,
-                        }}
-                      >
-                        <span style={{ flexShrink: 0, color: "white" }}>
-                          ID phòng:
-                        </span>{" "}
-                        <Input readOnly defaultValue={MainStore.roomId} />
-                      </div>
-                      {range(0, MainStore.totalPlayers).map((idx, index) => (
-                        <PlayerInfor
-                          key={
-                            (MainStore.players[idx]?.id || "noname-") + index
-                          }
-                          playerId={MainStore.players[idx]?.id}
-                        />
-                      ))}
-                    </>
-                  )}
-                  {MainStore.gameState !== GAME_STATES.WAITING && (
-                    <PlayerInfor playerId={MainStore.playingId} />
-                  )}
-
-                  {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
-                    MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY)) && (
-                    <>
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          bottom: 0,
+                          padding: 15,
+                          textAlign: "center",
                           width: "100%",
-                          display: "flex",
-                          justifyContent: "center",
                         }}
+                        className=" fade-in-top "
+                        key={MainStore.gameState}
                       >
+                        {getMessageFromGameState()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="information__row">
+                    {MainStore.gameState === GAME_STATES.WAITING && (
+                      <>
                         <div
-                          className={
-                            MainStore.gameState.startsWith(
-                              GAME_STATES.DEC_MONEY
-                            )
-                              ? "fade-in-left"
-                              : "fade-in-right"
-                          }
                           style={{
+                            position: "absolute",
+                            top: -45,
+                            userSelect: "auto",
                             display: "flex",
-                            flexDirection: "row-reverse",
-                            maxWidth: 60,
-                            flexWrap: "wrap-reverse",
-                            position: "relative",
-                            top: -30,
-                            alignSelf: "end",
+                            alignItems: "center",
+                            left: 0,
+                            right: 0,
+                            columnGap: 10,
+                          }}
+                        >
+                          <span style={{ flexShrink: 0, color: "white" }}>
+                            ID phòng:
+                          </span>{" "}
+                          <Input readOnly defaultValue={MainStore.roomId} />
+                        </div>
+                        {range(0, MainStore.totalPlayers).map((idx, index) => (
+                          <PlayerInfor
+                            key={
+                              (MainStore.players[idx]?.id || "noname-") + index
+                            }
+                            playerId={MainStore.players[idx]?.id}
+                          />
+                        ))}
+                      </>
+                    )}
+                    {MainStore.gameState !== GAME_STATES.WAITING && (
+                      <PlayerInfor playerId={MainStore.playingId} />
+                    )}
+
+                    {(MainStore.gameState.startsWith(GAME_STATES.INC_MONEY) ||
+                      MainStore.gameState.startsWith(
+                        GAME_STATES.DEC_MONEY
+                      )) && (
+                      <>
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            bottom: 0,
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "center",
                           }}
                         >
                           <div
+                            className={
+                              MainStore.gameState.startsWith(
+                                GAME_STATES.DEC_MONEY
+                              )
+                                ? "fade-in-left"
+                                : "fade-in-right"
+                            }
                             style={{
-                              width: 30,
-                              height: 30,
+                              display: "flex",
+                              flexDirection: "row-reverse",
+                              maxWidth: 60,
+                              flexWrap: "wrap-reverse",
                               position: "relative",
+                              top: -30,
+                              alignSelf: "end",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 30,
+                                height: 30,
+                                position: "relative",
+                              }}
+                            >
+                              <Icon
+                                symbol="money"
+                                style={{
+                                  position: "absolute",
+                                  width: 50,
+                                  height: 50,
+                                  maxWidth: 50,
+                                }}
+                                width="50px"
+                                height="50px"
+                              />
+                            </div>
+                            {parseInt(MainStore.gameState.split("--")[1]) >=
+                              2000 &&
+                              parseInt(MainStore.gameState.split("--")[1]) <
+                                3000 && (
+                                <div
+                                  style={{
+                                    width: 30,
+                                    height: 30,
+                                    position: "relative",
+                                  }}
+                                >
+                                  <Icon
+                                    style={{
+                                      position: "absolute",
+                                      width: 50,
+                                      height: 50,
+                                      maxWidth: 50,
+                                      top: -16,
+                                      left: 30,
+                                    }}
+                                    width={"50px"}
+                                    height={"50px"}
+                                    symbol="money"
+                                  />
+                                </div>
+                              )}
+                            {parseInt(MainStore.gameState.split("--")[1]) >=
+                              3000 &&
+                              range(
+                                1,
+                                Math.floor(
+                                  parseInt(MainStore.gameState.split("--")[1]) /
+                                    1000
+                                ) > 25
+                                  ? 25
+                                  : Math.floor(
+                                      parseInt(
+                                        MainStore.gameState.split("--")[1]
+                                      ) / 1000
+                                    )
+                              ).map((numb) => (
+                                <div
+                                  key={numb}
+                                  style={{
+                                    width: 30,
+                                    height: 30,
+                                    position: "relative",
+                                  }}
+                                >
+                                  <Icon
+                                    style={{
+                                      position: "absolute",
+                                      width: 50,
+                                      height: 50,
+                                      maxWidth: 50,
+                                      top:
+                                        14 *
+                                        ((numb % 2 !== 0 ? numb + 1 : numb) /
+                                          2),
+                                    }}
+                                    width={"50px"}
+                                    height={"50px"}
+                                    symbol="money"
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        </div>{" "}
+                        {MainStore.gameState.split("--")[2] &&
+                          MainStore.gameState.split("--")[2] !== "bank" && (
+                            <PlayerInfor
+                              playerId={MainStore.gameState.split("--")[2]}
+                              rightSide
+                            />
+                          )}
+                        {MainStore.gameState.split("--")[2] === "bank" && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              justifyContent: "center",
                             }}
                           >
                             <Icon
-                              symbol="money"
+                              symbol="bank"
+                              width={"120px"}
+                              height={"80px"}
+                            />
+                            <div
                               style={{
-                                position: "absolute",
-                                width: 50,
-                                height: 50,
-                                maxWidth: 50,
+                                fontWeight: "bold",
+                                textAlign: "center",
+                                textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                color: "white",
+                                marginTop: 10,
                               }}
-                              width="50px"
-                              height="50px"
+                            >
+                              {MainStore.gameState.startsWith(
+                                GAME_STATES.INC_MONEY
+                              )
+                                ? "-"
+                                : "+"}
+                              {MainStore.gameState.split("--")[1]}$
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {![
+                      GAME_STATES.INC_MONEY,
+                      GAME_STATES.DEC_MONEY,
+                      GAME_STATES.WAITING,
+                    ].includes(MainStore.gameState.split("--")[0]) && (
+                      <>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            position: "relative",
+                          }}
+                        >
+                          <div
+                            style={{ display: "flex" }}
+                            className={
+                              MainStore.gameState === GAME_STATES.ROLLING_DICE
+                                ? "bounce-top"
+                                : ""
+                            }
+                          >
+                            <Die value={MainStore.dice[0]} />
+                            <Die
+                              style={{ marginLeft: -20 }}
+                              value={MainStore.dice[1]}
                             />
                           </div>
-                          {parseInt(MainStore.gameState.split("--")[1]) >=
-                            2000 &&
-                            parseInt(MainStore.gameState.split("--")[1]) <
-                              3000 && (
-                              <div
-                                style={{
-                                  width: 30,
-                                  height: 30,
-                                  position: "relative",
-                                }}
-                              >
-                                <Icon
-                                  style={{
-                                    position: "absolute",
-                                    width: 50,
-                                    height: 50,
-                                    maxWidth: 50,
-                                    top: -16,
-                                    left: 30,
-                                  }}
-                                  width={"50px"}
-                                  height={"50px"}
-                                  symbol="money"
-                                />
-                              </div>
-                            )}
-                          {parseInt(MainStore.gameState.split("--")[1]) >=
-                            3000 &&
-                            range(
-                              1,
-                              Math.floor(
-                                parseInt(MainStore.gameState.split("--")[1]) /
-                                  1000
-                              ) > 25
-                                ? 25
-                                : Math.floor(
-                                    parseInt(
-                                      MainStore.gameState.split("--")[1]
-                                    ) / 1000
-                                  )
-                            ).map((numb) => (
-                              <div
-                                key={numb}
-                                style={{
-                                  width: 30,
-                                  height: 30,
-                                  position: "relative",
-                                }}
-                              >
-                                <Icon
-                                  style={{
-                                    position: "absolute",
-                                    width: 50,
-                                    height: 50,
-                                    maxWidth: 50,
-                                    top:
-                                      14 *
-                                      ((numb % 2 !== 0 ? numb + 1 : numb) / 2),
-                                  }}
-                                  width={"50px"}
-                                  height={"50px"}
-                                  symbol="money"
-                                />
-                              </div>
-                            ))}
+
+                          {MainStore.gameState.startsWith(
+                            GAME_STATES.NEED_MONEY
+                          ) && (
+                            <div
+                              style={{
+                                padding: "10px 0",
+                                color: "red",
+                                position: "absolute",
+                                bottom: -20,
+                                left: "50%",
+                                width: "160%",
+                                transform: "translateX(-50%)",
+                                textAlign: "center",
+                                background:
+                                  "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
+                              }}
+                            >
+                              <span style={{ color: "white" }}>
+                                Bạn cần thanh toán
+                              </span>{" "}
+                              <br />{" "}
+                              <strong style={{ color: "red" }}>
+                                {MainStore.priceNeedToPay &&
+                                  MainStore.priceNeedToPay
+                                    .toString()
+                                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                                $
+                              </strong>
+                            </div>
+                          )}
                         </div>
-                      </div>{" "}
-                      {MainStore.gameState.split("--")[2] &&
-                        MainStore.gameState.split("--")[2] !== "bank" && (
-                          <PlayerInfor
-                            playerId={MainStore.gameState.split("--")[2]}
-                            rightSide
-                          />
-                        )}
-                      {MainStore.gameState.split("--")[2] === "bank" && (
                         <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
-                            justifyContent: "center",
+                            rowGap: 5,
                           }}
                         >
-                          <Icon symbol="bank" width={"120px"} height={"80px"} />
-                          <div
-                            style={{
-                              fontWeight: "bold",
-                              textAlign: "center",
-                              textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
-                              color: "white",
-                              marginTop: 10,
-                            }}
-                          >
-                            {MainStore.gameState.startsWith(
-                              GAME_STATES.INC_MONEY
-                            )
-                              ? "-"
-                              : "+"}
-                            {MainStore.gameState.split("--")[1]}$
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {![
-                    GAME_STATES.INC_MONEY,
-                    GAME_STATES.DEC_MONEY,
-                    GAME_STATES.WAITING,
-                  ].includes(MainStore.gameState.split("--")[0]) && (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          position: "relative",
-                        }}
-                      >
-                        <div
-                          style={{ display: "flex" }}
-                          className={
-                            MainStore.gameState === GAME_STATES.ROLLING_DICE
-                              ? "bounce-top"
-                              : ""
-                          }
-                        >
-                          <Die value={MainStore.dice[0]} />
-                          <Die
-                            style={{ marginLeft: -20 }}
-                            value={MainStore.dice[1]}
-                          />
-                        </div>
-
-                        {MainStore.gameState.startsWith(
-                          GAME_STATES.NEED_MONEY
-                        ) && (
-                          <div
-                            style={{
-                              padding: "10px 0",
-                              color: "red",
-                              position: "absolute",
-                              bottom: -20,
-                              left: "50%",
-                              width: "160%",
-                              transform: "translateX(-50%)",
-                              textAlign: "center",
-                              background:
-                                "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8498249641653537) 10%, rgba(0,34,41,0.8498249641653537) 90%, rgba(0,212,255,0) 100%)",
-                            }}
-                          >
-                            <span style={{ color: "white" }}>
-                              Bạn cần thanh toán
-                            </span>{" "}
-                            <br />{" "}
-                            <strong style={{ color: "red" }}>
-                              {MainStore.priceNeedToPay &&
-                                MainStore.priceNeedToPay
-                                  .toString()
-                                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                              $
-                            </strong>
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          rowGap: 5,
-                        }}
-                      >
-                        {MainStore.players.map((player, index) => (
-                          <div
-                            key={player.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              position: "relative",
-                            }}
-                          >
-                            {player.haveFreeCard && (
-                              <Icon
-                                style={{
-                                  position: "absolute",
-                                  left: -20,
-                                }}
-                                symbol="card"
-                                width="20px"
-                                height="20px"
-                              />
-                            )}
-                            {player.broke && (
-                              <Icon
-                                style={{ position: "absolute", left: -3 }}
-                                symbol="stop"
-                                width="30px"
-                                height="30px"
-                              />
-                            )}
-
-                            <img
-                              style={{
-                                flex: "0 0 25px",
-                                height: 25,
-                                marginRight: 10,
-                              }}
-                              alt=""
-                              src={AVATARS[index]}
-                            />
+                          {MainStore.players.map((player, index) => (
                             <div
+                              key={player.id}
                               style={{
-                                textDecoration: player.broke
-                                  ? "line-through"
-                                  : undefined,
-                                fontWeight: "bold",
-                                color: "white",
-                                textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                display: "flex",
+                                alignItems: "center",
+                                position: "relative",
                               }}
                             >
-                              {player.money}$
+                              {player.haveFreeCard && (
+                                <Icon
+                                  style={{
+                                    position: "absolute",
+                                    left: -20,
+                                  }}
+                                  symbol="card"
+                                  width="20px"
+                                  height="20px"
+                                />
+                              )}
+                              {player.broke && (
+                                <Icon
+                                  style={{ position: "absolute", left: -3 }}
+                                  symbol="stop"
+                                  width="30px"
+                                  height="30px"
+                                />
+                              )}
+
+                              <img
+                                style={{
+                                  flex: "0 0 25px",
+                                  height: 25,
+                                  marginRight: 10,
+                                }}
+                                alt=""
+                                src={AVATARS[index]}
+                              />
+                              <div
+                                style={{
+                                  textDecoration: player.broke
+                                    ? "line-through"
+                                    : undefined,
+                                  fontWeight: "bold",
+                                  color: "white",
+                                  textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                }}
+                              >
+                                {player.money}$
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
           <Modal
             centered
