@@ -1391,7 +1391,7 @@ const Dashboard = () => {
                 color: "white",
               }}
             >
-              Version: {packageJson.version}
+              Phòng: {MainStore.roomId} &nbsp;&nbsp; Version: {packageJson.version}
             </div>
             {MainStore.players.map((player, index) => {
               let position = {};
@@ -1467,7 +1467,7 @@ const Dashboard = () => {
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 2000 &&
-                      !player.loan &&
+                      !player.loan && MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !currentPlayer?.loan && (
                         <Button
                           ghost
