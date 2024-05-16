@@ -11,6 +11,7 @@ import {
   Dropdown,
   message,
   Popconfirm,
+  Table,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -46,6 +47,18 @@ const Dashboard = () => {
   const gameState = MainStore.gameState;
 
   useEffect(() => {
+    const waitingRoomChannel = supabase.channel("waiting-room");
+    waitingRoomChannel
+      .on("presence", { event: "join" }, () => {
+        MainStore.transformAndSetRoomList(waitingRoomChannel.presenceState());
+      })
+      .on("presence", { event: "sync" }, () => {
+        MainStore.transformAndSetRoomList(waitingRoomChannel.presenceState());
+      })
+      .subscribe();
+  }, []);
+
+  useEffect(() => {
     const state = gameState?.split("--")[0] || gameState;
     if (SOUND[state]?.play) {
       SOUND[state].play();
@@ -60,6 +73,28 @@ const Dashboard = () => {
   }, [gameState]);
 
   const getMessageFromGameState = () => {
+    if (
+      MainStore.gameState === GAME_STATES.WAITING &&
+      MainStore.players.length > 1 &&
+      MainStore.isHost
+    ) {
+      return (
+        <div>
+          <Button
+            type="primary"
+            onClick={() => {
+              const randomPlayerId =
+                MainStore.players[random(0, MainStore.players.length - 1)].id;
+              MainStore.updatePlayingId(randomPlayerId);
+              MainStore.updateGameState(GAME_STATES.ROLL_DICE);
+              MainStore.sendDataToChannel()
+            }}
+          >
+            Bắt đầu
+          </Button>
+        </div>
+      );
+    }
     if (
       MainStore.gameState === GAME_STATES.ROLL_DICE &&
       MainStore.samePlayerRolling === 1 &&
@@ -363,6 +398,27 @@ const Dashboard = () => {
       if (MainStore.isHost) {
         MainStore.setPlayers([]);
         MainStore.addPlayer(MainStore.myName);
+        const waitingRoomChannel = supabase.channel("waiting-room", {
+          config: {
+            presence: {
+              key: MainStore.roomId,
+            },
+          },
+        });
+        waitingRoomChannel.subscribe(async (status) => {
+          if (status !== "SUBSCRIBED") {
+            return;
+          }
+
+          await waitingRoomChannel.track({
+            data: {
+              roomId: MainStore.roomId,
+              totalPlayers: MainStore.players.length,
+              hostName: MainStore.myName,
+              created: moment().toISOString(),
+            },
+          });
+        });
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
@@ -376,15 +432,6 @@ const Dashboard = () => {
               MainStore.players.findIndex((p) => p.name === key) === -1
             ) {
               MainStore.addPlayer(key);
-              if (
-                MainStore.gameState === GAME_STATES.WAITING &&
-                MainStore.players.length === MainStore.totalPlayers
-              ) {
-                const randomPlayerId =
-                  MainStore.players[random(0, MainStore.players.length - 1)].id;
-                MainStore.updatePlayingId(randomPlayerId);
-                MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-              }
             }
             MainStore.channel.track({
               data: pick(MainStore, [...SYNC_KEY, "loans"]),
@@ -403,6 +450,10 @@ const Dashboard = () => {
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
+          })
+          .on("presence", { event: "join" }, ({ key }) => {
+            const newState = MainStore.channel.presenceState();
+            console.log(newState);
           })
           .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
@@ -2022,25 +2073,22 @@ const Dashboard = () => {
             centered
             closable={false}
             open={MainStore.gameState === "init"}
-            footer={[
-              <Button key="submit" onClick={handleOk}>
-                {!MainStore.online && "Bắt đầu"}
-                {MainStore.online && MainStore.isHost && "Tạo phòng"}
-                {MainStore.online && !MainStore.isHost && "Tham gia"}
-              </Button>,
-            ]}
+            footer={
+              MainStore.online && MainStore.isHost ? (
+                [
+                  <Button key="submit" onClick={handleOk}>
+                    Tạo phòng
+                  </Button>,
+                ]
+              ) : !MainStore.online ? (
+                <Button key="submit" onClick={handleOk}>
+                  Bắt đầu
+                </Button>
+              ) : null
+            }
             maskClosable={false}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                  Chơi online:
-                </p>
-                <Switch
-                  value={MainStore.online}
-                  onChange={MainStore.setOnline}
-                />
-              </div>
               {MainStore.online && (
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <p style={{ flex: "0 0 auto", marginRight: 10 }}>
@@ -2055,17 +2103,6 @@ const Dashboard = () => {
             </div>
             {MainStore.online && (
               <>
-                {!MainStore.isHost && (
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                      Nhập Id phòng:
-                    </p>
-                    <Input
-                      onChange={(e) => MainStore.setRoomId(e.target.value)}
-                      placeholder="Nhập Id phòng"
-                    />
-                  </div>
-                )}
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <p style={{ flex: "0 0 auto", marginRight: 10 }}>Nhập tên:</p>
                   <Input
@@ -2074,6 +2111,48 @@ const Dashboard = () => {
                     placeholder="Nhập tên của bạn"
                   />
                 </div>
+                {!MainStore.isHost && (
+                  <Table
+                    columns={[
+                      {
+                        title: "ID",
+                        dataIndex: "roomId",
+                      },
+                      {
+                        title: "Chủ phòng",
+                        dataIndex: "hostName",
+                      },
+                      {
+                        title: "Số người",
+                        dataIndex: "totalPlayers",
+                      },
+                      {
+                        title: "Thời gian",
+                        dataIndex: "created",
+                        defaultSortOrder: "descend",
+                        sorter: (a, b) => new Date(b) - new Date(a),
+                        render: (value) => moment(value).fromNow(),
+                      },
+                      {
+                        title: "",
+                        dataIndex: "roomId",
+                        render: (value) => (
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              MainStore.setRoomId(value);
+                              handleOk();
+                            }}
+                          >
+                            Tham gia
+                          </Button>
+                        ),
+                      },
+                    ]}
+                    dataSource={MainStore.roomList}
+                    pagination={false}
+                  />
+                )}
               </>
             )}
 
@@ -2127,17 +2206,6 @@ const Dashboard = () => {
                     min={5000}
                     value={MainStore.startMoney}
                     onChange={MainStore.updateStartMoney}
-                  />
-                </div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <p style={{ flex: "0 0 auto", marginRight: 10 }}>
-                    Tổng số người chơi:
-                  </p>
-                  <InputNumber
-                    min={2}
-                    max={4}
-                    value={MainStore.totalPlayers}
-                    onChange={MainStore.updateTotalPlayers}
                   />
                 </div>
               </>

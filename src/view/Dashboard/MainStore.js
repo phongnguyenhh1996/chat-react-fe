@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { random, range } from "lodash";
+import { random, range, get } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -32,7 +32,7 @@ export const SYNC_KEY = [
 ];
 
 class MainStore {
-  online = false;
+  online = true;
   isHost = false;
   myName = localStorage.getItem("myName") || "Player 1";
   roomId = random(1000, 9999).toString();
@@ -40,10 +40,11 @@ class MainStore {
   showChat = false;
   cameraRef = null;
   messageApi = null;
+  roomList = []
 
   loans = {};
   chat = {};
-  totalPlayers = 2;
+  totalPlayers = 4;
   startMoney = 20000;
   gameState = "init";
   playingId = "";
@@ -624,6 +625,10 @@ class MainStore {
 
   setMessageApi(api) {
     this.messageApi = api;
+  }
+
+  transformAndSetRoomList(data) {
+    this.roomList = Object.values(data).map(room => get(room, ['0', 'data']))
   }
 }
 
