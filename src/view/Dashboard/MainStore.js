@@ -538,77 +538,79 @@ class MainStore {
         },
       });
     } else if (loan.status === "fail") {
-      this.messageApi.open({
-        type: "error",
-        content: (
-          <div
-            style={{
-              display: "inline-flex",
-              flexDirection: "column",
-              alignItems: "end",
-            }}
-          >
-            <div style={{ display: "flex" }}>
-              <strong
-                style={{
-                  color: COLORS[this.getPlayerIndexById(loan.to)],
-                  padding: "0 4px",
-                }}
-              >
-                {loan.to !== this.myName ? loan.to : "bạn"}
-              </strong>
-              đã từ chối cho
-              <strong
-                style={{
-                  color: COLORS[this.getPlayerIndexById(loan.from)],
-                  padding: "0 4px",
-                }}
-              >
-                {loan.from}
-              </strong>
-              mượn tiền
+      this.messageApi
+        .open({
+          type: "error",
+          content: (
+            <div
+              style={{
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "end",
+              }}
+            >
+              <div style={{ display: "flex" }}>
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.to)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.to !== this.myName ? loan.to : "bạn"}
+                </strong>
+                đã từ chối cho
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.from)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.from}
+                </strong>
+                mượn tiền
+              </div>
             </div>
-          </div>
-        ),
-        duration: 1,
-      });
-      this.messageApi.destroy(loan.id);
+          ),
+          duration: 1,
+        })
+        .then(() => this.messageApi.destroy(loan.id));
     } else if (loan.status === "success") {
-      this.messageApi.open({
-        type: "success",
-        content: (
-          <div
-            style={{
-              display: "inline-flex",
-              flexDirection: "column",
-              alignItems: "end",
-            }}
-          >
-            <div style={{ display: "flex" }}>
-              <strong
-                style={{
-                  color: COLORS[this.getPlayerIndexById(loan.to)],
-                  padding: "0 4px",
-                }}
-              >
-                {loan.to !== this.myName ? loan.to : "bạn"}
-              </strong>
-              đã đồng ý cho
-              <strong
-                style={{
-                  color: COLORS[this.getPlayerIndexById(loan.from)],
-                  padding: "0 4px",
-                }}
-              >
-                {loan.from}
-              </strong>
-              mượn tiền
+      this.messageApi
+        .open({
+          type: "success",
+          content: (
+            <div
+              style={{
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "end",
+              }}
+            >
+              <div style={{ display: "flex" }}>
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.to)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.to !== this.myName ? loan.to : "bạn"}
+                </strong>
+                đã đồng ý cho
+                <strong
+                  style={{
+                    color: COLORS[this.getPlayerIndexById(loan.from)],
+                    padding: "0 4px",
+                  }}
+                >
+                  {loan.from}
+                </strong>
+                mượn tiền
+              </div>
             </div>
-          </div>
-        ),
-        duration: 1,
-      });
-      this.messageApi.destroy(loan.id);
+          ),
+          duration: 1,
+        })
+        .then(() => this.messageApi.destroy(loan.id));
     }
   }
 

@@ -370,9 +370,15 @@ const Dashboard = () => {
             if (key === "host") {
               return;
             }
-            if (MainStore.players.length + 1 <= MainStore.totalPlayers) {
+            if (
+              MainStore.players.length + 1 <= MainStore.totalPlayers &&
+              MainStore.players.findIndex((p) => p.name === key) === -1
+            ) {
               MainStore.addPlayer(key);
-              if (MainStore.gameState === GAME_STATES.WAITING) {
+              if (
+                MainStore.gameState === GAME_STATES.WAITING &&
+                MainStore.players.length === MainStore.totalPlayers
+              ) {
                 const randomPlayerId =
                   MainStore.players[random(0, MainStore.players.length - 1)].id;
                 MainStore.updatePlayingId(randomPlayerId);
@@ -1391,7 +1397,8 @@ const Dashboard = () => {
                 color: "white",
               }}
             >
-              Phòng: {MainStore.roomId} &nbsp;&nbsp; Version: {packageJson.version}
+              Phòng: {MainStore.roomId} &nbsp;&nbsp; Version:{" "}
+              {packageJson.version}
             </div>
             {MainStore.players.map((player, index) => {
               let position = {};
@@ -1467,7 +1474,8 @@ const Dashboard = () => {
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 2000 &&
-                      !player.loan && MainStore.loans[MainStore.myName]?.status !== "request" &&
+                      !player.loan &&
+                      MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !currentPlayer?.loan && (
                         <Button
                           ghost
