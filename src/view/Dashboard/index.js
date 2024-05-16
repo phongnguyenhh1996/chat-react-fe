@@ -1250,7 +1250,7 @@ const Dashboard = () => {
     MainStore.sendDataToChannel(["gameState", "players"]);
   };
 
-  const openChat = debounce(MainStore.openChat, 100)
+  const openChat = debounce(MainStore.openChat, 100);
 
   useEffect(() => {
     document.addEventListener("keydown", (e) => {
@@ -2094,7 +2094,7 @@ const Dashboard = () => {
                     placeholder="Nhập tên của bạn"
                   />
                 </div>
-                {!MainStore.isHost && (
+                {!MainStore.isHost && MainStore.roomList.length > 0 && (
                   <Table
                     columns={[
                       {
