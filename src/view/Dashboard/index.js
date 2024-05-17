@@ -1480,11 +1480,10 @@ const Dashboard = () => {
                 >
                   <div
                     style={{
-                      position: "absolute",
-                      [[0, 1].includes(index) ? "bottom" : "top"]: -50,
-                      width: "100%",
-                      textAlign: "center",
+                      [[0, 1].includes(index) ? "bottom" : "top"]: -37,
+                      [[0, 2].includes(index) ? "left" : "right"]: -45,
                     }}
+                    className="player-action"
                   >
                     {contextHolder}
                     {player.loan?.turnLeft !== undefined && (
@@ -1520,7 +1519,7 @@ const Dashboard = () => {
                       >
                         <Button
                           ghost
-                          size="large"
+                          size="middle"
                           shape="circle"
                           icon={
                             <Icon symbol="flag" width="20px" height="20px" />
@@ -1536,22 +1535,29 @@ const Dashboard = () => {
                       !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
                       !currentPlayer.onJail &&
                       !currentPlayer?.loan && (
-                        <Button
-                          ghost
-                          size="large"
-                          icon={
-                            <Icon
-                              symbol="request-money"
-                              width="20px"
-                              height="20px"
-                            />
-                          }
-                          iconPosition="end"
-                          shape="circle"
-                          onClick={() =>
+                        <Popconfirm
+                          title={"Vay tiền"}
+                          description={`Bạn có muốn vay tiền ${player.id} không?`}
+                          onConfirm={() =>
                             requestLoan(currentPlayer.id, player.id)
                           }
-                        ></Button>
+                          okText="Vay"
+                          cancelText="Không"
+                        >
+                          <Button
+                            ghost
+                            size="middle"
+                            icon={
+                              <Icon
+                                symbol="request-money"
+                                width="20px"
+                                height="20px"
+                              />
+                            }
+                            iconPosition="end"
+                            shape="circle"
+                          ></Button>
+                        </Popconfirm>
                       )}
                   </div>
 
@@ -1597,11 +1603,11 @@ const Dashboard = () => {
                   <div
                     key={player.id}
                     style={{
-                      display: "flex",
                       alignItems: "center",
                       position: "relative",
                       padding: 10,
                     }}
+                    className="pc"
                   >
                     {player.broke && (
                       <Icon
@@ -1736,23 +1742,6 @@ const Dashboard = () => {
                   <div className="information__row">
                     {MainStore.gameState === GAME_STATES.WAITING && (
                       <>
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: -45,
-                            userSelect: "auto",
-                            display: "flex",
-                            alignItems: "center",
-                            left: 0,
-                            right: 0,
-                            columnGap: 10,
-                          }}
-                        >
-                          <span style={{ flexShrink: 0, color: "white" }}>
-                            ID phòng:
-                          </span>{" "}
-                          <Input readOnly defaultValue={MainStore.roomId} />
-                        </div>
                         {range(0, MainStore.totalPlayers).map((idx, index) => (
                           <PlayerInfor
                             key={

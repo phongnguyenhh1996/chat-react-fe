@@ -558,7 +558,7 @@ class MainStore {
               </div>
             </div>
           ),
-          duration: 1,
+          duration: 2,
         })
         .then(() => this.messageApi.destroy(loan.id));
     } else if (loan.status === "success") {
@@ -596,7 +596,7 @@ class MainStore {
               </div>
             </div>
           ),
-          duration: 1,
+          duration: 2,
         })
         .then(() => this.messageApi.destroy(loan.id));
     }
