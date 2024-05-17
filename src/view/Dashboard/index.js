@@ -370,6 +370,9 @@ const Dashboard = () => {
     return "";
   };
 
+  const createPeerId = (roomId, playerId) =>
+    `peer${roomId}${playerId.replace(/\s/g, "")}peer`;
+
   const handleOk = async () => {
     MainStore.setMessageApi(messageApi);
     if (!MainStore.online) {
@@ -390,9 +393,7 @@ const Dashboard = () => {
       );
       MainStore.updateGameState(GAME_STATES.WAITING);
 
-      const peer = new Peer(
-        "peer" + MainStore.roomId + MainStore.myName.replace(/\s/g, "")
-      );
+      const peer = new Peer(createPeerId(MainStore.roomId, MainStore.myName));
 
       const getUserMedia =
         navigator.mediaDevices.getUserMedia ||
@@ -405,7 +406,8 @@ const Dashboard = () => {
         peer.on("call", (call) => {
           call.answer(MainStore.myStream); // Answer the call with an A/V stream.
           call.on("stream", (remoteStream) => {
-            MainStore.addRemoteStream(call.peer, remoteStream);
+            const source = document.getElementById(call.peer);
+            source.srcObject = remoteStream;
           });
         });
       } catch (error) {
@@ -453,8 +455,7 @@ const Dashboard = () => {
             MainStore.channel.track({
               data: pick(MainStore, [...SYNC_KEY, "loans"]),
             });
-            const joinerPeerId =
-              "peer" + MainStore.roomId + key.replace(/\s/g, "");
+            const joinerPeerId = createPeerId(MainStore.roomId, key);
             if (!MainStore.remoteStreams[joinerPeerId]) {
               const call = peer.call(joinerPeerId, MainStore.myStream);
               call.on("stream", (remoteStream) => {
@@ -477,7 +478,13 @@ const Dashboard = () => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
           })
           .on("presence", { event: "join" }, ({ key }) => {
-            const newState = MainStore.channel.presenceState();
+            const joinerPeerId = createPeerId(MainStore.roomId, key);
+            if (!MainStore.remoteStreams[joinerPeerId]) {
+              const call = peer.call(joinerPeerId, MainStore.myStream);
+              call.on("stream", (remoteStream) => {
+                MainStore.addRemoteStream(joinerPeerId, remoteStream);
+              });
+            }
           })
           .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
@@ -1395,13 +1402,10 @@ const Dashboard = () => {
       doubleClick={{ disabled: true }}
     >
       <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
-        {Object.keys(MainStore.remoteStreams).map((key) => (
+        {MainStore.players.map((player) => (
           <audio
-            key={key}
-            ref={(ref) => {
-              if (!ref) return;
-              ref.srcObject = MainStore.remoteStreams[key];
-            }}
+            id={createPeerId(MainStore.roomId, player.id)}
+            key={player.id}
             autoPlay
           />
         ))}
