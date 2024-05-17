@@ -1481,7 +1481,9 @@ const Dashboard = () => {
                   <div
                     style={{
                       [[0, 1].includes(index) ? "bottom" : "top"]: -37,
-                      [[0, 2].includes(index) ? "left" : "right"]: -45,
+                      [[0, 2].includes(index) ? "left" : "right"]: 0,
+                      display: "flex",
+                      justifyContent: [0, 2].includes(index) ? 'flex-start' :'flex-end'
                     }}
                     className="player-action"
                   >
@@ -1490,7 +1492,6 @@ const Dashboard = () => {
                       <Button
                         disabled
                         ghost
-                        size="large"
                         icon={
                           <Icon
                             symbol="request-money"
@@ -1534,7 +1535,7 @@ const Dashboard = () => {
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
                       !currentPlayer.onJail &&
-                      !currentPlayer?.loan && (
+                      !currentPlayer?.loan && !player.broke && (
                         <Popconfirm
                           title={"Vay tiền"}
                           description={`Bạn có muốn vay tiền ${player.id} không?`}

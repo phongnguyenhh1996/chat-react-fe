@@ -302,7 +302,7 @@ class MainStore {
   }
 
   resetGame() {
-    if (!this.isHost || this.gameState !== GAME_STATES.END) return;
+    if (!this.isHost) return;
     const newData = new Reset();
     Object.keys(newData).forEach((key) => (this[key] = newData[key]));
     this.players = this.players.map((p) => ({
@@ -353,6 +353,7 @@ class MainStore {
       id: name,
       money: this.startMoney,
       position: 1,
+      broke: this.gameState !== GAME_STATES.WAITING
     });
     if (this.players.length > this.totalPlayers) {
       this.players.length = this.totalPlayers;
@@ -633,6 +634,7 @@ class MainStore {
 }
 
 class Reset {
+  loans = {}
   gameState = GAME_STATES.ROLL_DICE;
   dice = [6, 6];
   ownedBlocks = {};
