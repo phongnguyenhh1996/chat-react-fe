@@ -13,6 +13,7 @@ import {
   Popconfirm,
   Table,
 } from "antd";
+import Peer from "peerjs";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
 import {
@@ -88,7 +89,6 @@ const Dashboard = () => {
         </div>
       );
     }
-    console.log(MainStore.gameState, MainStore.playingId, MainStore.myName);
     if (
       MainStore.gameState === GAME_STATES.ROLL_DICE &&
       MainStore.samePlayerRolling === 1 &&
@@ -389,6 +389,29 @@ const Dashboard = () => {
         })
       );
       MainStore.updateGameState(GAME_STATES.WAITING);
+
+      const peer = new Peer(
+        "peer" + MainStore.roomId + MainStore.myName.replace(/\s/g, "")
+      );
+
+      const getUserMedia =
+        navigator.mediaDevices.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.mzGetUserMedia;
+      try {
+        const stream = await getUserMedia({ video: false, audio: true });
+        MainStore.addMyStream(stream);
+        peer.on("call", (call) => {
+          call.answer(MainStore.myStream); // Answer the call with an A/V stream.
+          call.on("stream", (remoteStream) => {
+            MainStore.addRemoteStream(call.peer, remoteStream);
+          });
+        });
+      } catch (error) {
+        console.log("Failed to get local stream", error);
+      }
+
       if (MainStore.isHost) {
         MainStore.setPlayers([]);
         MainStore.addPlayer(MainStore.myName);
@@ -430,6 +453,14 @@ const Dashboard = () => {
             MainStore.channel.track({
               data: pick(MainStore, [...SYNC_KEY, "loans"]),
             });
+            const joinerPeerId =
+              "peer" + MainStore.roomId + key.replace(/\s/g, "");
+            if (!MainStore.remoteStreams[joinerPeerId]) {
+              const call = peer.call(joinerPeerId, MainStore.myStream);
+              call.on("stream", (remoteStream) => {
+                MainStore.addRemoteStream(joinerPeerId, remoteStream);
+              });
+            }
           })
           .subscribe(async (status) => {
             if (status !== "SUBSCRIBED") {
@@ -447,7 +478,6 @@ const Dashboard = () => {
           })
           .on("presence", { event: "join" }, ({ key }) => {
             const newState = MainStore.channel.presenceState();
-            console.log(newState);
           })
           .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
@@ -1365,6 +1395,16 @@ const Dashboard = () => {
       doubleClick={{ disabled: true }}
     >
       <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
+        {Object.keys(MainStore.remoteStreams).map((key) => (
+          <audio
+            key={key}
+            ref={(ref) => {
+              if (!ref) return;
+              ref.srcObject = MainStore.remoteStreams[key];
+            }}
+            autoPlay
+          />
+        ))}
         <div
           className="container-page"
           style={{
@@ -1483,7 +1523,9 @@ const Dashboard = () => {
                       [[0, 1].includes(index) ? "bottom" : "top"]: -37,
                       [[0, 2].includes(index) ? "left" : "right"]: 0,
                       display: "flex",
-                      justifyContent: [0, 2].includes(index) ? 'flex-start' :'flex-end'
+                      justifyContent: [0, 2].includes(index)
+                        ? "flex-start"
+                        : "flex-end",
                     }}
                     className="player-action"
                   >
@@ -1522,12 +1564,35 @@ const Dashboard = () => {
                           ghost
                           size="middle"
                           shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
                           icon={
                             <Icon symbol="flag" width="20px" height="20px" />
                           }
                         />
                       </Popconfirm>
                     )}
+                    {MainStore.myStream && (
+                      <Button
+                        ghost
+                        size="middle"
+                        shape="circle"
+                        icon={
+                          <Icon
+                            symbol={MainStore.mute ? "mic-off" : "mic-on"}
+                            width="20px"
+                            height="20px"
+                          />
+                        }
+                        onClick={() => {
+                          MainStore.setMute(!MainStore.mute);
+                          MainStore.myStream.getAudioTracks()[0].enabled =
+                            !MainStore.mute;
+                        }}
+                      />
+                    )}
+
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 2000 &&
@@ -1535,7 +1600,8 @@ const Dashboard = () => {
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
                       !currentPlayer.onJail &&
-                      !currentPlayer?.loan && !player.broke && (
+                      !currentPlayer?.loan &&
+                      !player.broke && (
                         <Popconfirm
                           title={"Vay tiền"}
                           description={`Bạn có muốn vay tiền ${player.id} không?`}

@@ -40,7 +40,10 @@ class MainStore {
   showChat = false;
   cameraRef = null;
   messageApi = null;
-  roomList = []
+  roomList = [];
+  myStream = null;
+  remoteStreams = {}
+  mute = false
 
   loans = {};
   chat = {};
@@ -353,7 +356,7 @@ class MainStore {
       id: name,
       money: this.startMoney,
       position: 1,
-      broke: this.gameState !== GAME_STATES.WAITING
+      broke: this.gameState !== GAME_STATES.WAITING,
     });
     if (this.players.length > this.totalPlayers) {
       this.players.length = this.totalPlayers;
@@ -629,12 +632,26 @@ class MainStore {
   }
 
   transformAndSetRoomList(data) {
-    this.roomList = Object.values(data).map(room => get(room, ['0', 'data']))
+    this.roomList = Object.values(data).map((room) => get(room, ["0", "data"]));
+  }
+
+  addRemoteStream(key, stream) {
+    console.log(key, stream);
+    if (this.remoteStreams[key]) return;
+    this.remoteStreams[key] = stream;
+  }
+
+  addMyStream(stream) {
+    this.myStream = stream;
+  }
+
+  setMute(mute) {
+    this.mute = mute;
   }
 }
 
 class Reset {
-  loans = {}
+  loans = {};
   gameState = GAME_STATES.ROLL_DICE;
   dice = [6, 6];
   ownedBlocks = {};
