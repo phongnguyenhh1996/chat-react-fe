@@ -80,7 +80,7 @@ const Dashboard = () => {
                 MainStore.players[random(0, MainStore.players.length - 1)].id;
               MainStore.updatePlayingId(randomPlayerId);
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-              MainStore.sendDataToChannel();
+              MainStore.sendDataToChannel(['playingId', 'gameState']);
             }}
           >
             Bắt đầu

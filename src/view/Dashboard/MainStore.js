@@ -276,7 +276,7 @@ class MainStore {
         block.name +
         "--" +
         this.gameState.split("--")[2];
-      this.sendDataToChannel();
+      this.sendDataToChannel(["gameState", "festivalProperty", "ownedBlocks"]);
 
       delay(2000).then(() => {
         if (callback) callback();
@@ -395,8 +395,8 @@ class MainStore {
     this.chat[playerId] = message;
   }
 
-  sendDataToChannel() {
-    const data = SYNC_KEY.reduce((fullData, key) => {
+  sendDataToChannel(key = SYNC_KEY) {
+    const data = key.reduce((fullData, key) => {
       fullData[key] = this[key];
       return fullData;
     }, {});
