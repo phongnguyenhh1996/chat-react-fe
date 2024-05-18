@@ -377,3 +377,5 @@ export const randomPropertyIndex = () =>
     random(30, 31),
     random(34, 35),
   ][random(0, 7)];
+
+export const BEG_MONEY = 1000

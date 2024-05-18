@@ -80,7 +80,7 @@ const Dashboard = () => {
                 MainStore.players[random(0, MainStore.players.length - 1)].id;
               MainStore.updatePlayingId(randomPlayerId);
               MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-              MainStore.sendDataToChannel(['playingId', 'gameState']);
+              MainStore.sendDataToChannel(["playingId", "gameState"]);
             }}
           >
             Bắt đầu
@@ -675,7 +675,7 @@ const Dashboard = () => {
     }
 
     if (block.type === "chance") {
-      await [
+      let chances = [
         async () => {
           const gift = [500, 1000][random(0, 1)];
           MainStore.updatePlayerData(
@@ -698,27 +698,6 @@ const Dashboard = () => {
           MainStore.sendDataToChannel(["players"]);
           nextPlayerTurn();
           return;
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) =>
-              MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
-              MainStore.ownedBlocks[key].lostElectricity > 0
-          );
-          if (allOwnedBlockKeys.length > 0) {
-            MainStore.updateGameState(
-              GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-          } else {
-            MainStore.updateGameState(
-              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--fixElectricity"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
         },
         async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
@@ -901,7 +880,28 @@ const Dashboard = () => {
           nextPlayerTurn();
           return;
         },
-      ][random(0, 11)]();
+      ];
+
+      const allMyBuildingLostElectricity = Object.keys(
+        MainStore.ownedBlocks
+      ).filter(
+        (key) =>
+          MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
+          MainStore.ownedBlocks[key].lostElectricity > 0
+      );
+
+      if (allMyBuildingLostElectricity.length > 0) {
+        chances.push(() => {
+          MainStore.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
+          );
+          MainStore.sendDataToChannel(["gameState"]);
+        });
+      }
+
+      const randomNumber = random(0, chances.length - 1);
+      const randomChanceAction = chances[randomNumber];
+      randomChanceAction();
       return;
     }
 
@@ -1313,7 +1313,7 @@ const Dashboard = () => {
     checkEndGame();
   };
 
-  console.log((currentPlayer?.position-1) % 36 );
+  console.log((currentPlayer?.position - 1) % 36);
 
   return (
     <TransformWrapper
@@ -1333,9 +1333,10 @@ const Dashboard = () => {
           className="container-page"
           style={{
             gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
-            gridAutoColumns: `minmax(${parseInt(
-              window.innerWidth / 12
-            ) + (window.innerWidth > 950 ? 0 : 10)}px, 1fr)`,
+            gridAutoColumns: `minmax(${
+              parseInt(window.innerWidth / 12) +
+              (window.innerWidth > 950 ? 0 : 10)
+            }px, 1fr)`,
           }}
         >
           {BLOCKS.map((block, index) => (
@@ -1344,7 +1345,9 @@ const Dashboard = () => {
               key={block.name + index}
               block={block}
               idx={index}
-              active={currentPlayer && (currentPlayer.position-1) % 36 === index}
+              active={
+                currentPlayer && (currentPlayer.position - 1) % 36 === index
+              }
             />
           ))}
           {MainStore.players.map(
@@ -1361,7 +1364,8 @@ const Dashboard = () => {
                         ? 0.2
                         : 1,
                     pointerEvents: "none",
-                    zIndex: MainStore.playingId === player.id ? 1000 : undefined
+                    zIndex:
+                      MainStore.playingId === player.id ? 1000 : undefined,
                   }}
                   className="player"
                   key={player.id}

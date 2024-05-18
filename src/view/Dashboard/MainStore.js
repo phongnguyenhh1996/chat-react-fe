@@ -3,6 +3,7 @@ import { random, range, get } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
+  BEG_MONEY,
   BLOCKS,
   COLORS,
   GAME_STATES,
@@ -441,7 +442,7 @@ class MainStore {
               >
                 {loan.to !== this.myName ? loan.to : "bạn"}
               </strong>
-              số tiền <strong style={{ padding: "0 4px" }}>500$</strong>
+              số tiền <strong style={{ padding: "0 4px" }}>{BEG_MONEY}$</strong>
             </div>
             {loan.to === this.myName && (
               <div>
@@ -481,14 +482,14 @@ class MainStore {
                       this.players[this.getPlayerIndexById(newLoan.to)],
                       "money",
                       this.players[this.getPlayerIndexById(newLoan.to)].money -
-                        2000
+                        BEG_MONEY
                     );
 
                     this.updatePlayerData(
                       this.players[this.getPlayerIndexById(newLoan.from)],
                       "money",
                       this.players[this.getPlayerIndexById(newLoan.from)]
-                        .money + 2000
+                        .money + BEG_MONEY
                     );
                     this.channel
                       .send({
@@ -586,7 +587,7 @@ class MainStore {
                 >
                   {loan.from}
                 </strong>
-                2000$
+                {BEG_MONEY}$
               </div>
             </div>
           ),
