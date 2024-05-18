@@ -13,7 +13,6 @@ import {
   Popconfirm,
   Table,
 } from "antd";
-import Peer from "peerjs";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
 import {
@@ -370,9 +369,6 @@ const Dashboard = () => {
     return "";
   };
 
-  const createPeerId = (roomId, playerId) =>
-    `peer${roomId}${playerId.replace(/\s/g, "")}peer`;
-
   const handleOk = async () => {
     MainStore.setMessageApi(messageApi);
     if (!MainStore.online) {
@@ -392,27 +388,6 @@ const Dashboard = () => {
         })
       );
       MainStore.updateGameState(GAME_STATES.WAITING);
-
-      const peer = new Peer(createPeerId(MainStore.roomId, MainStore.myName));
-
-      const getUserMedia =
-        navigator.mediaDevices.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia ||
-        navigator.mzGetUserMedia;
-      try {
-        const stream = await getUserMedia({ video: false, audio: true });
-        MainStore.addMyStream(stream);
-        peer.on("call", (call) => {
-          call.answer(MainStore.myStream); // Answer the call with an A/V stream.
-          call.on("stream", (remoteStream) => {
-            const source = document.getElementById(call.peer);
-            source.srcObject = remoteStream;
-          });
-        });
-      } catch (error) {
-        console.log("Failed to get local stream", error);
-      }
 
       if (MainStore.isHost) {
         MainStore.setPlayers([]);
@@ -455,13 +430,6 @@ const Dashboard = () => {
             MainStore.channel.track({
               data: pick(MainStore, [...SYNC_KEY, "loans"]),
             });
-            const joinerPeerId = createPeerId(MainStore.roomId, key);
-            if (!MainStore.remoteStreams[joinerPeerId]) {
-              const call = peer.call(joinerPeerId, MainStore.myStream);
-              call.on("stream", (remoteStream) => {
-                MainStore.addRemoteStream(joinerPeerId, remoteStream);
-              });
-            }
           })
           .subscribe(async (status) => {
             if (status !== "SUBSCRIBED") {
@@ -476,15 +444,6 @@ const Dashboard = () => {
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
-          })
-          .on("presence", { event: "join" }, ({ key }) => {
-            const joinerPeerId = createPeerId(MainStore.roomId, key);
-            if (!MainStore.remoteStreams[joinerPeerId]) {
-              const call = peer.call(joinerPeerId, MainStore.myStream);
-              call.on("stream", (remoteStream) => {
-                MainStore.addRemoteStream(joinerPeerId, remoteStream);
-              });
-            }
           })
           .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
@@ -1388,6 +1347,8 @@ const Dashboard = () => {
     checkEndGame();
   };
 
+  console.log((currentPlayer?.position-1) % 36 );
+
   return (
     <TransformWrapper
       minScale={0.5}
@@ -1402,20 +1363,13 @@ const Dashboard = () => {
       doubleClick={{ disabled: true }}
     >
       <TransformComponent wrapperStyle={{ width: "100vw", height: "100vh" }}>
-        {MainStore.players.map((player) => (
-          <audio
-            id={createPeerId(MainStore.roomId, player.id)}
-            key={player.id}
-            autoPlay
-          />
-        ))}
         <div
           className="container-page"
           style={{
             gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
             gridAutoColumns: `minmax(${parseInt(
               window.innerWidth / 12
-            )}px, 1fr)`,
+            ) + (window.innerWidth > 950 ? 0 : 10)}px, 1fr)`,
           }}
         >
           {BLOCKS.map((block, index) => (
@@ -1424,6 +1378,7 @@ const Dashboard = () => {
               key={block.name + index}
               block={block}
               idx={index}
+              active={currentPlayer && (currentPlayer.position-1) % 36 === index}
             />
           ))}
           {MainStore.players.map(
@@ -1440,6 +1395,7 @@ const Dashboard = () => {
                         ? 0.2
                         : 1,
                     pointerEvents: "none",
+                    zIndex: MainStore.playingId === player.id ? 1000 : undefined
                   }}
                   className="player"
                   key={player.id}
@@ -1577,26 +1533,6 @@ const Dashboard = () => {
                         />
                       </Popconfirm>
                     )}
-                    {MainStore.myStream && (
-                      <Button
-                        ghost
-                        size="middle"
-                        shape="circle"
-                        icon={
-                          <Icon
-                            symbol={MainStore.mute ? "mic-off" : "mic-on"}
-                            width="20px"
-                            height="20px"
-                          />
-                        }
-                        onClick={() => {
-                          MainStore.setMute(!MainStore.mute);
-                          MainStore.myStream.getAudioTracks()[0].enabled =
-                            !MainStore.mute;
-                        }}
-                      />
-                    )}
-
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 2000 &&

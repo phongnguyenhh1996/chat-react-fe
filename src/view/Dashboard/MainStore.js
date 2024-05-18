@@ -41,9 +41,6 @@ class MainStore {
   cameraRef = null;
   messageApi = null;
   roomList = [];
-  myStream = null;
-  remoteStreams = {}
-  mute = false
 
   loans = {};
   chat = {};
@@ -633,20 +630,6 @@ class MainStore {
 
   transformAndSetRoomList(data) {
     this.roomList = Object.values(data).map((room) => get(room, ["0", "data"]));
-  }
-
-  addRemoteStream(key, stream) {
-    console.log(key, stream);
-    if (this.remoteStreams[key]) return;
-    this.remoteStreams[key] = stream;
-  }
-
-  addMyStream(stream) {
-    this.myStream = stream;
-  }
-
-  setMute(mute) {
-    this.mute = mute;
   }
 }
 

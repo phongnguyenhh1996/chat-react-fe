@@ -7,7 +7,7 @@ import MainStore from "./MainStore";
 import fettiSVG from "../../asset/img/confetti.svg";
 import lightningSVG from "../../asset/img/lightning.svg";
 
-const Block = ({ block, idx, nextPlayerTurn }) => {
+const Block = ({ block, idx, nextPlayerTurn, active }) => {
   const price = MainStore.getPrice(block);
   const color =
     COLORS[
@@ -43,13 +43,23 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
   return (
     <div
       style={{
+        backgroundColor: active ? "rgba(0,0,0,0.8)" : undefined,
+        boxShadow: active ? `0 0 2px #fff, 0 0 20px ${
+          COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
+        }, 0 0 30px ${
+          COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
+        },
+    0 0 40px ${
+      COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
+    }` : undefined,
+        transform: active ? "scale(1.1)" : 'scale(1)',
         gridArea: "i" + (idx + 1).toString(),
         flexDirection: ["top", "bottom"].includes(block.position)
           ? "column"
           : block.position === "left"
           ? "row"
           : "row-reverse",
-        opacity: checkNeedToHide() ? 0.2 : 1,
+        opacity: checkNeedToHide() && !active ? 0.2 : 1,
         outline:
           MainStore.sellingProperty === block.name ||
           ((MainStore.gameState.startsWith(GAME_STATES.CHOOSEN_BUILDING) ||
@@ -62,7 +72,8 @@ const Block = ({ block, idx, nextPlayerTurn }) => {
             : undefined,
         zIndex:
           MainStore.sellingProperty === block.name ||
-          MainStore.gameState.split("--")[1] === block.name
+          MainStore.gameState.split("--")[1] === block.name ||
+          active
             ? 999
             : undefined,
       }}
