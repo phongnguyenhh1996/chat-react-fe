@@ -432,7 +432,7 @@ class MainStore {
               >
                 {loan.from}
               </strong>
-              muốn mượn
+              muốn xin
               <strong
                 style={{
                   color: COLORS[this.getPlayerIndexById(loan.to)],
@@ -441,9 +441,7 @@ class MainStore {
               >
                 {loan.to !== this.myName ? loan.to : "bạn"}
               </strong>
-              số tiền <strong style={{ padding: "0 4px" }}>2000$</strong> và sẽ
-              trả <strong style={{ padding: "0 4px" }}>2500$</strong> sau
-              <strong style={{ padding: "0 4px" }}>10</strong> lượt đi
+              số tiền <strong style={{ padding: "0 4px" }}>500$</strong>
             </div>
             {loan.to === this.myName && (
               <div>
@@ -492,11 +490,6 @@ class MainStore {
                       this.players[this.getPlayerIndexById(newLoan.from)]
                         .money + 2000
                     );
-                    this.updatePlayerData(
-                      this.players[this.getPlayerIndexById(newLoan.from)],
-                      "loan",
-                      { turnLeft: 9, price: 2500, to: newLoan.to }
-                    );
                     this.channel
                       .send({
                         type: "broadcast",
@@ -513,7 +506,7 @@ class MainStore {
                   type="primary"
                   style={{ marginLeft: 15 }}
                 >
-                  Cho mượn
+                  Cho
                 </Button>
               </div>
             )}
@@ -555,7 +548,7 @@ class MainStore {
                 >
                   {loan.from}
                 </strong>
-                mượn tiền
+                tiền
               </div>
             </div>
           ),
@@ -593,7 +586,7 @@ class MainStore {
                 >
                   {loan.from}
                 </strong>
-                mượn 2000$
+                2000$
               </div>
             </div>
           ),

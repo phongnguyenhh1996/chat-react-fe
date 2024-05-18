@@ -510,40 +510,6 @@ const Dashboard = () => {
       }
     }
     MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
-    const playerCheckLoan = MainStore.players[nextPlayerIndex];
-    if (playerCheckLoan.loan?.turnLeft > 0) {
-      MainStore.updatePlayerData(playerCheckLoan, "loan", {
-        ...playerCheckLoan.loan,
-        turnLeft: playerCheckLoan.loan.turnLeft - 1,
-      });
-    } else if (playerCheckLoan.loan?.turnLeft === 0) {
-      await delay(1000);
-      const receivePlayer =
-        MainStore.players[
-          MainStore.getPlayerIndexById(playerCheckLoan.loan?.to)
-        ];
-      let price = playerCheckLoan?.loan?.price;
-      if (playerCheckLoan.money - price < 0) {
-        price = await handleNotEnoughMoney(playerCheckLoan, price);
-      }
-      MainStore.updatePlayerData(
-        playerCheckLoan,
-        "money",
-        playerCheckLoan.money - price
-      );
-
-      MainStore.updatePlayerData(
-        receivePlayer,
-        "money",
-        receivePlayer.money + price
-      );
-      MainStore.updatePlayerData(playerCheckLoan, "loan", undefined);
-      MainStore.updateGameState(
-        GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
-      );
-      MainStore.sendDataToChannel(["gameState", "players"]);
-      await delay(2000);
-    }
     MainStore.updateGameState(GAME_STATES.ROLL_DICE);
     MainStore.sendDataToChannel([
       "playingId",
@@ -1490,28 +1456,6 @@ const Dashboard = () => {
                     className="player-action"
                   >
                     {contextHolder}
-                    {player.loan?.turnLeft !== undefined && (
-                      <Button
-                        disabled
-                        ghost
-                        icon={
-                          <Icon
-                            symbol="request-money"
-                            width="20px"
-                            height="20px"
-                          />
-                        }
-                        iconPosition="end"
-                        style={{
-                          fontSize: 20,
-                          fontWeight: "bold",
-                          marginRight: 5,
-                          color: "white",
-                        }}
-                      >
-                        {player.loan?.turnLeft + 1}
-                      </Button>
-                    )}
                     {player.id === MainStore.myName && (
                       <Popconfirm
                         title={"Đầu hàng"}
@@ -1535,7 +1479,7 @@ const Dashboard = () => {
                     )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
-                      player.money >= 2000 &&
+                      player.money >= 500 &&
                       !player.loan &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
@@ -1543,12 +1487,12 @@ const Dashboard = () => {
                       !currentPlayer?.loan &&
                       !player.broke && (
                         <Popconfirm
-                          title={"Vay tiền"}
-                          description={`Bạn có muốn vay tiền ${player.id} không?`}
+                          title={"Xin tiền"}
+                          description={`Bạn có muốn xin tiền ${player.id} không?`}
                           onConfirm={() =>
                             requestLoan(currentPlayer.id, player.id)
                           }
-                          okText="Vay"
+                          okText="Xin tiền"
                           cancelText="Không"
                         >
                           <Button
