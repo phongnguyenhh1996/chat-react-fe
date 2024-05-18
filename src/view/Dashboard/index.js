@@ -1217,7 +1217,7 @@ const Dashboard = () => {
       return currentSellingProperty.price[0];
     const price =
       currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
-    return parseInt(price / 1.8);
+    return parseInt(price / 1.5);
   };
 
   const sellProperty = async () => {
