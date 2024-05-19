@@ -691,15 +691,6 @@ const Dashboard = () => {
           nextPlayerTurn();
         },
         async () => {
-          MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
-          MainStore.sendDataToChannel(["players"]);
-          nextPlayerTurn();
-          return;
-        },
-        async () => {
           const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
             (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
           );
@@ -731,25 +722,6 @@ const Dashboard = () => {
             nextPlayerTurn();
           }
           return;
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          if (allOwnedBlockKeys.length > 0) {
-            MainStore.updateGameState(
-              GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-          } else {
-            MainStore.updateGameState(
-              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--festival"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
         },
         async () => {
           const allOtherOwnedBlockKeys = Object.keys(
@@ -881,6 +853,46 @@ const Dashboard = () => {
           return;
         },
       ];
+
+      if (!currentPlayer.haveFreeCard) {
+        chances.push(async () => {
+          MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
+          MainStore.sendDataToChannel(["gameState"]);
+          await delay(2000);
+          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
+          MainStore.sendDataToChannel(["players"]);
+          nextPlayerTurn();
+          return;
+        });
+      }
+
+      const allMyBuilding = Object.keys(MainStore.ownedBlocks).filter(
+        (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
+      );
+
+      if (allMyBuilding.length > 0) {
+        chances.push(() => {
+          MainStore.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
+          );
+          MainStore.sendDataToChannel(["gameState"]);
+        });
+      }
+
+      const allMyBuildingLowerThan5 = Object.keys(MainStore.ownedBlocks).filter(
+        (key) =>
+          MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
+          MainStore.ownedBlocks[key].level < 5
+      );
+
+      if (allMyBuildingLowerThan5.length > 0) {
+        chances.push(() => {
+          MainStore.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building-lower-5--upgradeFree"
+          );
+          MainStore.sendDataToChannel(["gameState"]);
+        });
+      }
 
       const allMyBuildingLostElectricity = Object.keys(
         MainStore.ownedBlocks

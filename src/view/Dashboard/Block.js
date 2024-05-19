@@ -31,6 +31,16 @@ const Block = ({ block, idx, nextPlayerTurn, active }) => {
           return true;
       }
 
+      if (MainStore.gameState.split("--")[1] === "my-building-lower-5") {
+        if (
+          MainStore.ownedBlocks[block.name].playerId !== MainStore.playingId ||
+          (MainStore.ownedBlocks[block.name].playerId === MainStore.playingId &&
+            (MainStore.ownedBlocks[block.name].level >= 5 ||
+              block.type === "public"))
+        )
+          return true;
+      }
+
       if (MainStore.gameState.split("--")[1] === "other-building") {
         if (MainStore.ownedBlocks[block.name].playerId === MainStore.playingId)
           return true;
@@ -44,15 +54,15 @@ const Block = ({ block, idx, nextPlayerTurn, active }) => {
     <div
       style={{
         backgroundColor: active ? "rgba(0,0,0,0.8)" : undefined,
-        boxShadow: active ? `0 0 2px #fff, 0 0 20px ${
-          COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
-        }, 0 0 30px ${
-          COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
-        },
-    0 0 40px ${
-      COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
-    }` : undefined,
-        transform: active ? "scale(1.1)" : 'scale(1)',
+        boxShadow: active
+          ? `0 0 2px #fff, 0 0 20px ${
+              COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
+            }, 0 0 30px ${
+              COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
+            },
+    0 0 40px ${COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]}`
+          : undefined,
+        transform: active ? "scale(1.1)" : "scale(1)",
         gridArea: "i" + (idx + 1).toString(),
         flexDirection: ["top", "bottom"].includes(block.position)
           ? "column"

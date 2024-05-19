@@ -361,6 +361,7 @@ export const CHOOSE_BUILDING_ACTIONS = {
   lostElectricity: "cắt điện",
   downgrade: "phá nhà",
   fixElectricity: "sửa điện",
+  upgradeFree: "nâng cấp miễn phí"
 };
 
 export const REBUY_RATE = 1.4;

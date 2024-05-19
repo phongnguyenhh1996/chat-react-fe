@@ -271,6 +271,11 @@ class MainStore {
       if (this.gameState.split("--")[2] === "fixElectricity") {
         this.updateOwnedBlockElectricity(block.name, 0);
       }
+
+      if (this.gameState.split("--")[2] === "upgradeFree") {
+        this.updateOwnedBlocks(block.name);
+      }
+
       this.gameState =
         GAME_STATES.CHOOSEN_BUILDING +
         "--" +
