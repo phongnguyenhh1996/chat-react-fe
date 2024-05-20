@@ -713,7 +713,7 @@ class MainStore {
 
   *buyProperty(player, isRebuy) {
     const updatingPropertyInfo =
-    this.ownedBlocks[this.buyingPropertyInfo.name] || {};
+      this.ownedBlocks[this.buyingPropertyInfo.name] || {};
     const currentPlayer = player;
     let price = this.buyingPropertyInfo.price[updatingPropertyInfo?.level || 0];
     let receivePlayer;
@@ -733,9 +733,7 @@ class MainStore {
       );
       if (isRebuy) {
         receivePlayer =
-          this.players[
-            this.getPlayerIndexById(updatingPropertyInfo.playerId)
-          ];
+          this.players[this.getPlayerIndexById(updatingPropertyInfo.playerId)];
         this.updateOwnedBlockPlayerId(
           this.buyingPropertyInfo.name,
           currentPlayer.id
@@ -817,18 +815,15 @@ class MainStore {
     return BLOCKS.find((block) => block.name === this.buyingProperty);
   }
 
-  get sellingPropertyBlock () {
-    return  BLOCKS.find(
-      (block) => block.name === this.sellingProperty
-    )
+  get sellingPropertyBlock() {
+    return BLOCKS.find((block) => block.name === this.sellingProperty);
   }
   get sellingPropertyInfor() {
-    return this.ownedBlocks[this.sellingProperty]
+    return this.ownedBlocks[this.sellingProperty];
   }
 
   surrender() {
-    const player =
-      this.players[this.getPlayerIndexById(this.myName)];
+    const player = this.players[this.getPlayerIndexById(this.myName)];
     this.updatePlayerData(player, "broke", true);
     this.updatePlayerData(player, "position", 1);
     Object.keys(this.ownedBlocks).forEach((key) => {
@@ -838,7 +833,7 @@ class MainStore {
     });
     this.sendDataToChannel(["ownedBlocks", "players"]);
     this.checkEndGame();
-  };
+  }
 
   updateTotalPlayers(total) {
     this.totalPlayers = total;
@@ -934,6 +929,21 @@ class MainStore {
     }
   }
 
+  isMonopolyBlock(block) {
+    const allPropertySameRow = BLOCKS.filter((b) => b.row === block.row);
+    const isOwnedAllPropertySameRow = allPropertySameRow.every(
+      (b) =>
+        b.row === block.row &&
+        this.ownedBlocks[b.name]?.playerId ===
+          this.ownedBlocks[block.name].playerId
+    );
+
+    return {
+      value: isOwnedAllPropertySameRow,
+      length: allPropertySameRow.length,
+    };
+  }
+
   getPrice(block = {}, level, isSelling) {
     if (!["public", "property"].includes(block.type)) return;
     const prices = block?.price;
@@ -957,17 +967,10 @@ class MainStore {
     }
 
     if (block.type === "property") {
-      const allPropertySameRow = BLOCKS.filter((b) => b.row === block.row);
-      const isOwnedAllPropertySameRow = allPropertySameRow.every(
-        (b) =>
-          b.row === block.row &&
-          this.ownedBlocks[b.name]?.playerId ===
-            this.ownedBlocks[block.name].playerId
-      );
       if (isSelling) return totalPrice;
-      if (isOwnedAllPropertySameRow)
+      if (this.isMonopolyBlock(block).value)
         return parseInt(
-          totalPrice * (allPropertySameRow.length === 2 ? 1.8 : 2)
+          totalPrice * (this.isMonopolyBlock(block).length === 2 ? 1.8 : 2)
         );
     }
     return totalPrice;
@@ -1365,7 +1368,9 @@ class MainStore {
           total += block.price[currentIdx];
           return total;
         }, 0) *
-          (REBUY_RATE + updatingPropertyInfo.level / 10)
+          (REBUY_RATE +
+            updatingPropertyInfo.level / 10 +
+            (this.isMonopolyBlock(block) ? 0.3 : 0))
       ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
     );
   }

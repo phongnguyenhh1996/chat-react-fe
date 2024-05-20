@@ -410,6 +410,7 @@ const Dashboard = () => {
               totalPlayers: MainStore.players.length,
               hostName: MainStore.myName,
               created: moment().toISOString(),
+              version: packageJson.version
             },
           });
         });
@@ -1308,10 +1309,6 @@ const Dashboard = () => {
                         dataIndex: "hostName",
                       },
                       {
-                        title: "Số người",
-                        dataIndex: "totalPlayers",
-                      },
-                      {
                         title: "Thời gian",
                         dataIndex: "created",
                         defaultSortOrder: "descend",
@@ -1319,12 +1316,24 @@ const Dashboard = () => {
                         render: (value) => moment(value).fromNow(),
                       },
                       {
+                        title: "Version",
+                        dataIndex: "version",
+                      },
+                      {
                         title: "",
                         dataIndex: "roomId",
-                        render: (value) => (
+                        render: (value, record) => (
                           <Button
                             type="primary"
                             onClick={() => {
+                              if (packageJson.version !== record.version) {
+                                MainStore.messageApi.open({
+                                  type: "error",
+                                  content: `Vui lòng nâng cấp lên phiên bản ${record.version} để tham gia`,
+                                  duration: 2,
+                                })
+                                return
+                              }
                               MainStore.setRoomId(value);
                               handleOk();
                             }}
