@@ -357,7 +357,7 @@ class MainStore {
     }
 
     if (block.type === "jail") {
-      this.goToJailJail();
+      this.goToJail();
       return;
     }
 
