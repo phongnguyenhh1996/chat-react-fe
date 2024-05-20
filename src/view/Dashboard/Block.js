@@ -7,7 +7,7 @@ import MainStore from "./MainStore";
 import fettiSVG from "../../asset/img/confetti.svg";
 import lightningSVG from "../../asset/img/lightning.svg";
 
-const Block = ({ block, idx, nextPlayerTurn, active }) => {
+const Block = ({ block, idx, active }) => {
   const price = MainStore.getPrice(block);
   const color =
     COLORS[
@@ -53,7 +53,7 @@ const Block = ({ block, idx, nextPlayerTurn, active }) => {
   return (
     <div
       style={{
-        backgroundColor: active ? "rgba(0,0,0,0.8)" : undefined,
+        backgroundColor: active ? "rgb(18, 48, 77)" : undefined,
         boxShadow: active
           ? `0 0 2px #fff, 0 0 20px ${
               COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
@@ -90,7 +90,7 @@ const Block = ({ block, idx, nextPlayerTurn, active }) => {
       className={"block block--" + block.type}
       id={`block-${idx}`}
       onClick={() =>
-        MainStore.handleChooseBlock(block, checkNeedToHide(), nextPlayerTurn)
+        MainStore.handleChooseBlock(block, checkNeedToHide(), true)
       }
     >
       <div

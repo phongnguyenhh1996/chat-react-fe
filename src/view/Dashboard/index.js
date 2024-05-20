@@ -169,13 +169,13 @@ const Dashboard = () => {
               marginTop: 15,
             }}
           >
-            <Button onClick={() => nextPlayerTurn()} type="primary" danger>
+            <Button onClick={() => MainStore.nextPlayerTurn()} type="primary" danger>
               Không
             </Button>
             <Button
               type="primary"
               onClick={() =>
-                buyProperty(
+                MainStore.buyProperty(
                   currentPlayer,
                   MainStore.gameState === GAME_STATES.REBUYING
                 )
@@ -209,7 +209,7 @@ const Dashboard = () => {
             </span>{" "}
           </div>
           <div style={{ textAlign: "left" }}>
-            Tổng bán được: {getSellingPrice()}$
+            Tổng bán được: {MainStore.getSellingPrice()}$
           </div>
           <div
             style={{
@@ -219,7 +219,7 @@ const Dashboard = () => {
               marginTop: 10,
             }}
           >
-            <Button type="primary" onClick={sellProperty}>
+            <Button type="primary" onClick={MainStore.sellProperty}>
               OK
             </Button>
           </div>
@@ -369,7 +369,7 @@ const Dashboard = () => {
     return "";
   };
 
-  const handleOk = async () => {
+  const handleOk = () => {
     MainStore.setMessageApi(messageApi);
     if (!MainStore.online) {
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
@@ -399,12 +399,12 @@ const Dashboard = () => {
             },
           },
         });
-        waitingRoomChannel.subscribe(async (status) => {
+        waitingRoomChannel.subscribe((status) => {
           if (status !== "SUBSCRIBED") {
             return;
           }
 
-          await waitingRoomChannel.track({
+          waitingRoomChannel.track({
             data: {
               roomId: MainStore.roomId,
               totalPlayers: MainStore.players.length,
@@ -431,12 +431,12 @@ const Dashboard = () => {
               data: pick(MainStore, [...SYNC_KEY, "loans"]),
             });
           })
-          .subscribe(async (status) => {
+          .subscribe((status) => {
             if (status !== "SUBSCRIBED") {
               return;
             }
 
-            await MainStore.channel.track({
+            MainStore.channel.track({
               data: pick(MainStore, SYNC_KEY),
             });
           });
@@ -449,15 +449,16 @@ const Dashboard = () => {
             const newState = MainStore.channel.presenceState();
             MainStore.updateStore(get(newState, ["host", "0", "data"], {}));
           })
-          .subscribe(async (status) => {
+          .subscribe((status) => {
             if (status !== "SUBSCRIBED") {
               return;
             }
 
-            await MainStore.channel.track({
-              online_at: new Date().toISOString(),
-            });
-            MainStore.updateGameState(GAME_STATES.WAITING);
+            MainStore.channel
+              .track({
+                online_at: new Date().toISOString(),
+              })
+              .then(() => MainStore.updateGameState(GAME_STATES.WAITING));
           });
       }
     }
@@ -468,624 +469,6 @@ const Dashboard = () => {
   );
   const currentPlayer = MainStore.players[currentPlayerIndex];
 
-  const getJailPosition = (player) => {
-    return Math.floor(player.position / 36) * 36 + 12;
-  };
-
-  const goToJail = async () => {
-    MainStore.updateGameState(GAME_STATES.GOING_JAIL);
-    MainStore.sendDataToChannel(["gameState"]);
-    await delay(2000);
-    if (currentPlayer.haveFreeCard) {
-      MainStore.updateGameState(GAME_STATES.USE_FREE_CARD);
-      MainStore.updatePlayerData(currentPlayer, "haveFreeCard", false);
-      MainStore.sendDataToChannel(["players", "gameState"]);
-      await delay(2000);
-      nextPlayerTurn(true);
-      return;
-    }
-    MainStore.updatePlayerData(
-      currentPlayer,
-      "position",
-      getJailPosition(currentPlayer)
-    );
-    MainStore.updatePlayerData(currentPlayer, "onJail", 1);
-    MainStore.sendDataToChannel(["players"]);
-    nextPlayerTurn(true);
-  };
-
-  const goNextAvailablePlayer = async () => {
-    MainStore.setSamePlayerRolling(1);
-    let nextPlayerIndex = MainStore.getPlayerIndexById(MainStore.playingId) + 1;
-    if (nextPlayerIndex >= MainStore.players.length) {
-      nextPlayerIndex = 0;
-    }
-    while (
-      MainStore.players[nextPlayerIndex] &&
-      MainStore.players[nextPlayerIndex].broke
-    ) {
-      nextPlayerIndex += 1;
-      if (nextPlayerIndex >= MainStore.players.length) {
-        nextPlayerIndex = 0;
-      }
-    }
-    MainStore.updatePlayingId(MainStore.players[nextPlayerIndex].id);
-    MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-    MainStore.sendDataToChannel([
-      "playingId",
-      "samePlayerRolling",
-      "gameState",
-    ]);
-  };
-
-  const nextPlayerTurn = async (forceSwitch) => {
-    MainStore.updateGameState(GAME_STATES.SWITCH_TURN);
-    MainStore.sendDataToChannel(["gameState"]);
-    await delay(100);
-    if (forceSwitch || currentPlayer.broke) {
-      goNextAvailablePlayer();
-      return;
-    }
-    if (MainStore.dice[0] === MainStore.dice[1]) {
-      MainStore.setSamePlayerRolling(MainStore.samePlayerRolling + 1);
-      if (MainStore.samePlayerRolling > 3) {
-        goToJail();
-      } else {
-        MainStore.updateGameState(GAME_STATES.ROLL_DICE);
-      }
-      MainStore.sendDataToChannel(["gameState", "samePlayerRolling"]);
-    } else {
-      goNextAvailablePlayer();
-    }
-  };
-
-  const checkNewRound = async () => {
-    const round = currentPlayer.round || 0;
-    const currentRound = Math.floor((currentPlayer.position - 1) / 36);
-    if (currentRound > round) {
-      MainStore.updatePlayerData(
-        currentPlayer,
-        "money",
-        currentPlayer.money + 2000
-      );
-      MainStore.updatePlayerData(currentPlayer, "round", currentRound);
-      MainStore.updateGameState(
-        GAME_STATES.INC_MONEY + "--2000--bank--new-round"
-      );
-      MainStore.sendDataToChannel(["gameState", "players"]);
-      await delay(2000);
-      checkCurrentBlock();
-    } else checkCurrentBlock();
-  };
-
-  const checkCurrentBlock = async () => {
-    let idx = currentPlayer.position - 1;
-    if (idx > 35) {
-      idx = idx % 36;
-    }
-    const block = BLOCKS[idx] || {};
-    if (block.type === "property" || block.type === "public") {
-      const ownedBlock = MainStore.ownedBlocks[block.name];
-      if (!ownedBlock) {
-        MainStore.updateBuyingProperty(block.name);
-        MainStore.sendDataToChannel(["buyingProperty"]);
-        await delay(1000);
-        MainStore.updateGameState(GAME_STATES.BUYING);
-        MainStore.sendDataToChannel(["gameState"]);
-      } else {
-        if (ownedBlock.playerId !== currentPlayer.id) {
-          const receivePlayer =
-            MainStore.players[
-              MainStore.getPlayerIndexById(ownedBlock.playerId)
-            ];
-          if (!receivePlayer.onJail) {
-            if (ownedBlock.lostElectricity > 0) {
-              MainStore.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
-              MainStore.updateOwnedBlockElectricity(block.name);
-              MainStore.sendDataToChannel(["gameState", "ownedBlocks"]);
-            } else {
-              let price = MainStore.getPrice(block);
-              if (currentPlayer.money - price < 0) {
-                price = await handleNotEnoughMoney(currentPlayer, price);
-              }
-              MainStore.updatePlayerData(
-                currentPlayer,
-                "money",
-                currentPlayer.money - price
-              );
-
-              MainStore.updatePlayerData(
-                receivePlayer,
-                "money",
-                receivePlayer.money + price
-              );
-
-              MainStore.updateGameState(
-                GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
-              );
-              MainStore.sendDataToChannel(["gameState", "players"]);
-              if (
-                block.type === "property" &&
-                !currentPlayer.broke &&
-                ownedBlock.level <= 5
-              ) {
-                await delay(2000);
-                MainStore.updateBuyingProperty(block.name);
-                MainStore.updateGameState(GAME_STATES.REBUYING);
-                MainStore.sendDataToChannel(["gameState", "buyingProperty"]);
-                return;
-              }
-            }
-          } else {
-            MainStore.updateGameState(GAME_STATES.RECEIVER_ON_JAIL);
-            MainStore.sendDataToChannel(["gameState"]);
-          }
-          await delay(2000);
-          nextPlayerTurn();
-        } else {
-          if (block.type === "public") {
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
-          if (ownedBlock?.level === 6) {
-            MainStore.updateGameState(GAME_STATES.MAX_LEVEL_PROPERTY);
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-          } else {
-            MainStore.updateBuyingProperty(block.name);
-            MainStore.sendDataToChannel(["buyingProperty"]);
-            await delay(1000);
-            MainStore.updateGameState(GAME_STATES.UPDATING);
-            MainStore.sendDataToChannel(["gameState"]);
-          }
-        }
-      }
-      return;
-    }
-
-    if (block.type === "jail") {
-      goToJail();
-      return;
-    }
-
-    if (block.type === "jail-visit") {
-      const totalPlayerOnJail = MainStore.players.filter(
-        (p) => p.onJail > 0
-      ).length;
-      if (totalPlayerOnJail > 0) {
-        let price = totalPlayerOnJail * 200;
-        if (currentPlayer.money - price < 0) {
-          price = await handleNotEnoughMoney(currentPlayer, price);
-        }
-        MainStore.updatePlayerData(
-          currentPlayer,
-          "money",
-          currentPlayer.money - price
-        );
-        MainStore.updateGameState(
-          GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
-        );
-        MainStore.sendDataToChannel(["gameState", "players"]);
-        await delay(2000);
-      }
-      nextPlayerTurn();
-      return;
-    }
-
-    if (block.type === "chance") {
-      let chances = [
-        async () => {
-          const gift = [500, 1000][random(0, 1)];
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            currentPlayer.money + gift
-          );
-          MainStore.updateGameState(
-            GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift"
-          );
-          MainStore.sendDataToChannel(["gameState", "players"]);
-          await delay(2000);
-          nextPlayerTurn();
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          MainStore.updateGameState(GAME_STATES.RANDOM_TRAVELING);
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          if (allOwnedBlockKeys.length > 0) {
-            const randomKey =
-              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-            const idx = BLOCKS.findIndex((b) => b.name === randomKey);
-            const round = Math.floor((currentPlayer.position - 1) / 36);
-            const currentRoundDestination = round * 36 + (idx + 1);
-            let position = currentRoundDestination;
-            if (position <= currentPlayer.position) {
-              position += 36;
-            }
-            movingPlayer(() => {}, position);
-          } else {
-            MainStore.updatePlayerData(
-              currentPlayer,
-              "money",
-              currentPlayer.money + 500
-            );
-            MainStore.updateGameState(
-              GAME_STATES.INC_MONEY + "--" + 500 + "--bank"
-            );
-            MainStore.sendDataToChannel(["gameState", "players"]);
-            await delay(2000);
-            nextPlayerTurn();
-          }
-          return;
-        },
-        async () => {
-          const allOtherOwnedBlockKeys = Object.keys(
-            MainStore.ownedBlocks
-          ).filter(
-            (key) => MainStore.ownedBlocks[key].playerId !== currentPlayer.id
-          );
-          if (allOtherOwnedBlockKeys.length > 0) {
-            MainStore.updateGameState(
-              GAME_STATES.CHOOSE_BUILDING + "--other-building--lostElectricity"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-          } else {
-            MainStore.updateGameState(
-              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--lostElectricity"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
-        },
-        async () => {
-          const allOtherOwnedBlockKeys = Object.keys(
-            MainStore.ownedBlocks
-          ).filter(
-            (key) => MainStore.ownedBlocks[key].playerId !== currentPlayer.id
-          );
-          if (allOtherOwnedBlockKeys.length > 0) {
-            MainStore.updateGameState(
-              GAME_STATES.CHOOSE_BUILDING + "--other-building--downgrade"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-          } else {
-            MainStore.updateGameState(
-              GAME_STATES.NO_BLOCK_TO_CHOOSE + "--downgrade"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
-        },
-        async () => {
-          let tax = [500, 1000][random(0, 1)];
-          if (currentPlayer.money - tax < 0) {
-            tax = await handleNotEnoughMoney(currentPlayer, tax);
-          }
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            currentPlayer.money - tax
-          );
-          MainStore.updateGameState(
-            GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax"
-          );
-          MainStore.sendDataToChannel(["gameState", "players"]);
-          await delay(2000);
-          nextPlayerTurn();
-        },
-        goToJail,
-        async () => {
-          const round = currentPlayer.round || 0;
-          const position = random(currentPlayer.position - 1, round * 36 + 1);
-          MainStore.updateGameState(
-            GAME_STATES.GOING_BACK + "--" + (currentPlayer.position - position)
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          movingPlayer(() => {}, position);
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          if (allOwnedBlockKeys.length === 0) {
-            MainStore.updateGameState(
-              GAME_STATES.DOWN_GRADE_BUILDING + "--no-property"
-            );
-            MainStore.sendDataToChannel(["gameState"]);
-            await delay(2000);
-            nextPlayerTurn();
-            return;
-          }
-          const randomKey =
-            allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-          MainStore.updateGameState(
-            GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          const price = getSellingPrice(randomKey);
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            parseInt(currentPlayer.money + price)
-          );
-          MainStore.updateOwnedBlockLevel(randomKey);
-          MainStore.updateGameState(
-            GAME_STATES.INC_MONEY + "--" + price + "--bank"
-          );
-          MainStore.sendDataToChannel([
-            "gameState",
-            "players",
-            "sellingProperty",
-            "ownedBlocks",
-          ]);
-          await delay(2000);
-          nextPlayerTurn();
-        },
-        async () => {
-          const allOwnedBlockKeys = Object.keys(MainStore.ownedBlocks).filter(
-            (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-          );
-          MainStore.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          if (allOwnedBlockKeys.length > 0) {
-            const randomKey =
-              allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
-            MainStore.updateOwnedBlockElectricity(randomKey, 1);
-            MainStore.updateGameState(
-              GAME_STATES.LOST_ELECTRIC_BUILDING + "--" + randomKey
-            );
-            MainStore.sendDataToChannel(["ownedBlocks"]);
-            await delay(1000);
-          }
-          nextPlayerTurn();
-          return;
-        },
-      ];
-
-      if (!currentPlayer.haveFreeCard) {
-        chances.push(async () => {
-          MainStore.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
-          MainStore.sendDataToChannel(["gameState"]);
-          await delay(2000);
-          MainStore.updatePlayerData(currentPlayer, "haveFreeCard", true);
-          MainStore.sendDataToChannel(["players"]);
-          nextPlayerTurn();
-          return;
-        });
-      }
-
-      const allMyBuilding = Object.keys(MainStore.ownedBlocks).filter(
-        (key) => MainStore.ownedBlocks[key].playerId === currentPlayer.id
-      );
-
-      if (allMyBuilding.length > 0) {
-        chances.push(() => {
-          MainStore.updateGameState(
-            GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-        });
-      }
-
-      const allMyBuildingLowerThan5 = Object.keys(MainStore.ownedBlocks).filter(
-        (key) =>
-          MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
-          MainStore.ownedBlocks[key].level < 5
-      );
-
-      if (allMyBuildingLowerThan5.length > 0) {
-        chances.push(() => {
-          MainStore.updateGameState(
-            GAME_STATES.CHOOSE_BUILDING + "--my-building-lower-5--upgradeFree"
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-        });
-      }
-
-      const allMyBuildingLostElectricity = Object.keys(
-        MainStore.ownedBlocks
-      ).filter(
-        (key) =>
-          MainStore.ownedBlocks[key].playerId === currentPlayer.id &&
-          MainStore.ownedBlocks[key].lostElectricity > 0
-      );
-
-      if (allMyBuildingLostElectricity.length > 0) {
-        chances.push(() => {
-          MainStore.updateGameState(
-            GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
-          );
-          MainStore.sendDataToChannel(["gameState"]);
-        });
-      }
-
-      const randomNumber = random(0, chances.length - 1);
-      const randomChanceAction = chances[randomNumber];
-      randomChanceAction();
-      return;
-    }
-
-    if (block.type === "plane") {
-      const round = Math.floor((currentPlayer.position - 1) / 36);
-      const currentRoundDestination =
-        round * 36 + (MainStore.flightDestination + 1);
-      let position = currentRoundDestination;
-      if (position <= currentPlayer.position) {
-        position += 36;
-      }
-
-      MainStore.updateGameState(
-        GAME_STATES.FLIGHT + "--" + MainStore.flightDestination
-      );
-      MainStore.sendDataToChannel(["gameState"]);
-      await delay(2000);
-      movingPlayer(MainStore.randomFlightDestination, position);
-      return;
-    }
-
-    nextPlayerTurn();
-  };
-
-  const checkEndGame = () => {
-    if (MainStore.players.filter((p) => !p.broke).length < 2) {
-      const playerNotBroke = MainStore.players.find((p) => !p.broke);
-      MainStore.updatePlayerData(playerNotBroke, "winner", true);
-      MainStore.updatePlayerData(playerNotBroke, "winReason", "not-broke");
-      MainStore.setEndGame(true);
-      MainStore.sendDataToChannel(["players", "endGame"]);
-      return;
-    }
-
-    let isFourPublic = false;
-    let isThreeMonopoly = false;
-    MainStore.players.forEach((p) => {
-      const ownedBlocks = Object.keys(MainStore.ownedBlocks).filter(
-        (key) => MainStore.ownedBlocks[key].playerId === p.id
-      );
-      let rows = {};
-      ownedBlocks.forEach((key) => {
-        const block = BLOCKS.find((b) => b.name === key);
-        const rowKey = block.row || block.type;
-        if (rows[rowKey]) {
-          rows[rowKey] += 1;
-        } else {
-          rows[rowKey] = 1;
-        }
-      });
-      isFourPublic = Object.values(rows).some((value) => value === 4);
-      isThreeMonopoly =
-        Object.keys(rows).filter(
-          (key) =>
-            rows[key] === BLOCKS.filter((b) => b.row === key).length &&
-            key !== "public"
-        ).length === 3;
-      if (isFourPublic || isThreeMonopoly) {
-        MainStore.updatePlayerData(p, "winner", true);
-        MainStore.updatePlayerData(
-          p,
-          "winReason",
-          isFourPublic ? "four-public" : "three-monopoly"
-        );
-        MainStore.setEndGame(true);
-        MainStore.sendDataToChannel(["players", "endGame"]);
-        return;
-      }
-    });
-  };
-
-  const movingPlayer = async (callback, planeDestinationPostion) => {
-    if (currentPlayer.onJail > 0) {
-      if (MainStore.dice[0] === MainStore.dice[1]) {
-        MainStore.updateGameState(GAME_STATES.GOING_OUT_JAIL);
-        MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-        MainStore.sendDataToChannel(["players", "gameState"]);
-        await delay(2000);
-        nextPlayerTurn(true);
-      } else {
-        MainStore.updatePlayerData(
-          currentPlayer,
-          "onJail",
-          currentPlayer.onJail + 1
-        );
-        MainStore.sendDataToChannel(["players", "gameState"]);
-        await delay(500);
-        if (currentPlayer.onJail === 4) {
-          let price = 500;
-          if (currentPlayer.money - 500 < 0) {
-            price = await handleNotEnoughMoney(currentPlayer, price);
-          }
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "money",
-            currentPlayer.money - price
-          );
-          MainStore.updatePlayerData(currentPlayer, "onJail", 0);
-          MainStore.updateGameState(
-            GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
-          );
-          MainStore.sendDataToChannel(["players", "gameState"]);
-          await delay(2000);
-          nextPlayerTurn(true);
-          return;
-        }
-        MainStore.updateGameState(GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL);
-        MainStore.sendDataToChannel(["gameState"]);
-        const playerPayToOutJail = await MainStore.ensureMoneyIsEnough(
-          MainStore.checkPayToOutJail,
-          currentPlayer.id
-        );
-        if (playerPayToOutJail) {
-          MainStore.updatePlayerData(currentPlayer, "onJail", 3);
-          MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
-          MainStore.sendDataToChannel(["players"]);
-          movingPlayer();
-          return;
-        }
-        MainStore.updatePlayerData(currentPlayer, "payToOutJail", undefined);
-        MainStore.sendDataToChannel(["players"]);
-        nextPlayerTurn(true);
-      }
-      return;
-    }
-    const newPosition = planeDestinationPostion
-      ? planeDestinationPostion
-      : currentPlayer.position + MainStore.dice[0] + MainStore.dice[1];
-
-    if (!planeDestinationPostion) {
-      MainStore.updateGameState(GAME_STATES.MOVING);
-      await delay(500);
-    }
-    const moving = setInterval(
-      () => {
-        if (currentPlayer.position === newPosition) {
-          clearInterval(moving);
-          checkNewRound();
-          if (callback) {
-            callback();
-          }
-        } else {
-          MainStore.updatePlayerData(
-            currentPlayer,
-            "position",
-            currentPlayer.position +
-              (newPosition > currentPlayer.position ? 1 : -1)
-          );
-          MainStore.sendDataToChannel(["players", "gameState"]);
-        }
-      },
-      planeDestinationPostion ? 100 : 200
-    );
-  };
-
-  const rollDice = async () => {
-    if (
-      MainStore.gameState !== GAME_STATES.ROLL_DICE ||
-      (MainStore.online && MainStore.playingId !== MainStore.myName)
-    )
-      return;
-    MainStore.updateGameState(GAME_STATES.ROLLING_DICE);
-    MainStore.randomDice();
-    MainStore.sendDataToChannel(["dice"]);
-    await delay(200);
-    MainStore.randomDice();
-    MainStore.sendDataToChannel(["dice"]);
-    await delay(500);
-    movingPlayer();
-    // movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
-  };
-
   const buyingProperty = BLOCKS.find(
     (block) => block.name === MainStore.buyingProperty
   );
@@ -1093,130 +476,10 @@ const Dashboard = () => {
   const updatingPropertyInfo =
     MainStore.ownedBlocks[buyingProperty?.name] || {};
 
-  const handleNotEnoughMoney = async (player, price) => {
-    MainStore.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
-    MainStore.setPriceNeedToPay(price);
-    MainStore.sendDataToChannel(["priceNeedToPay", "gameState"]);
-    const playerStillHaveMoney = await MainStore.ensureMoneyIsEnough(
-      MainStore.checkMoney,
-      player.id,
-      price
-    );
-    if (!playerStillHaveMoney) {
-      price = player.money;
-      MainStore.updatePlayerData(player, "broke", true);
-      MainStore.updatePlayerData(player, "position", 1);
-      Object.keys(MainStore.ownedBlocks).forEach((key) => {
-        if (MainStore.ownedBlocks[key].playerId === player.id) {
-          MainStore.deleteOwnedBlock(key);
-        }
-      });
-      MainStore.sendDataToChannel(["players", "ownedBlocks"]);
-      checkEndGame();
-    }
-    await delay(1000);
-    MainStore.resetSellingState();
-    return price;
-  };
-
-  const buyProperty = async (player, isRebuy) => {
-    const currentPlayer = player;
-    let price = buyingProperty.price[updatingPropertyInfo?.level || 0];
-    let receivePlayer;
-    if (isRebuy) {
-      price = MainStore.getRebuyPrice(buyingProperty);
-    }
-    const priceBefore = price;
-    let priceAfter = price;
-    if (currentPlayer.money - price < 0) {
-      priceAfter = await handleNotEnoughMoney(currentPlayer, price);
-    }
-    if (priceBefore === priceAfter) {
-      MainStore.updatePlayerData(
-        currentPlayer,
-        "money",
-        currentPlayer.money - price
-      );
-      if (isRebuy) {
-        receivePlayer =
-          MainStore.players[
-            MainStore.getPlayerIndexById(updatingPropertyInfo.playerId)
-          ];
-        MainStore.updateOwnedBlockPlayerId(
-          buyingProperty.name,
-          currentPlayer.id
-        );
-        MainStore.updatePlayerData(
-          receivePlayer,
-          "money",
-          receivePlayer.money + price
-        );
-      } else {
-        MainStore.updateOwnedBlocks(buyingProperty.name, price);
-      }
-      MainStore.updateGameState(
-        GAME_STATES.DEC_MONEY +
-          "--" +
-          price +
-          "--" +
-          (isRebuy ? receivePlayer.id : "bank")
-      );
-      MainStore.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
-    }
-
-    await delay(2000);
-    checkEndGame();
-
-    if (
-      (MainStore.ownedBlocks[MainStore.buyingProperty]?.level < 2 || isRebuy) &&
-      buyingProperty.type === "property" &&
-      !currentPlayer.broke
-    ) {
-      MainStore.updateGameState(GAME_STATES.UPDATING);
-      MainStore.sendDataToChannel(["gameState"]);
-    } else {
-      nextPlayerTurn();
-    }
-  };
-
   const sellingProperty = BLOCKS.find(
     (block) => block.name === MainStore.sellingProperty
   );
   const sellingPropertyInfor = MainStore.ownedBlocks[MainStore.sellingProperty];
-
-  const getSellingPrice = (key) => {
-    const currentSellingProperty = key
-      ? BLOCKS.find((block) => block.name === key)
-      : sellingProperty;
-    const currentSellingPropertyInfor = key
-      ? MainStore.ownedBlocks[key]
-      : sellingPropertyInfor;
-    if (currentSellingProperty.type === "public")
-      return currentSellingProperty.price[0];
-    const price =
-      currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
-    return parseInt(price / 1.5);
-  };
-
-  const sellProperty = async () => {
-    const price = getSellingPrice();
-    MainStore.updatePlayerData(
-      currentPlayer,
-      "money",
-      parseInt(currentPlayer.money + price)
-    );
-    MainStore.updateOwnedBlockLevel(MainStore.sellingProperty);
-    MainStore.updateGameState(
-      GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + currentPlayer.id
-    );
-    MainStore.sendDataToChannel([
-      "gameState",
-      "ownedBlocks",
-      "players",
-      "sellingProperty",
-    ]);
-    await delay(1000);
-  };
 
   const updatePayToOutJail = (payToOutJail) => {
     MainStore.updatePlayerData(currentPlayer, "payToOutJail", payToOutJail);
@@ -1311,22 +574,6 @@ const Dashboard = () => {
     });
   };
 
-  const surrender = () => {
-    const player =
-      MainStore.players[MainStore.getPlayerIndexById(MainStore.myName)];
-    MainStore.updatePlayerData(player, "broke", true);
-    MainStore.updatePlayerData(player, "position", 1);
-    Object.keys(MainStore.ownedBlocks).forEach((key) => {
-      if (MainStore.ownedBlocks[key].playerId === player.id) {
-        MainStore.deleteOwnedBlock(key);
-      }
-    });
-    MainStore.sendDataToChannel(["ownedBlocks", "players"]);
-    checkEndGame();
-  };
-
-  console.log((currentPlayer?.position - 1) % 36);
-
   return (
     <TransformWrapper
       minScale={0.5}
@@ -1353,7 +600,6 @@ const Dashboard = () => {
         >
           {BLOCKS.map((block, index) => (
             <Block
-              nextPlayerTurn={nextPlayerTurn}
               key={block.name + index}
               block={block}
               idx={index}
@@ -1476,7 +722,7 @@ const Dashboard = () => {
                       <Popconfirm
                         title={"Đầu hàng"}
                         description={"Bạn muốn đầu hàng không?"}
-                        onConfirm={surrender}
+                        onConfirm={MainStore.surrender}
                         okText={"Đầu hàng"}
                         cancelText="Không"
                       >
@@ -1677,7 +923,7 @@ const Dashboard = () => {
 
             {MainStore.gameState !== GAME_STATES.INIT &&
               MainStore.loans[MainStore.myName]?.status !== "request" && (
-                <div className="information" onClick={rollDice}>
+                <div className="information" onClick={MainStore.rollDice}>
                   <div
                     className="information__row"
                     style={{

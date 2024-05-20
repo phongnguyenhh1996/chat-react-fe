@@ -79,6 +79,767 @@ class MainStore {
     makeAutoObservable(this, null, { autoBind: true });
   }
 
+  *rollDice() {
+    if (
+      this.gameState !== GAME_STATES.ROLL_DICE ||
+      (this.online && this.playingId !== this.myName)
+    )
+      return;
+    this.updateGameState(GAME_STATES.ROLLING_DICE);
+    this.randomDice();
+    this.sendDataToChannel(["dice"]);
+    yield delay(200);
+    this.randomDice();
+    this.sendDataToChannel(["dice"]);
+    yield delay(500);
+    this.movingPlayer();
+    // this.movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
+  }
+
+  *movingPlayer(callback, planeDestinationPostion) {
+    if (this.currentPlayer.onJail > 0) {
+      if (this.dice[0] === this.dice[1]) {
+        this.updateGameState(GAME_STATES.GOING_OUT_JAIL);
+        this.updatePlayerData(this.currentPlayer, "onJail", 0);
+        this.sendDataToChannel(["players", "gameState"]);
+        yield delay(2000);
+        this.nextPlayerTurn(true);
+      } else {
+        this.updatePlayerData(
+          this.currentPlayer,
+          "onJail",
+          this.currentPlayer.onJail + 1
+        );
+        this.sendDataToChannel(["players", "gameState"]);
+        yield delay(500);
+        if (this.currentPlayer.onJail === 4) {
+          let price = 500;
+          if (this.currentPlayer.money - 500 < 0) {
+            price = yield this.handleNotEnoughMoney(this.currentPlayer, price);
+          }
+          this.updatePlayerData(
+            this.currentPlayer,
+            "money",
+            this.currentPlayer.money - price
+          );
+          this.updatePlayerData(this.currentPlayer, "onJail", 0);
+          this.updateGameState(
+            GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
+          );
+          this.sendDataToChannel(["players", "gameState"]);
+          yield delay(2000);
+          this.nextPlayerTurn(true);
+          return;
+        }
+        this.updateGameState(GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL);
+        this.sendDataToChannel(["gameState"]);
+        const playerPayToOutJail = yield this.ensureMoneyIsEnough(
+          this.checkPayToOutJail,
+          this.currentPlayer.id
+        );
+        if (playerPayToOutJail) {
+          this.updatePlayerData(this.currentPlayer, "onJail", 3);
+          this.updatePlayerData(this.currentPlayer, "payToOutJail", undefined);
+          this.sendDataToChannel(["players"]);
+          this.movingPlayer();
+          return;
+        }
+        this.updatePlayerData(this.currentPlayer, "payToOutJail", undefined);
+        this.sendDataToChannel(["players"]);
+        this.nextPlayerTurn(true);
+      }
+      return;
+    }
+    const newPosition = planeDestinationPostion
+      ? planeDestinationPostion
+      : this.currentPlayer.position + this.dice[0] + this.dice[1];
+
+    if (!planeDestinationPostion) {
+      this.updateGameState(GAME_STATES.MOVING);
+      yield delay(500);
+    }
+    const moving = setInterval(
+      () => {
+        if (this.currentPlayer.position === newPosition) {
+          clearInterval(moving);
+          this.checkNewRound();
+          if (callback) {
+            callback();
+          }
+        } else {
+          this.updatePlayerData(
+            this.currentPlayer,
+            "position",
+            this.currentPlayer.position +
+              (newPosition > this.currentPlayer.position ? 1 : -1)
+          );
+          this.sendDataToChannel(["players", "gameState"]);
+        }
+      },
+      planeDestinationPostion ? 100 : 200
+    );
+  }
+
+  *nextPlayerTurn(forceSwitch) {
+    this.updateGameState(GAME_STATES.SWITCH_TURN);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(100);
+    if (forceSwitch || this.currentPlayer.broke) {
+      this.goNextAvailablePlayer();
+      return;
+    }
+    if (this.dice[0] === this.dice[1]) {
+      this.setSamePlayerRolling(this.samePlayerRolling + 1);
+      if (this.samePlayerRolling > 3) {
+        this.goToJail();
+      } else {
+        this.updateGameState(GAME_STATES.ROLL_DICE);
+      }
+      this.sendDataToChannel(["gameState", "samePlayerRolling"]);
+    } else {
+      this.goNextAvailablePlayer();
+    }
+  }
+
+  get currentPlayer() {
+    return this.players.find((p) => p.id === this.playingId);
+  }
+
+  *handleNotEnoughMoney(player, price) {
+    this.updateGameState(GAME_STATES.NEED_MONEY + "----" + player.id);
+    this.setPriceNeedToPay(price);
+    this.sendDataToChannel(["priceNeedToPay", "gameState"]);
+    const playerStillHaveMoney = yield this.ensureMoneyIsEnough(
+      this.checkMoney,
+      player.id,
+      price
+    );
+    if (!playerStillHaveMoney) {
+      price = player.money;
+      this.updatePlayerData(player, "broke", true);
+      this.updatePlayerData(player, "position", 1);
+      Object.keys(this.ownedBlocks).forEach((key) => {
+        if (this.ownedBlocks[key].playerId === player.id) {
+          this.deleteOwnedBlock(key);
+        }
+      });
+      this.sendDataToChannel(["players", "ownedBlocks"]);
+      this.checkEndGame();
+    }
+    yield delay(1000);
+    this.resetSellingState();
+    return price;
+  }
+
+  goNextAvailablePlayer() {
+    this.setSamePlayerRolling(1);
+    let nextPlayerIndex = this.getPlayerIndexById(this.playingId) + 1;
+    if (nextPlayerIndex >= this.players.length) {
+      nextPlayerIndex = 0;
+    }
+    while (
+      this.players[nextPlayerIndex] &&
+      this.players[nextPlayerIndex].broke
+    ) {
+      nextPlayerIndex += 1;
+      if (nextPlayerIndex >= this.players.length) {
+        nextPlayerIndex = 0;
+      }
+    }
+    this.updatePlayingId(this.players[nextPlayerIndex].id);
+    this.updateGameState(GAME_STATES.ROLL_DICE);
+    this.sendDataToChannel(["playingId", "samePlayerRolling", "gameState"]);
+  }
+
+  *checkNewRound() {
+    const round = this.currentPlayer.round || 0;
+    const currentRound = Math.floor((this.currentPlayer.position - 1) / 36);
+    if (currentRound > round) {
+      this.updatePlayerData(
+        this.currentPlayer,
+        "money",
+        this.currentPlayer.money + 2000
+      );
+      this.updatePlayerData(this.currentPlayer, "round", currentRound);
+      this.updateGameState(GAME_STATES.INC_MONEY + "--2000--bank--new-round");
+      this.sendDataToChannel(["gameState", "players"]);
+      yield delay(2000);
+      this.checkCurrentBlock();
+    } else this.checkCurrentBlock();
+  }
+
+  *checkCurrentBlock() {
+    let idx = this.currentPlayer.position - 1;
+    if (idx > 35) {
+      idx = idx % 36;
+    }
+    const block = BLOCKS[idx] || {};
+    if (block.type === "property" || block.type === "public") {
+      const ownedBlock = this.ownedBlocks[block.name];
+      if (!ownedBlock) {
+        this.updateBuyingProperty(block.name);
+        this.sendDataToChannel(["buyingProperty"]);
+        yield delay(1000);
+        this.updateGameState(GAME_STATES.BUYING);
+        this.sendDataToChannel(["gameState"]);
+      } else {
+        if (ownedBlock.playerId !== this.currentPlayer.id) {
+          const receivePlayer =
+            this.players[this.getPlayerIndexById(ownedBlock.playerId)];
+          if (!receivePlayer.onJail) {
+            if (ownedBlock.lostElectricity > 0) {
+              this.updateGameState(GAME_STATES.CURRENT_LOST_ELECTRIC);
+              this.updateOwnedBlockElectricity(block.name);
+              this.sendDataToChannel(["gameState", "ownedBlocks"]);
+            } else {
+              let price = this.getPrice(block);
+              if (this.currentPlayer.money - price < 0) {
+                price = yield this.handleNotEnoughMoney(
+                  this.currentPlayer,
+                  price
+                );
+              }
+              this.updatePlayerData(
+                this.currentPlayer,
+                "money",
+                this.currentPlayer.money - price
+              );
+
+              this.updatePlayerData(
+                receivePlayer,
+                "money",
+                receivePlayer.money + price
+              );
+
+              this.updateGameState(
+                GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
+              );
+              this.sendDataToChannel(["gameState", "players"]);
+              if (
+                block.type === "property" &&
+                !this.currentPlayer.broke &&
+                ownedBlock.level <= 5
+              ) {
+                yield delay(2000);
+                this.updateBuyingProperty(block.name);
+                this.updateGameState(GAME_STATES.REBUYING);
+                this.sendDataToChannel(["gameState", "buyingProperty"]);
+                return;
+              }
+            }
+          } else {
+            this.updateGameState(GAME_STATES.RECEIVER_ON_JAIL);
+            this.sendDataToChannel(["gameState"]);
+          }
+          yield delay(2000);
+          this.nextPlayerTurn();
+        } else {
+          if (block.type === "public") {
+            yield delay(2000);
+            this.nextPlayerTurn();
+            return;
+          }
+          if (ownedBlock?.level === 6) {
+            this.updateGameState(GAME_STATES.MAX_LEVEL_PROPERTY);
+            this.sendDataToChannel(["gameState"]);
+            yield delay(2000);
+            this.nextPlayerTurn();
+          } else {
+            this.updateBuyingProperty(block.name);
+            this.sendDataToChannel(["buyingProperty"]);
+            yield delay(1000);
+            this.updateGameState(GAME_STATES.UPDATING);
+            this.sendDataToChannel(["gameState"]);
+          }
+        }
+      }
+      return;
+    }
+
+    if (block.type === "jail") {
+      this.goToJailJail();
+      return;
+    }
+
+    if (block.type === "jail-visit") {
+      const totalPlayerOnJail = this.players.filter((p) => p.onJail > 0).length;
+      if (totalPlayerOnJail > 0) {
+        let price = totalPlayerOnJail * 200;
+        if (this.currentPlayer.money - price < 0) {
+          price = yield this.handleNotEnoughMoney(this.currentPlayer, price);
+        }
+        this.updatePlayerData(
+          this.currentPlayer,
+          "money",
+          this.currentPlayer.money - price
+        );
+        this.updateGameState(
+          GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
+        );
+        this.sendDataToChannel(["gameState", "players"]);
+        yield delay(2000);
+      }
+      this.nextPlayerTurn();
+      return;
+    }
+
+    if (block.type === "chance") {
+      let chances = [
+        this.receiveGift,
+        this.randomTravel,
+        this.chooseLostElectric,
+        this.chooseDowngrade,
+        this.payTax,
+        this.goToJail,
+        this.movingBack,
+        this.randomDowngrade,
+        this.randomLostElectric,
+      ];
+
+      if (!this.currentPlayer.haveFreeCard) {
+        chances.push(this.giveFreeCard);
+      }
+
+      const allMyBuilding = Object.keys(this.ownedBlocks).filter(
+        (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+      );
+
+      if (allMyBuilding.length > 0) {
+        chances.push(() => {
+          this.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
+          );
+          this.sendDataToChannel(["gameState"]);
+        });
+      }
+
+      const allMyBuildingLowerThan5 = Object.keys(this.ownedBlocks).filter(
+        (key) =>
+          this.ownedBlocks[key].playerId === this.currentPlayer.id &&
+          this.ownedBlocks[key].level < 5
+      );
+
+      if (allMyBuildingLowerThan5.length > 0) {
+        chances.push(() => {
+          this.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building-lower-5--upgradeFree"
+          );
+          this.sendDataToChannel(["gameState"]);
+        });
+      }
+
+      const allMyBuildingLostElectricity = Object.keys(this.ownedBlocks).filter(
+        (key) =>
+          this.ownedBlocks[key].playerId === this.currentPlayer.id &&
+          this.ownedBlocks[key].lostElectricity > 0
+      );
+
+      if (allMyBuildingLostElectricity.length > 0) {
+        chances.push(() => {
+          this.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building--fixElectricity"
+          );
+          this.sendDataToChannel(["gameState"]);
+        });
+      }
+
+      const randomNumber = random(0, chances.length - 1);
+      const randomChanceAction = chances[randomNumber];
+      randomChanceAction();
+      return;
+    }
+
+    if (block.type === "plane") {
+      const round = Math.floor((this.currentPlayer.position - 1) / 36);
+      const currentRoundDestination = round * 36 + (this.flightDestination + 1);
+      let position = currentRoundDestination;
+      if (position <= this.currentPlayer.position) {
+        position += 36;
+      }
+
+      this.updateGameState(GAME_STATES.FLIGHT + "--" + this.flightDestination);
+      this.sendDataToChannel(["gameState"]);
+      yield delay(2000);
+      this.movingPlayer(this.randomFlightDestination, position);
+      return;
+    }
+
+    this.nextPlayerTurn();
+  }
+
+  *receiveGift() {
+    const gift = [500, 1000][random(0, 1)];
+    this.updatePlayerData(
+      this.currentPlayer,
+      "money",
+      this.currentPlayer.money + gift
+    );
+    this.updateGameState(GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift");
+    this.sendDataToChannel(["gameState", "players"]);
+    yield delay(2000);
+    this.nextPlayerTurn();
+  }
+
+  *randomTravel() {
+    const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
+      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+    );
+    this.updateGameState(GAME_STATES.RANDOM_TRAVELING);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    if (allOwnedBlockKeys.length > 0) {
+      const randomKey =
+        allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+      const idx = BLOCKS.findIndex((b) => b.name === randomKey);
+      const round = Math.floor((this.currentPlayer.position - 1) / 36);
+      const currentRoundDestination = round * 36 + (idx + 1);
+      let position = currentRoundDestination;
+      if (position <= this.currentPlayer.position) {
+        position += 36;
+      }
+      this.movingPlayer(() => {}, position);
+    } else {
+      this.updatePlayerData(
+        this.currentPlayer,
+        "money",
+        this.currentPlayer.money + 500
+      );
+      this.updateGameState(GAME_STATES.INC_MONEY + "--" + 500 + "--bank");
+      this.sendDataToChannel(["gameState", "players"]);
+      yield delay(2000);
+      this.nextPlayerTurn();
+    }
+    return;
+  }
+  *chooseLostElectric() {
+    const allOtherOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
+      (key) => this.ownedBlocks[key].playerId !== this.currentPlayer.id
+    );
+    if (allOtherOwnedBlockKeys.length > 0) {
+      this.updateGameState(
+        GAME_STATES.CHOOSE_BUILDING + "--other-building--lostElectricity"
+      );
+      this.sendDataToChannel(["gameState"]);
+    } else {
+      this.updateGameState(
+        GAME_STATES.NO_BLOCK_TO_CHOOSE + "--lostElectricity"
+      );
+      this.sendDataToChannel(["gameState"]);
+      yield delay(2000);
+      this.nextPlayerTurn();
+      return;
+    }
+  }
+
+  *chooseDowngrade() {
+    const allOtherOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
+      (key) => this.ownedBlocks[key].playerId !== this.currentPlayer.id
+    );
+    if (allOtherOwnedBlockKeys.length > 0) {
+      this.updateGameState(
+        GAME_STATES.CHOOSE_BUILDING + "--other-building--downgrade"
+      );
+      this.sendDataToChannel(["gameState"]);
+    } else {
+      this.updateGameState(GAME_STATES.NO_BLOCK_TO_CHOOSE + "--downgrade");
+      this.sendDataToChannel(["gameState"]);
+      yield delay(2000);
+      this.nextPlayerTurn();
+      return;
+    }
+  }
+
+  *payTax() {
+    let tax = [500, 1000][random(0, 1)];
+    if (this.currentPlayer.money - tax < 0) {
+      tax = yield this.handleNotEnoughMoney(this.currentPlayer, tax);
+    }
+    this.updatePlayerData(
+      this.currentPlayer,
+      "money",
+      this.currentPlayer.money - tax
+    );
+    this.updateGameState(GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax");
+    this.sendDataToChannel(["gameState", "players"]);
+    yield delay(2000);
+    this.nextPlayerTurn();
+  }
+  getJailPosition(player) {
+    return Math.floor(player.position / 36) * 36 + 12;
+  }
+  *goToJail() {
+    this.updateGameState(GAME_STATES.GOING_JAIL);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    if (this.currentPlayer.haveFreeCard) {
+      this.updateGameState(GAME_STATES.USE_FREE_CARD);
+      this.updatePlayerData(this.currentPlayer, "haveFreeCard", false);
+      this.sendDataToChannel(["players", "gameState"]);
+      yield delay(2000);
+      this.nextPlayerTurn(true);
+      return;
+    }
+    this.updatePlayerData(
+      this.currentPlayer,
+      "position",
+      this.getJailPosition(this.currentPlayer)
+    );
+    this.updatePlayerData(this.currentPlayer, "onJail", 1);
+    this.sendDataToChannel(["players"]);
+    this.nextPlayerTurn(true);
+  }
+
+  *movingBack() {
+    const round = this.currentPlayer.round || 0;
+    const position = random(this.currentPlayer.position - 1, round * 36 + 1);
+    this.updateGameState(
+      GAME_STATES.GOING_BACK + "--" + (this.currentPlayer.position - position)
+    );
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    this.movingPlayer(() => {}, position);
+  }
+  *randomDowngrade() {
+    const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
+      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+    );
+    if (allOwnedBlockKeys.length === 0) {
+      this.updateGameState(GAME_STATES.DOWN_GRADE_BUILDING + "--no-property");
+      this.sendDataToChannel(["gameState"]);
+      yield delay(2000);
+      this.nextPlayerTurn();
+      return;
+    }
+    const randomKey =
+      allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+    this.updateGameState(GAME_STATES.DOWN_GRADE_BUILDING + "--" + randomKey);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    const price = this.getSellingPrice(randomKey);
+    this.updatePlayerData(
+      this.currentPlayer,
+      "money",
+      parseInt(this.currentPlayer.money + price)
+    );
+    this.updateOwnedBlockLevel(randomKey);
+    this.updateGameState(GAME_STATES.INC_MONEY + "--" + price + "--bank");
+    this.sendDataToChannel([
+      "gameState",
+      "players",
+      "sellingProperty",
+      "ownedBlocks",
+    ]);
+    yield delay(2000);
+    this.nextPlayerTurn();
+  }
+
+  *randomLostElectric() {
+    const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
+      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+    );
+    this.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    if (allOwnedBlockKeys.length > 0) {
+      const randomKey =
+        allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
+      this.updateOwnedBlockElectricity(randomKey, 1);
+      this.updateGameState(
+        GAME_STATES.LOST_ELECTRIC_BUILDING + "--" + randomKey
+      );
+      this.sendDataToChannel(["ownedBlocks"]);
+      yield delay(1000);
+    }
+    this.nextPlayerTurn();
+    return;
+  }
+
+  *giveFreeCard() {
+    this.updateGameState(GAME_STATES.FREE_OUT_FAIL_CARD);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    this.updatePlayerData(this.currentPlayer, "haveFreeCard", true);
+    this.sendDataToChannel(["players"]);
+    this.nextPlayerTurn();
+    return;
+  }
+
+  checkEndGame() {
+    if (this.players.filter((p) => !p.broke).length < 2) {
+      const playerNotBroke = this.players.find((p) => !p.broke);
+      this.updatePlayerData(playerNotBroke, "winner", true);
+      this.updatePlayerData(playerNotBroke, "winReason", "not-broke");
+      this.setEndGame(true);
+      this.sendDataToChannel(["players", "endGame"]);
+      return;
+    }
+
+    let isFourPublic = false;
+    let isThreeMonopoly = false;
+    this.players.forEach((p) => {
+      const ownedBlocks = Object.keys(this.ownedBlocks).filter(
+        (key) => this.ownedBlocks[key].playerId === p.id
+      );
+      let rows = {};
+      ownedBlocks.forEach((key) => {
+        const block = BLOCKS.find((b) => b.name === key);
+        const rowKey = block.row || block.type;
+        if (rows[rowKey]) {
+          rows[rowKey] += 1;
+        } else {
+          rows[rowKey] = 1;
+        }
+      });
+      isFourPublic = Object.values(rows).some((value) => value === 4);
+      isThreeMonopoly =
+        Object.keys(rows).filter(
+          (key) =>
+            rows[key] === BLOCKS.filter((b) => b.row === key).length &&
+            key !== "public"
+        ).length === 3;
+      if (isFourPublic || isThreeMonopoly) {
+        this.updatePlayerData(p, "winner", true);
+        this.updatePlayerData(
+          p,
+          "winReason",
+          isFourPublic ? "four-public" : "three-monopoly"
+        );
+        this.setEndGame(true);
+        this.sendDataToChannel(["players", "endGame"]);
+        return;
+      }
+    });
+  }
+
+  *buyProperty(player, isRebuy) {
+    const updatingPropertyInfo =
+    this.ownedBlocks[this.buyingPropertyInfo.name] || {};
+    const currentPlayer = player;
+    let price = this.buyingPropertyInfo.price[updatingPropertyInfo?.level || 0];
+    let receivePlayer;
+    if (isRebuy) {
+      price = this.getRebuyPrice(this.buyingPropertyInfo);
+    }
+    const priceBefore = price;
+    let priceAfter = price;
+    if (currentPlayer.money - price < 0) {
+      priceAfter = yield this.handleNotEnoughMoney(currentPlayer, price);
+    }
+    if (priceBefore === priceAfter) {
+      this.updatePlayerData(
+        currentPlayer,
+        "money",
+        currentPlayer.money - price
+      );
+      if (isRebuy) {
+        receivePlayer =
+          this.players[
+            this.getPlayerIndexById(updatingPropertyInfo.playerId)
+          ];
+        this.updateOwnedBlockPlayerId(
+          this.buyingPropertyInfo.name,
+          currentPlayer.id
+        );
+        this.updatePlayerData(
+          receivePlayer,
+          "money",
+          receivePlayer.money + price
+        );
+      } else {
+        this.updateOwnedBlocks(this.buyingPropertyInfo.name, price);
+      }
+      this.updateGameState(
+        GAME_STATES.DEC_MONEY +
+          "--" +
+          price +
+          "--" +
+          (isRebuy ? receivePlayer.id : "bank")
+      );
+      this.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
+    }
+
+    yield delay(2000);
+    this.checkEndGame();
+
+    if (
+      (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
+      this.buyingPropertyInfo.type === "property" &&
+      !currentPlayer.broke
+    ) {
+      this.updateGameState(GAME_STATES.UPDATING);
+      this.sendDataToChannel(["gameState"]);
+    } else {
+      this.nextPlayerTurn();
+    }
+  }
+
+  getSellingPrice(key) {
+    const currentSellingProperty = key
+      ? BLOCKS.find((block) => block.name === key)
+      : this.sellingPropertyBlock;
+    const currentSellingPropertyInfor = key
+      ? this.ownedBlocks[key]
+      : this.sellingPropertyInfor;
+    if (currentSellingProperty.type === "public")
+      return currentSellingProperty.price[0];
+    const price =
+      currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
+    return parseInt(price / 1.5);
+  }
+
+  *sellProperty() {
+    const price = this.getSellingPrice();
+    this.updatePlayerData(
+      this.currentPlayer,
+      "money",
+      parseInt(this.currentPlayer.money + price)
+    );
+    this.updateOwnedBlockLevel(this.sellingProperty);
+    this.updateGameState(
+      GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + this.currentPlayer.id
+    );
+    this.sendDataToChannel([
+      "gameState",
+      "ownedBlocks",
+      "players",
+      "sellingProperty",
+    ]);
+    yield delay(1000);
+  }
+
+  updatePayToOutJail(payToOutJail) {
+    this.updatePlayerData(this.currentPlayer, "payToOutJail", payToOutJail);
+    this.updateGameState(GAME_STATES.RESPONDED_PAY_OUT_JAIL);
+    this.sendDataToChannel(["gameState", "players"]);
+  }
+
+  get buyingPropertyInfo() {
+    return BLOCKS.find((block) => block.name === this.buyingProperty);
+  }
+
+  get sellingPropertyBlock () {
+    return  BLOCKS.find(
+      (block) => block.name === this.sellingProperty
+    )
+  }
+  get sellingPropertyInfor() {
+    return this.ownedBlocks[this.sellingProperty]
+  }
+
+  surrender() {
+    const player =
+      this.players[this.getPlayerIndexById(this.myName)];
+    this.updatePlayerData(player, "broke", true);
+    this.updatePlayerData(player, "position", 1);
+    Object.keys(this.ownedBlocks).forEach((key) => {
+      if (this.ownedBlocks[key].playerId === player.id) {
+        this.deleteOwnedBlock(key);
+      }
+    });
+    this.sendDataToChannel(["ownedBlocks", "players"]);
+    this.checkEndGame();
+  };
+
   updateTotalPlayers(total) {
     this.totalPlayers = total;
     if (!this.online) {
@@ -107,12 +868,6 @@ class MainStore {
 
   updateGameState(state) {
     this.gameState = state;
-  }
-
-  async transitionGameState(state1, state2, delayTime) {
-    this.gameState = state1;
-    await delay(delayTime);
-    this.gameState = state2;
   }
 
   updatePlayingId(id) {
@@ -246,7 +1001,7 @@ class MainStore {
     });
   }
 
-  handleChooseBlock(block, isHide, callback) {
+  handleChooseBlock(block, isHide, goNext) {
     if (isHide || (this.online && this.playingId !== this.myName)) return;
 
     if (this.gameState.startsWith(GAME_STATES.NEED_MONEY)) {
@@ -285,7 +1040,7 @@ class MainStore {
       this.sendDataToChannel(["gameState", "festivalProperty", "ownedBlocks"]);
 
       delay(2000).then(() => {
-        if (callback) callback();
+        if (goNext) this.nextPlayerTurn();
       });
 
       return;
