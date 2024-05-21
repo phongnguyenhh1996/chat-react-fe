@@ -398,6 +398,10 @@ class MainStore {
         this.chooseTravel,
       ];
 
+      if (this.isLowestStatistic) {
+        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift)
+      }
+
       if (!this.currentPlayer.haveFreeCard) {
         chances.push(this.giveFreeCard);
       }
@@ -418,7 +422,8 @@ class MainStore {
       const allMyBuildingLowerThan5 = Object.keys(this.ownedBlocks).filter(
         (key) =>
           this.ownedBlocks[key].playerId === this.currentPlayer.id &&
-          this.ownedBlocks[key].level < 5 && BLOCKS.find(b => b.name === key).type !== 'public'
+          this.ownedBlocks[key].level < 5 &&
+          BLOCKS.find((b) => b.name === key).type !== "public"
       );
 
       if (allMyBuildingLowerThan5.length > 0) {
@@ -883,17 +888,21 @@ class MainStore {
   }
 
   randomDice() {
-    const statistic = this.getTotalMoneyPlayers();
-    if (
-      this.players.length > 2 &&
-      statistic[0].id === this.myName &&
-      statistic[statistic.length - 1].total - statistic[0].total > 15000
-    ) {
+    if (this.isLowestStatistic) {
       console.log("here");
       this.dice = [random(4, 6), random(4, 6)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
+  }
+
+  get isLowestStatistic() {
+    const statistic = this.getTotalMoneyPlayers();
+    return (
+      this.players.length > 2 &&
+      statistic[0].id === this.myName &&
+      statistic[statistic.length - 1].total - statistic[0].total > 15000
+    );
   }
 
   updateBuyingProperty(name) {
