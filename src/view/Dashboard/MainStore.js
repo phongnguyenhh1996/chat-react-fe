@@ -418,7 +418,7 @@ class MainStore {
       const allMyBuildingLowerThan5 = Object.keys(this.ownedBlocks).filter(
         (key) =>
           this.ownedBlocks[key].playerId === this.currentPlayer.id &&
-          this.ownedBlocks[key].level < 5
+          this.ownedBlocks[key].level < 5 && BLOCKS.find(b => b.name === key).type !== 'public'
       );
 
       if (allMyBuildingLowerThan5.length > 0) {
