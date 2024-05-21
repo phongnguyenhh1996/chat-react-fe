@@ -452,7 +452,7 @@ class MainStore {
     }
 
     if (block.type === "plane") {
-      this.flight(this.flightDestination, this.randomFlightDestination);
+      yield this.flight(this.flightDestination, this.randomFlightDestination);
       return;
     }
 
