@@ -1049,7 +1049,7 @@ class MainStore {
 
       if (this.gameState.split("--")[2] === "travel") {
         const blockIndex = BLOCKS.findIndex((b) => b.name === block.name);
-        this.flight(blockIndex);
+        yield this.flight(blockIndex);
       } else {
         this.gameState =
           GAME_STATES.CHOOSEN_BUILDING +
