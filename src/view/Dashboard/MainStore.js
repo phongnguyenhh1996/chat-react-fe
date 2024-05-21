@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { random, range, get } from "lodash";
+import { random, range, get, orderBy } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -460,7 +460,7 @@ class MainStore {
   }
 
   *flight(destinationIndex, callback) {
-    const noFunction = () => {}
+    const noFunction = () => {};
     const round = Math.floor((this.currentPlayer.position - 1) / 36);
     const currentRoundDestination = round * 36 + (destinationIndex + 1);
     let position = currentRoundDestination;
@@ -884,7 +884,16 @@ class MainStore {
   }
 
   randomDice() {
-    this.dice = [random(1, 6), random(1, 6)];
+    const statistic = this.getTotalMoneyPlayers();
+    if (
+      this.players.length > 2 &&
+      statistic[0].id === this.myName &&
+      statistic[statistic.length - 1].total - statistic[0].total > 15000
+    ) {
+      this.dice = [random(4, 6), random(4, 6)];
+    } else {
+      this.dice = [random(1, 6), random(1, 6)];
+    }
   }
 
   updateBuyingProperty(name) {
@@ -1405,10 +1414,11 @@ class MainStore {
         (blockName) => this.ownedBlocks[blockName].playerId === player.id
       );
       allBlock.forEach((blockName) => {
+        const block = BLOCKS.find((b) => b.name === blockName);
         const blockSellPrice = parseInt(
           range(0, this.ownedBlocks[blockName].level).reduce(
             (total, currentIdx) => {
-              total += this.getSellingPrice(blockName, currentIdx + 1);
+              total += block.price[currentIdx];
               return total;
             },
             0
@@ -1422,7 +1432,7 @@ class MainStore {
       };
     });
 
-    return total
+    return orderBy(total, "total", "desc");
   }
 
   setCameraRef(ref) {

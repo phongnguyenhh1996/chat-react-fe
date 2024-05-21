@@ -473,7 +473,6 @@ const Dashboard = () => {
               .track({
                 online_at: new Date().toISOString(),
               })
-              .then(() => MainStore.updateGameState(GAME_STATES.WAITING));
           });
       }
     }
