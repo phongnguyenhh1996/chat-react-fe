@@ -889,6 +889,7 @@ class MainStore {
       statistic[0].id === this.myName &&
       statistic[statistic.length - 1].total - statistic[0].total > 15000
     ) {
+      console.log("here");
       this.dice = [random(4, 6), random(4, 6)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
@@ -1431,7 +1432,7 @@ class MainStore {
       };
     });
 
-    return orderBy(total, "total", "desc");
+    return orderBy(total, "total", "asc");
   }
 
   setCameraRef(ref) {
