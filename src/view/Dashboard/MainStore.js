@@ -1017,7 +1017,7 @@ class MainStore {
     });
   }
 
-  handleChooseBlock(block, isHide, goNext) {
+  *handleChooseBlock(block, isHide, goNext) {
     if (isHide || (this.online && this.playingId !== this.myName)) return;
 
     if (this.gameState.startsWith(GAME_STATES.NEED_MONEY)) {
