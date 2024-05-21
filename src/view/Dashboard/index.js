@@ -65,6 +65,8 @@ const Dashboard = () => {
       SOUND[state].play();
     }
   }, [gameState]);
+  
+  console.log('total:', MainStore.getTotalMoneyPlayers());
 
   const getMessageFromGameState = () => {
     if (

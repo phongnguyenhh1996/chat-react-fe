@@ -784,17 +784,17 @@ class MainStore {
     }
   }
 
-  getSellingPrice(key) {
+  getSellingPrice(key, level) {
     const currentSellingProperty = key
       ? BLOCKS.find((block) => block.name === key)
       : this.sellingPropertyBlock;
     const currentSellingPropertyInfor = key
       ? this.ownedBlocks[key]
       : this.sellingPropertyInfor;
+    level = level !== undefined ? level : currentSellingPropertyInfor?.level;
     if (currentSellingProperty.type === "public")
       return currentSellingProperty.price[0];
-    const price =
-      currentSellingProperty.price[currentSellingPropertyInfor?.level - 1];
+    const price = currentSellingProperty.price[level - 1];
     return parseInt(price / 1.5);
   }
 
@@ -1395,6 +1395,33 @@ class MainStore {
             (this.isMonopolyBlock(block) ? 0.3 : 0))
       ) * (this.festivalProperty.includes(block.name) ? 2 : 1)
     );
+  }
+
+  getTotalMoneyPlayers() {
+    const total = this.players.map((player) => {
+      let money = player.money;
+      const allBlock = Object.keys(this.ownedBlocks).filter(
+        (blockName) => this.ownedBlocks[blockName].playerId === player.id
+      );
+      allBlock.forEach((blockName) => {
+        const blockSellPrice = parseInt(
+          range(0, this.ownedBlocks[blockName].level).reduce(
+            (total, currentIdx) => {
+              total += this.getSellingPrice(blockName, currentIdx + 1);
+              return total;
+            },
+            0
+          )
+        );
+        money += blockSellPrice;
+      });
+      return {
+        id: player.id,
+        total: money,
+      };
+    });
+
+    return total
   }
 
   setCameraRef(ref) {
