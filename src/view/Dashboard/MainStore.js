@@ -452,14 +452,14 @@ class MainStore {
     }
 
     if (block.type === "plane") {
-      yield this.flight(this.flightDestination, this.randomFlightDestination);
+      this.flight(this.flightDestination, this.randomFlightDestination);
       return;
     }
 
     this.nextPlayerTurn();
   }
 
-  *flight(destinationIndex, callback) {
+  flight(destinationIndex, callback) {
     const noFunction = () => {};
     const round = Math.floor((this.currentPlayer.position - 1) / 36);
     const currentRoundDestination = round * 36 + (destinationIndex + 1);
@@ -470,8 +470,7 @@ class MainStore {
 
     this.updateGameState(GAME_STATES.FLIGHT + "--" + destinationIndex);
     this.sendDataToChannel(["gameState"]);
-    yield delay(2000);
-    this.movingPlayer(callback || noFunction, position);
+    delay(2000).then(() => this.movingPlayer(callback || noFunction, position));
   }
 
   chooseTravel() {
@@ -1027,7 +1026,7 @@ class MainStore {
     });
   }
 
-  *handleChooseBlock(block, isHide, goNext) {
+  handleChooseBlock(block, isHide, goNext) {
     if (isHide || (this.online && this.playingId !== this.myName)) return;
 
     if (this.gameState.startsWith(GAME_STATES.NEED_MONEY)) {
@@ -1059,7 +1058,7 @@ class MainStore {
 
       if (this.gameState.split("--")[2] === "travel") {
         const blockIndex = BLOCKS.findIndex((b) => b.name === block.name);
-        yield this.flight(blockIndex);
+        this.flight(blockIndex);
       } else {
         this.gameState =
           GAME_STATES.CHOOSEN_BUILDING +
