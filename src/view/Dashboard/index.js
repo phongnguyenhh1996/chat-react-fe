@@ -46,6 +46,7 @@ const Dashboard = () => {
   const gameState = MainStore.gameState;
 
   useEffect(() => {
+    MainStore.setMessageApi(messageApi);
     const waitingRoomChannel = supabase.channel("waiting-room");
     waitingRoomChannel
       .on("presence", { event: "join" }, () => {
@@ -55,6 +56,7 @@ const Dashboard = () => {
         MainStore.transformAndSetRoomList(waitingRoomChannel.presenceState());
       })
       .subscribe();
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -169,7 +171,11 @@ const Dashboard = () => {
               marginTop: 15,
             }}
           >
-            <Button onClick={() => MainStore.nextPlayerTurn()} type="primary" danger>
+            <Button
+              onClick={() => MainStore.nextPlayerTurn()}
+              type="primary"
+              danger
+            >
               Không
             </Button>
             <Button
@@ -370,7 +376,6 @@ const Dashboard = () => {
   };
 
   const handleOk = () => {
-    MainStore.setMessageApi(messageApi);
     if (!MainStore.online) {
       MainStore.updateGameState(GAME_STATES.ROLL_DICE);
       const randomPlayerId =
@@ -410,7 +415,7 @@ const Dashboard = () => {
               totalPlayers: MainStore.players.length,
               hostName: MainStore.myName,
               created: moment().toISOString(),
-              version: packageJson.version
+              version: packageJson.version,
             },
           });
         });
@@ -448,7 +453,14 @@ const Dashboard = () => {
           })
           .on("presence", { event: "sync" }, () => {
             const newState = MainStore.channel.presenceState();
-            MainStore.updateStore(get(newState, ["host", "0", "data"], {}));
+            const newStoreData = get(newState, ["host", "0", "data"], {});
+            if (
+              newStoreData.gameState === GAME_STATES.WAITING ||
+              !MainStore.sync
+            ) {
+              MainStore.updateStore(newStoreData);
+              MainStore.setSync(newState.gameState !== GAME_STATES.WAITING);
+            }
           })
           .subscribe((status) => {
             if (status !== "SUBSCRIBED") {
@@ -1299,6 +1311,7 @@ const Dashboard = () => {
                 </div>
                 {!MainStore.isHost && MainStore.roomList.length > 0 && (
                   <Table
+                    rowKey="roomId"
                     columns={[
                       {
                         title: "ID",
@@ -1331,8 +1344,8 @@ const Dashboard = () => {
                                   type: "error",
                                   content: `Vui lòng nâng cấp lên phiên bản ${record.version} để tham gia`,
                                   duration: 2,
-                                })
-                                return
+                                });
+                                return;
                               }
                               MainStore.setRoomId(value);
                               handleOk();

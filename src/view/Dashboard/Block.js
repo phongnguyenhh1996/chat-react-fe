@@ -25,6 +25,11 @@ const Block = ({ block, idx, active }) => {
       return true;
     }
     if (MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)) {
+      if (
+        MainStore.gameState.split("--")[1] === "all-building" &&
+        (block.type === "public" || block.type === "property")
+      )
+        return false;
       if (!MainStore.ownedBlocks[block.name]) return true;
       if (MainStore.gameState.split("--")[1] === "my-building") {
         if (MainStore.ownedBlocks[block.name].playerId !== MainStore.playingId)

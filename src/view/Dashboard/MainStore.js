@@ -42,6 +42,7 @@ class MainStore {
   cameraRef = null;
   messageApi = null;
   roomList = [];
+  sync = false;
 
   loans = {};
   chat = {};
@@ -394,6 +395,7 @@ class MainStore {
         this.movingBack,
         this.randomDowngrade,
         this.randomLostElectric,
+        this.chooseTravel,
       ];
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -450,21 +452,32 @@ class MainStore {
     }
 
     if (block.type === "plane") {
-      const round = Math.floor((this.currentPlayer.position - 1) / 36);
-      const currentRoundDestination = round * 36 + (this.flightDestination + 1);
-      let position = currentRoundDestination;
-      if (position <= this.currentPlayer.position) {
-        position += 36;
-      }
-
-      this.updateGameState(GAME_STATES.FLIGHT + "--" + this.flightDestination);
-      this.sendDataToChannel(["gameState"]);
-      yield delay(2000);
-      this.movingPlayer(this.randomFlightDestination, position);
+      this.flight(this.flightDestination, this.randomFlightDestination);
       return;
     }
 
     this.nextPlayerTurn();
+  }
+
+  *flight(destinationIndex, callback = () => {}) {
+    const round = Math.floor((this.currentPlayer.position - 1) / 36);
+    const currentRoundDestination = round * 36 + (destinationIndex + 1);
+    let position = currentRoundDestination;
+    if (position <= this.currentPlayer.position) {
+      position += 36;
+    }
+
+    this.updateGameState(GAME_STATES.FLIGHT + "--" + destinationIndex);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    this.movingPlayer(callback, position);
+  }
+
+  chooseTravel() {
+    this.updateGameState(
+      GAME_STATES.CHOOSE_BUILDING + "--all-building--travel"
+    );
+    this.sendDataToChannel(["gameState"]);
   }
 
   *receiveGift() {
@@ -1034,17 +1047,26 @@ class MainStore {
         this.updateOwnedBlocks(block.name);
       }
 
-      this.gameState =
-        GAME_STATES.CHOOSEN_BUILDING +
-        "--" +
-        block.name +
-        "--" +
-        this.gameState.split("--")[2];
-      this.sendDataToChannel(["gameState", "festivalProperty", "ownedBlocks"]);
+      if (this.gameState.split("--")[2] === "travel") {
+        const blockIndex = BLOCKS.findIndex((b) => b.name === block.name);
+        this.flight(blockIndex);
+      } else {
+        this.gameState =
+          GAME_STATES.CHOOSEN_BUILDING +
+          "--" +
+          block.name +
+          "--" +
+          this.gameState.split("--")[2];
+        this.sendDataToChannel([
+          "gameState",
+          "festivalProperty",
+          "ownedBlocks",
+        ]);
 
-      delay(2000).then(() => {
-        if (goNext) this.nextPlayerTurn();
-      });
+        delay(2000).then(() => {
+          if (goNext) this.nextPlayerTurn();
+        });
+      }
 
       return;
     }
@@ -1389,6 +1411,10 @@ class MainStore {
 
   transformAndSetRoomList(data) {
     this.roomList = Object.values(data).map((room) => get(room, ["0", "data"]));
+  }
+
+  setSync(sync) {
+    this.sync = sync;
   }
 }
 
