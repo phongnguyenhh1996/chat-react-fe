@@ -459,7 +459,8 @@ class MainStore {
     this.nextPlayerTurn();
   }
 
-  *flight(destinationIndex, callback = () => {}) {
+  *flight(destinationIndex, callback) {
+    const noFunction = () => {}
     const round = Math.floor((this.currentPlayer.position - 1) / 36);
     const currentRoundDestination = round * 36 + (destinationIndex + 1);
     let position = currentRoundDestination;
@@ -470,7 +471,7 @@ class MainStore {
     this.updateGameState(GAME_STATES.FLIGHT + "--" + destinationIndex);
     this.sendDataToChannel(["gameState"]);
     yield delay(2000);
-    this.movingPlayer(callback, position);
+    this.movingPlayer(callback || noFunction, position);
   }
 
   chooseTravel() {
