@@ -802,7 +802,7 @@ class MainStore {
     if (currentSellingProperty.type === "public")
       return currentSellingProperty.price[0];
     const price = currentSellingProperty.price[level - 1];
-    return parseInt(price / 1.5);
+    return parseInt(price / 1.8);
   }
 
   *sellProperty() {
@@ -913,7 +913,7 @@ class MainStore {
           }
         }
       }
-      this.dice = [[random(1, 6), random(1, 6)], newDice][random(0, 1)];
+      this.dice = [[random(1, 6), random(1, 6)], [random(1, 6), random(1, 6)], newDice][random(0, 2)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
