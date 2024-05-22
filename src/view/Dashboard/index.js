@@ -65,7 +65,7 @@ const Dashboard = () => {
       SOUND[state].play();
     }
   }, [gameState]);
-  
+
   const getMessageFromGameState = () => {
     if (
       MainStore.gameState === GAME_STATES.WAITING &&
@@ -387,14 +387,14 @@ const Dashboard = () => {
         supabase.channel(MainStore.roomId.trim(), {
           config: {
             presence: {
-              key: MainStore.isHost ? "host" : MainStore.myName,
+              key: MainStore.myName,
             },
           },
         })
       );
-      MainStore.updateGameState(GAME_STATES.WAITING);
 
       if (MainStore.isHost) {
+        MainStore.updateGameState(GAME_STATES.WAITING);
         MainStore.setPlayers([]);
         MainStore.addPlayer(MainStore.myName);
         const waitingRoomChannel = supabase.channel("waiting-room", {
@@ -414,63 +414,54 @@ const Dashboard = () => {
               roomId: MainStore.roomId,
               totalPlayers: MainStore.players.length,
               hostName: MainStore.myName,
-              created: moment().toISOString(),
               version: packageJson.version,
+              store: pick(MainStore, SYNC_KEY),
             },
           });
         });
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
-          })
-          .on("presence", { event: "join" }, ({ key }) => {
-            if (key === "host") {
-              return;
-            }
-            if (
-              MainStore.players.length + 1 <= MainStore.totalPlayers &&
-              MainStore.players.findIndex((p) => p.name === key) === -1
-            ) {
-              MainStore.addPlayer(key);
-            }
-            MainStore.channel.track({
-              data: pick(MainStore, [...SYNC_KEY, "loans"]),
+            waitingRoomChannel.track({
+              data: {
+                roomId: MainStore.roomId,
+                totalPlayers: MainStore.players.length,
+                hostName: MainStore.myName,
+                version: packageJson.version,
+                store: pick(MainStore, SYNC_KEY),
+              },
             });
           })
-          .subscribe((status) => {
-            if (status !== "SUBSCRIBED") {
-              return;
+          .on("broadcast", { event: "join" }, (payload) => {
+            const playerName = get(
+              payload,
+              ["payload", "data", "playerName"],
+              {}
+            );
+            const playerVersion = get(
+              payload,
+              ["payload", "data", "version"],
+              {}
+            );
+            if (playerVersion === packageJson.version) {
+              MainStore.addAndTrack(
+                playerName,
+                waitingRoomChannel,
+                packageJson.version
+              );
             }
-
-            MainStore.channel.track({
-              data: pick(MainStore, SYNC_KEY),
-            });
-          });
+          })
+          .subscribe();
       } else {
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
           })
-          .on("presence", { event: "sync" }, () => {
-            const newState = MainStore.channel.presenceState();
-            const newStoreData = get(newState, ["host", "0", "data"], {});
-            if (
-              newStoreData.gameState === GAME_STATES.WAITING ||
-              !MainStore.sync
-            ) {
-              MainStore.updateStore(newStoreData);
-              MainStore.setSync(newState.gameState !== GAME_STATES.WAITING);
-            }
-          })
           .subscribe((status) => {
             if (status !== "SUBSCRIBED") {
               return;
             }
-
-            MainStore.channel
-              .track({
-                online_at: new Date().toISOString(),
-              })
+            MainStore.sendJoinSignalToChannel(packageJson.version);
           });
       }
     }
@@ -1321,19 +1312,12 @@ const Dashboard = () => {
                         dataIndex: "hostName",
                       },
                       {
-                        title: "Thời gian",
-                        dataIndex: "created",
-                        defaultSortOrder: "descend",
-                        sorter: (a, b) => new Date(b) - new Date(a),
-                        render: (value) => moment(value).fromNow(),
-                      },
-                      {
                         title: "Version",
                         dataIndex: "version",
                       },
                       {
                         title: "",
-                        dataIndex: "roomId",
+                        dataIndex: "store",
                         render: (value, record) => (
                           <Button
                             type="primary"
@@ -1346,7 +1330,7 @@ const Dashboard = () => {
                                 });
                                 return;
                               }
-                              MainStore.setRoomId(value);
+                              MainStore.updateStore(value);
                               handleOk();
                             }}
                           >

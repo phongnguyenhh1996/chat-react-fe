@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { random, range, get, orderBy } from "lodash";
+import { random, range, get, orderBy, pick } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -30,6 +30,7 @@ export const SYNC_KEY = [
   "samePlayerRolling",
   "festivalProperty",
   "cameraKey",
+  "loans",
 ];
 
 class MainStore {
@@ -1222,6 +1223,19 @@ class MainStore {
     this.chat[playerId] = message;
   }
 
+  sendJoinSignalToChannel(version) {
+    this.channel.send({
+      type: "broadcast",
+      event: "join",
+      payload: {
+        data: {
+          playerName: this.myName,
+          version
+        },
+      },
+    });
+  }
+
   sendDataToChannel(key = SYNC_KEY) {
     const data = key.reduce((fullData, key) => {
       fullData[key] = this[key];
@@ -1237,6 +1251,7 @@ class MainStore {
   }
 
   updateLoans(loan) {
+    if (!loan.from) return
     this.loans[loan.from] = loan;
     if (loan.status === "request") {
       this.messageApi.open({
@@ -1484,6 +1499,25 @@ class MainStore {
 
   setSync(sync) {
     this.sync = sync;
+  }
+
+  addAndTrack(key, waitingRoomChannel, version) {
+    if (
+      this.players.length + 1 <= this.totalPlayers &&
+      this.players.findIndex((p) => p.name === key) === -1
+    ) {
+      this.addPlayer(key);
+    }
+    this.sendDataToChannel(["players"]);
+    waitingRoomChannel.track({
+      data: {
+        roomId: this.roomId,
+        totalPlayers: this.players.length,
+        hostName: this.myName,
+        version,
+        store: pick(this, SYNC_KEY),
+      },
+    });
   }
 }
 
