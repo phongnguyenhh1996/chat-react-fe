@@ -66,8 +66,6 @@ const Dashboard = () => {
     }
   }, [gameState]);
   
-  console.log('total:', MainStore.getTotalMoneyPlayers());
-
   const getMessageFromGameState = () => {
     if (
       MainStore.gameState === GAME_STATES.WAITING &&

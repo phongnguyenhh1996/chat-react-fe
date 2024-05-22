@@ -399,7 +399,8 @@ class MainStore {
       ];
 
       if (this.isLowestStatistic) {
-        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift)
+        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
+        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
       }
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -888,9 +889,30 @@ class MainStore {
   }
 
   randomDice() {
+    console.log("total:", this.getTotalMoneyPlayers());
+
     if (this.isLowestStatistic) {
-      console.log("here");
-      this.dice = [random(4, 6), random(4, 6)];
+      let newDice = [random(4, 6), random(4, 6)];
+      for (let x = 1; x <= 6; x++) {
+        for (let y = 1; y <= 6; y++) {
+          let idx = this.currentPlayer.position + x + y - 1;
+          if (idx > 35) {
+            idx = idx % 36;
+          }
+          const block = BLOCKS[idx] || {};
+          if (
+            block.type === "chance" ||
+            block.type === "public" ||
+            this.ownedBlocks[block.name]?.playerId === this.myName
+          ) {
+            newDice[0] = x;
+            newDice[1] = y;
+            console.log("newDice", newDice);
+            break;
+          }
+        }
+      }
+      this.dice = [[random(1, 6), random(1, 6)], newDice][random(0, 1)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
