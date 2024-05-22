@@ -923,8 +923,8 @@ class MainStore {
     const statistic = this.getTotalMoneyPlayers();
     return (
       this.players.length > 2 &&
-      statistic[0].id === this.myName &&
-      statistic[statistic.length - 1].total - statistic[0].total > 15000
+      statistic[statistic.length - 1].id === this.myName &&
+      statistic[0].total - statistic[statistic.length - 1].total > 15000
     );
   }
 
@@ -1478,7 +1478,7 @@ class MainStore {
       };
     });
 
-    return orderBy(total, "total", "asc");
+    return orderBy(total, "total", "desc");
   }
 
   setCameraRef(ref) {

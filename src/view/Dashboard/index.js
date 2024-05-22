@@ -577,6 +577,8 @@ const Dashboard = () => {
     });
   };
 
+  const playerStats = MainStore.getTotalMoneyPlayers();
+
   return (
     <TransformWrapper
       minScale={0.5}
@@ -1198,58 +1200,64 @@ const Dashboard = () => {
                             rowGap: 5,
                           }}
                         >
-                          {MainStore.players.map((player, index) => (
-                            <div
-                              key={player.id}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                position: "relative",
-                              }}
-                            >
-                              {player.haveFreeCard && (
-                                <Icon
-                                  style={{
-                                    position: "absolute",
-                                    left: -20,
-                                  }}
-                                  symbol="card"
-                                  width="20px"
-                                  height="20px"
-                                />
-                              )}
-                              {player.broke && (
-                                <Icon
-                                  style={{ position: "absolute", left: -3 }}
-                                  symbol="stop"
-                                  width="30px"
-                                  height="30px"
-                                />
-                              )}
-
-                              <img
-                                style={{
-                                  flex: "0 0 25px",
-                                  height: 25,
-                                  marginRight: 10,
-                                }}
-                                alt=""
-                                src={AVATARS[index]}
-                              />
+                          {playerStats.map((playerStat) => {
+                            const index = MainStore.getPlayerIndexById(
+                              playerStat.id
+                            );
+                            const player = MainStore.players[index];
+                            return (
                               <div
+                                key={player.id}
                                 style={{
-                                  textDecoration: player.broke
-                                    ? "line-through"
-                                    : undefined,
-                                  fontWeight: "bold",
-                                  color: "white",
-                                  textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  position: "relative",
                                 }}
                               >
-                                {player.money}$
+                                {player.haveFreeCard && (
+                                  <Icon
+                                    style={{
+                                      position: "absolute",
+                                      left: -20,
+                                    }}
+                                    symbol="card"
+                                    width="20px"
+                                    height="20px"
+                                  />
+                                )}
+                                {player.broke && (
+                                  <Icon
+                                    style={{ position: "absolute", left: -3 }}
+                                    symbol="stop"
+                                    width="30px"
+                                    height="30px"
+                                  />
+                                )}
+
+                                <img
+                                  style={{
+                                    flex: "0 0 25px",
+                                    height: 25,
+                                    marginRight: 10,
+                                  }}
+                                  alt=""
+                                  src={AVATARS[index]}
+                                />
+                                <div
+                                  style={{
+                                    textDecoration: player.broke
+                                      ? "line-through"
+                                      : undefined,
+                                    fontWeight: "bold",
+                                    color: "white",
+                                    textShadow: `-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000`,
+                                  }}
+                                >
+                                  {player.money}$
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </>
                     )}
