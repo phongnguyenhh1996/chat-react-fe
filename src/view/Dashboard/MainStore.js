@@ -1508,7 +1508,7 @@ class MainStore {
     ) {
       this.addPlayer(key);
     }
-    this.sendDataToChannel(["players"]);
+    this.sendDataToChannel();
     waitingRoomChannel.track({
       data: {
         roomId: this.roomId,
