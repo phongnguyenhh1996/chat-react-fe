@@ -9,6 +9,7 @@ import {
   GAME_STATES,
   randomPropertyIndex,
   REBUY_RATE,
+  SELL_RATE,
   SOUND,
 } from "./constants";
 import { delay } from "./utils";
@@ -802,7 +803,7 @@ class MainStore {
     if (currentSellingProperty.type === "public")
       return currentSellingProperty.price[0];
     const price = currentSellingProperty.price[level - 1];
-    return parseInt(price / 1.8);
+    return parseInt(price / SELL_RATE);
   }
 
   *sellProperty() {

@@ -366,6 +366,7 @@ export const CHOOSE_BUILDING_ACTIONS = {
 };
 
 export const REBUY_RATE = 1.4;
+export const SELL_RATE = 1.5
 
 export const randomPropertyIndex = () =>
   [
