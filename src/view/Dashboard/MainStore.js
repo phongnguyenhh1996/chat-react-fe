@@ -854,6 +854,9 @@ class MainStore {
     });
     this.sendDataToChannel(["ownedBlocks", "players"]);
     this.checkEndGame();
+    if (this.gameState !== GAME_STATES.END) {
+      this.nextPlayerTurn(true);
+    }
   }
 
   updateTotalPlayers(total) {
@@ -894,7 +897,7 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (this.isLowestStatistic) {
-      let newDice = [[random(1, 6), random(1, 6)]];
+      let newDice = [[random(1, 6), random(1, 6)], [random(1, 6), random(1, 6)]];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
           let idx = this.currentPlayer.position + x + y - 1;
@@ -904,13 +907,14 @@ class MainStore {
           const block = BLOCKS[idx] || {};
           if (
             block.type === "chance" ||
-            this.ownedBlocks[block.name]?.playerId === this.myName
+            this.ownedBlocks[block.name]?.playerId === this.myName ||
+            (!this.ownedBlocks[block.name] && block.type === "property")
           ) {
-            newDice.push([x,y])
+            newDice.push([x, y]);
           }
         }
       }
-      this.dice = newDice[random(0, newDice.length - 1)]
+      this.dice = newDice[random(0, newDice.length - 1)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
@@ -921,7 +925,7 @@ class MainStore {
     return (
       this.players.length > 2 &&
       statistic[statistic.length - 1].id === this.myName &&
-      statistic[0].total - statistic[statistic.length - 1].total > 15000
+      statistic[0].total - statistic[statistic.length - 1].total > 12000
     );
   }
 
@@ -1227,7 +1231,7 @@ class MainStore {
       payload: {
         data: {
           playerName: this.myName,
-          version
+          version,
         },
       },
     });
@@ -1248,7 +1252,7 @@ class MainStore {
   }
 
   updateLoans(loan) {
-    if (!loan.from) return
+    if (!loan.from) return;
     this.loans[loan.from] = loan;
     if (loan.status === "request") {
       this.messageApi.open({

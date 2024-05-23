@@ -723,30 +723,31 @@ const Dashboard = () => {
                     className="player-action"
                   >
                     {contextHolder}
-                    {player.id === MainStore.myName && (
-                      <Popconfirm
-                        title={"Đầu hàng"}
-                        description={"Bạn muốn đầu hàng không?"}
-                        onConfirm={MainStore.surrender}
-                        okText={"Đầu hàng"}
-                        cancelText="Không"
-                      >
-                        <Button
-                          ghost
-                          size="middle"
-                          shape="circle"
-                          style={{
-                            marginRight: 5,
-                          }}
-                          icon={
-                            <Icon symbol="flag" width="20px" height="20px" />
-                          }
-                        />
-                      </Popconfirm>
-                    )}
+                    {player.id === MainStore.myName &&
+                      MainStore.playingId === MainStore.myName && (
+                        <Popconfirm
+                          title={"Đầu hàng"}
+                          description={"Bạn muốn đầu hàng không?"}
+                          onConfirm={MainStore.surrender}
+                          okText={"Đầu hàng"}
+                          cancelText="Không"
+                        >
+                          <Button
+                            ghost
+                            size="middle"
+                            shape="circle"
+                            style={{
+                              marginRight: 5,
+                            }}
+                            icon={
+                              <Icon symbol="flag" width="20px" height="20px" />
+                            }
+                          />
+                        </Popconfirm>
+                      )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
-                      player.money >= 500 &&
+                      player.money >= 1000 &&
                       !player.loan &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
                       !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
@@ -786,7 +787,7 @@ const Dashboard = () => {
                         style={{
                           color: COLORS[index],
                           fontWeight: "bold",
-                          fontSize: 15,
+                          fontSize: window.innerWidth > 950 ? 15 : 13,
                         }}
                       >
                         {MainStore.chat[player.id]
