@@ -894,7 +894,7 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (this.isLowestStatistic) {
-      let newDice = [random(4, 6), random(4, 6)];
+      let newDice = [[random(1, 6), random(1, 6)]];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
           let idx = this.currentPlayer.position + x + y - 1;
@@ -904,17 +904,13 @@ class MainStore {
           const block = BLOCKS[idx] || {};
           if (
             block.type === "chance" ||
-            block.type === "public" ||
             this.ownedBlocks[block.name]?.playerId === this.myName
           ) {
-            newDice[0] = x;
-            newDice[1] = y;
-            console.log("newDice", newDice);
-            break;
+            newDice.push([x,y])
           }
         }
       }
-      this.dice = [[random(1, 6), random(1, 6)], [random(1, 6), random(1, 6)], newDice][random(0, 2)];
+      this.dice = newDice[random(0, newDice.length - 1)]
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
