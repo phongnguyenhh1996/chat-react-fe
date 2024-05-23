@@ -897,7 +897,10 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (this.isLowestStatistic) {
-      let newDice = [[random(1, 6), random(1, 6)], [random(1, 6), random(1, 6)]];
+      let newDice = [
+        [random(1, 6), random(1, 6)],
+        [random(1, 6), random(1, 6)],
+      ];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
           let idx = this.currentPlayer.position + x + y - 1;

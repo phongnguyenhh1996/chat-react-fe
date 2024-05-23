@@ -44,6 +44,43 @@ const Dashboard = () => {
   const [msg, setMsg] = useState("");
 
   const gameState = MainStore.gameState;
+  const isMyTurn = MainStore.myName === MainStore.playingId;
+
+  useEffect(() => {
+    let rollTimeout;
+    let nextTimeout;
+    let answerJailTimeout;
+    if (isMyTurn) {
+      if (gameState === GAME_STATES.ROLL_DICE) {
+        rollTimeout = setTimeout(() => MainStore.rollDice(), 1000 * 5);
+      }
+      if (
+        gameState === GAME_STATES.BUYING ||
+        gameState === GAME_STATES.UPDATING ||
+        gameState === GAME_STATES.REBUYING ||
+        gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
+      ) {
+        nextTimeout = setTimeout(() => MainStore.nextPlayerTurn(), 1000 * 10);
+      }
+      if (gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL) {
+        answerJailTimeout = setTimeout(
+          () => MainStore.updatePayToOutJail(false),
+          1000 * 5
+        );
+      }
+    }
+    return () => {
+      if (rollTimeout) {
+        clearTimeout(rollTimeout);
+      }
+      if (nextTimeout) {
+        clearTimeout(nextTimeout);
+      }
+      if (answerJailTimeout) {
+        clearTimeout(answerJailTimeout);
+      }
+    };
+  }, [gameState, isMyTurn]);
 
   useEffect(() => {
     MainStore.setMessageApi(messageApi);
@@ -341,13 +378,16 @@ const Dashboard = () => {
             }}
           >
             <Button
-              onClick={() => updatePayToOutJail(false)}
+              onClick={() => MainStore.updatePayToOutJail(false)}
               type="primary"
               danger
             >
               Không
             </Button>
-            <Button type="primary" onClick={() => updatePayToOutJail(true)}>
+            <Button
+              type="primary"
+              onClick={() => MainStore.updatePayToOutJail(true)}
+            >
               Có
             </Button>
           </div>
@@ -483,12 +523,6 @@ const Dashboard = () => {
     (block) => block.name === MainStore.sellingProperty
   );
   const sellingPropertyInfor = MainStore.ownedBlocks[MainStore.sellingProperty];
-
-  const updatePayToOutJail = (payToOutJail) => {
-    MainStore.updatePlayerData(currentPlayer, "payToOutJail", payToOutJail);
-    MainStore.updateGameState(GAME_STATES.RESPONDED_PAY_OUT_JAIL);
-    MainStore.sendDataToChannel(["gameState", "players"]);
-  };
 
   const openChat = debounce(MainStore.openChat, 100);
 
@@ -745,6 +779,19 @@ const Dashboard = () => {
                           />
                         </Popconfirm>
                       )}
+                    {MainStore.isLowestStatistic && (
+                      <Button
+                        disabled
+                        ghost
+                        size="middle"
+                        shape="circle"
+                        style={{
+                          marginRight: 5,
+                          color: '#fff'
+                        }}
+                        icon={<Icon symbol="wolf" width="20px" height="20px" />}
+                      />
+                    )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
