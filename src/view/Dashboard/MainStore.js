@@ -1009,7 +1009,7 @@ class MainStore {
     level = level || this.ownedBlocks[block.name]?.level;
     if (!this.ownedBlocks[block.name]) return;
 
-    const rate = [0.2, 1, 2, 3, 4, 1.5];
+    const rate = [0.2, 1, 2, 3, 4, 2];
     let totalPrice =
       prices[level - 1] *
       rate[level - 1] *

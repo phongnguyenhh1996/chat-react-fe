@@ -19,42 +19,42 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Phú Quốc",
-    price: [1500, 750, 750, 750, 975, 4500],
+    price: [1500, 750, 750, 750, 1500, 4500],
     row: "#BC9A6C",
     position: "bottom",
   },
   {
     type: "property",
     name: "Lào Cai",
-    price: [1600, 800, 800, 800, 1040, 4800],
+    price: [1600, 800, 800, 800, 1600, 4800],
     row: "#73D1F7",
     position: "bottom",
   },
   {
     type: "property",
     name: "Việt Trì",
-    price: [1800, 900, 900, 900, 1170, 5400],
+    price: [1800, 900, 900, 900, 1800, 5400],
     row: "#73D1F7",
     position: "bottom",
   },
   {
     type: "property",
     name: "Hòa Bình",
-    price: [1700, 850, 850, 850, 1105, 5100],
+    price: [1700, 850, 850, 850, 1700, 5100],
     row: "#73D1F7",
     position: "bottom",
   },
   {
     type: "property",
     name: "Hạ Long",
-    price: [2500, 1250, 1250, 1250, 1625, 7500],
+    price: [2500, 1250, 1250, 1250, 2500, 7500],
     row: "#EF62A4",
     position: "bottom",
   },
   {
     type: "property",
     name: "Hải Phòng",
-    price: [3200, 1600, 1600, 1600, 2080, 9600],
+    price: [3200, 1600, 1600, 1600, 3200, 9600],
     row: "#EF62A4",
     position: "bottom",
   },
@@ -72,7 +72,7 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Hà Nội",
-    price: [3500, 1750, 1750, 1750, 2275, 10500],
+    price: [3500, 1750, 1750, 1750, 3500, 10500],
     row: "#EF62A4",
     position: "bottom",
   },
@@ -84,14 +84,14 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Hải Dương",
-    price: [2200, 1100, 1100, 1100, 1430, 6600],
+    price: [2200, 1100, 1100, 1100, 2200, 6600],
     row: "#F7BEFF",
     position: "left",
   },
   {
     type: "property",
     name: "Nam Định",
-    price: [2400, 1200, 1200, 1200, 1560, 7200],
+    price: [2400, 1200, 1200, 1200, 2400, 7200],
     row: "#F7BEFF",
     position: "left",
   },
@@ -109,14 +109,14 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Thanh Hóa",
-    price: [2700, 1350, 1350, 1350, 1755, 8100],
+    price: [2700, 1350, 1350, 1350, 2700, 8100],
     row: "#ff6969",
     position: "left",
   },
   {
     type: "property",
     name: "Vinh",
-    price: [2600, 1300, 1300, 1300, 1690, 7800],
+    price: [2600, 1300, 1300, 1300, 2600, 7800],
     row: "#ff6969",
     position: "left",
   },
@@ -128,7 +128,7 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Hà Tĩnh",
-    price: [1500, 750, 750, 750, 975, 4500],
+    price: [1500, 750, 750, 750, 1500, 4500],
     row: "#ff6969",
     position: "top",
   },
@@ -140,21 +140,21 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Huế",
-    price: [2700, 1350, 1350, 1350, 1755, 8100],
+    price: [2700, 1350, 1350, 1350, 2700, 8100],
     row: "#7FC5CA",
     position: "top",
   },
   {
     type: "property",
     name: "Đà Nẵng",
-    price: [3000, 1500, 1500, 1500, 1950, 9000],
+    price: [3000, 1500, 1500, 1500, 3000, 9000],
     row: "#7FC5CA",
     position: "top",
   },
   {
     type: "property",
     name: "Hội An",
-    price: [2200, 1100, 1100, 1100, 1430, 6600],
+    price: [2200, 1100, 1100, 1100, 2200, 6600],
     row: "#7FC5CA",
     position: "top",
   },
@@ -167,21 +167,21 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Kon Tum",
-    price: [1400, 700, 700, 700, 910, 4200],
+    price: [1400, 700, 700, 700, 1400, 4200],
     row: "#F69733",
     position: "top",
   },
   {
     type: "property",
     name: "Pleiku",
-    price: [1600, 800, 800, 800, 1040, 4800],
+    price: [1600, 800, 800, 800, 1600, 4800],
     row: "#F69733",
     position: "top",
   },
   {
     type: "property",
     name: "Đà Lạt",
-    price: [2700, 1350, 1350, 1350, 1755, 8100],
+    price: [2700, 1350, 1350, 1350, 2700, 8100],
     row: "#F69733",
     position: "top",
   },
@@ -198,14 +198,14 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Vũng tàu",
-    price: [2600, 1300, 1300, 1300, 1690, 7800],
+    price: [2600, 1300, 1300, 1300, 2600, 7800],
     row: "#FFCC29",
     position: "right",
   },
   {
     type: "property",
     name: "TP. HCM",
-    price: [3500, 1750, 1750, 1750, 2275, 10500],
+    price: [3500, 1750, 1750, 1750, 3500, 10500],
     row: "#FFCC29",
     position: "right",
   },
@@ -223,14 +223,14 @@ export const BLOCKS = [
   {
     type: "property",
     name: "Cần Thơ",
-    price: [3000, 1500, 1500, 1500, 1950, 9000],
+    price: [3000, 1500, 1500, 1500, 3000, 9000],
     row: "#BC9A6C",
     position: "right",
   },
   {
     type: "property",
     name: "Cà mau",
-    price: [1500, 750, 750, 750, 975, 4500],
+    price: [1500, 750, 750, 750, 1500, 4500],
     row: "#BC9A6C",
     position: "right",
   },
@@ -362,11 +362,11 @@ export const CHOOSE_BUILDING_ACTIONS = {
   downgrade: "phá nhà",
   fixElectricity: "sửa điện",
   upgradeFree: "nâng cấp miễn phí",
-  travel: 'đi du lịch'
+  travel: "đi du lịch",
 };
 
 export const REBUY_RATE = 1.4;
-export const SELL_RATE = 1.5
+export const SELL_RATE = 1.5;
 
 export const randomPropertyIndex = () =>
   [
@@ -381,4 +381,4 @@ export const randomPropertyIndex = () =>
     random(34, 35),
   ][random(0, 7)];
 
-export const BEG_MONEY = 1000
+export const BEG_MONEY = 1000;
