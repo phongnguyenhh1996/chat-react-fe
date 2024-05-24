@@ -403,7 +403,6 @@ class MainStore {
       if (this.isLowestStatistic) {
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
-        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
       }
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -898,10 +897,7 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (this.isLowestStatistic) {
-      let newDice = [
-        [random(1, 6), random(1, 6)],
-        [random(1, 6), random(1, 6)],
-      ];
+      let luckyDices = [];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
           let idx = this.currentPlayer.position + x + y - 1;
@@ -912,13 +908,19 @@ class MainStore {
           if (
             block.type === "chance" ||
             this.ownedBlocks[block.name]?.playerId === this.myName ||
-            (!this.ownedBlocks[block.name] && ["property", "public"].includes(block.name))
+            (!this.ownedBlocks[block.name] &&
+              ["property", "public"].includes(block.name))
           ) {
-            newDice.push([x, y]);
+            luckyDices.push([x, y]);
           }
         }
       }
-      this.dice = newDice[random(0, newDice.length - 1)];
+      const randomDice = [
+        [random(1, 6), random(1, 6)],
+        [random(1, 6), random(1, 6)],
+        luckyDices[random(0, luckyDices.length - 1)],
+      ];
+      this.dice = randomDice[random(0, randomDice.length - 1)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
     }
@@ -929,14 +931,16 @@ class MainStore {
     if (
       this.players.length > 2 &&
       statistic[0].total - statistic[statistic.length - 1].total > 12000
-    ) return statistic[statistic.length - 1].id
+    )
+      return statistic[statistic.length - 1].id;
 
-    return null
+    return null;
   }
 
   get isLowestStatistic() {
     return (
-      this.lowestStatisticPlayerId === this.myName && this.playingId === this.myName
+      this.lowestStatisticPlayerId === this.myName &&
+      this.playingId === this.myName
     );
   }
 
@@ -1017,11 +1021,12 @@ class MainStore {
     level = level || this.ownedBlocks[block.name]?.level;
     if (!this.ownedBlocks[block.name]) return;
 
-    const rate = [0.2, 1, 2, 3, 4, 2];
-    let totalPrice =
+    const rate = [0.2, 1, 2, 3, 3.5, 2.5];
+    let totalPrice = parseInt(
       prices[level - 1] *
-      rate[level - 1] *
-      (this.festivalProperty.includes(block.name) ? 2 : 1);
+        rate[level - 1] *
+        (this.festivalProperty.includes(block.name) ? 2 : 1)
+    );
 
     if (block.type === "public") {
       const allOwnedPublicBlock = BLOCKS.filter(
