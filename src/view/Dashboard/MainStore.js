@@ -403,6 +403,7 @@ class MainStore {
       if (this.isLowestStatistic) {
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
+        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
       }
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -911,7 +912,7 @@ class MainStore {
           if (
             block.type === "chance" ||
             this.ownedBlocks[block.name]?.playerId === this.myName ||
-            (!this.ownedBlocks[block.name] && block.type === "property")
+            (!this.ownedBlocks[block.name] && ["property", "public"].includes(block.name))
           ) {
             newDice.push([x, y]);
           }
@@ -923,12 +924,19 @@ class MainStore {
     }
   }
 
-  get isLowestStatistic() {
+  get lowestStatisticPlayerId() {
     const statistic = this.getTotalMoneyPlayers();
-    return (
+    if (
       this.players.length > 2 &&
-      statistic[statistic.length - 1].id === this.myName &&
       statistic[0].total - statistic[statistic.length - 1].total > 12000
+    ) return statistic[statistic.length - 1].id
+
+    return null
+  }
+
+  get isLowestStatistic() {
+    return (
+      this.lowestStatisticPlayerId === this.myName && this.playingId === this.myName
     );
   }
 

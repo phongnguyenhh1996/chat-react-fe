@@ -12,6 +12,7 @@ import {
   message,
   Popconfirm,
   Table,
+  Tooltip,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -52,7 +53,7 @@ const Dashboard = () => {
     let answerJailTimeout;
     if (isMyTurn) {
       if (gameState === GAME_STATES.ROLL_DICE) {
-        rollTimeout = setTimeout(() => MainStore.rollDice(), 1000 * 5);
+        rollTimeout = setTimeout(() => MainStore.rollDice(), 1000 * 20);
       }
       if (
         gameState === GAME_STATES.BUYING ||
@@ -60,12 +61,12 @@ const Dashboard = () => {
         gameState === GAME_STATES.REBUYING ||
         gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
       ) {
-        nextTimeout = setTimeout(() => MainStore.nextPlayerTurn(), 1000 * 10);
+        nextTimeout = setTimeout(() => MainStore.nextPlayerTurn(), 1000 * 20);
       }
       if (gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL) {
         answerJailTimeout = setTimeout(
           () => MainStore.updatePayToOutJail(false),
-          1000 * 5
+          1000 * 20
         );
       }
     }
@@ -779,27 +780,25 @@ const Dashboard = () => {
                           />
                         </Popconfirm>
                       )}
-                    {MainStore.isLowestStatistic && (
-                      <Button
-                        disabled
-                        ghost
-                        size="middle"
-                        shape="circle"
-                        style={{
-                          marginRight: 5,
-                          color: '#fff'
-                        }}
-                        icon={<Icon symbol="wolf" width="20px" height="20px" />}
-                      />
+                    {MainStore.lowestStatisticPlayerId !== player.id && (
+                      <Tooltip title={`${player.id} quá nghèo nên sẽ được tăng tỉ lệ may mắn`}>
+                        <Button
+                          disabled
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                            color: '#fff'
+                          }}
+                          icon={<Icon symbol="wolf" width="20px" height="20px" />}
+                        />
+                      </Tooltip>
                     )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
-                      !player.loan &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
-                      !MainStore.gameState.includes(GAME_STATES.NEED_MONEY) &&
-                      !currentPlayer.onJail &&
-                      !currentPlayer?.loan &&
                       !player.broke && (
                         <Popconfirm
                           title={"Xin tiền"}
