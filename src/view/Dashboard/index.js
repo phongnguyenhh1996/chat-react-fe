@@ -780,7 +780,7 @@ const Dashboard = () => {
                           />
                         </Popconfirm>
                       )}
-                    {MainStore.lowestStatisticPlayerId !== player.id && (
+                    {MainStore.lowestStatisticPlayerId === player.id && (
                       <Tooltip title={`${player.id} quá nghèo nên sẽ được tăng tỉ lệ may mắn`}>
                         <Button
                           disabled
