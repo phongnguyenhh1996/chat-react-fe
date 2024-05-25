@@ -781,25 +781,6 @@ const Dashboard = () => {
                           />
                         </Popconfirm>
                       )}
-                    {MainStore.lowestStatisticPlayerId === player.id && (
-                      <Tooltip
-                        trigger="click"
-                        title={`${player.id} quá nghèo nên sẽ được tăng tỉ lệ may mắn`}
-                      >
-                        <Button
-                          ghost
-                          size="middle"
-                          shape="circle"
-                          style={{
-                            marginRight: 5,
-                            color: "#fff",
-                          }}
-                          icon={
-                            <Icon symbol="wolf" width="20px" height="20px" />
-                          }
-                        />
-                      </Tooltip>
-                    )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
