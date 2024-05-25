@@ -758,7 +758,8 @@ const Dashboard = () => {
                     className="player-action"
                   >
                     {contextHolder}
-                    {player.id === MainStore.myName &&
+                    {!MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
+                      player.id === MainStore.myName &&
                       MainStore.playingId === MainStore.myName && (
                         <Popconfirm
                           title={"Đầu hàng"}
@@ -781,16 +782,21 @@ const Dashboard = () => {
                         </Popconfirm>
                       )}
                     {MainStore.lowestStatisticPlayerId === player.id && (
-                      <Tooltip trigger="click" title={`${player.id} quá nghèo nên sẽ được tăng tỉ lệ may mắn`}>
+                      <Tooltip
+                        trigger="click"
+                        title={`${player.id} quá nghèo nên sẽ được tăng tỉ lệ may mắn`}
+                      >
                         <Button
                           ghost
                           size="middle"
                           shape="circle"
                           style={{
                             marginRight: 5,
-                            color: '#fff'
+                            color: "#fff",
                           }}
-                          icon={<Icon symbol="wolf" width="20px" height="20px" />}
+                          icon={
+                            <Icon symbol="wolf" width="20px" height="20px" />
+                          }
                         />
                       </Tooltip>
                     )}

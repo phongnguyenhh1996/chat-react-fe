@@ -403,6 +403,7 @@ class MainStore {
       if (this.isLowestStatistic) {
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
         chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
+        chances.push(this.chooseTravel, this.randomTravel, this.receiveGift);
       }
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -896,7 +897,11 @@ class MainStore {
   randomDice() {
     console.log("total:", this.getTotalMoneyPlayers());
 
-    if (this.isLowestStatistic) {
+    if (
+      this.isLowestStatistic ||
+      (this.currentPlayer.position <= 36 * 7 + 1 &&
+        this.currentPlayer.id === this.myName)
+    ) {
       let luckyDices = [];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
