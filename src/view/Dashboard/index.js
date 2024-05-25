@@ -12,7 +12,6 @@ import {
   message,
   Popconfirm,
   Table,
-  Tooltip,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -66,7 +65,7 @@ const Dashboard = () => {
       if (gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL) {
         answerJailTimeout = setTimeout(
           () => MainStore.updatePayToOutJail(false),
-          1000 * 20
+          1000 * 40
         );
       }
     }

@@ -892,7 +892,7 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (
-      this.currentPlayer.position <= 36 * 7 + 1 &&
+      this.currentPlayer.position <= 36 * 3 + 1 &&
       this.currentPlayer.id === this.myName
     ) {
       let luckyDices = [];
@@ -905,17 +905,16 @@ class MainStore {
           const block = BLOCKS[idx] || {};
           if (
             !this.ownedBlocks[block.name] &&
-            ["property"].includes(block.name)
+            ["property"].includes(block.type)
           ) {
             luckyDices.push([x, y]);
           }
         }
       }
-      const randomDice = [
-        [random(1, 6), random(1, 6)],
-        [random(1, 6), random(1, 6)],
-        luckyDices[random(0, luckyDices.length - 1)],
-      ];
+      let randomDice = [[random(1, 6), random(1, 6)]];
+      if (luckyDices.length > 0) {
+        randomDice.push(luckyDices[random(0, luckyDices.length - 1)]);
+      }
       this.dice = randomDice[random(0, randomDice.length - 1)];
     } else {
       this.dice = [random(1, 6), random(1, 6)];
