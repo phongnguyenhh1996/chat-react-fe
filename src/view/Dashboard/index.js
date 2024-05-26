@@ -60,7 +60,7 @@ const Dashboard = () => {
         gameState === GAME_STATES.REBUYING ||
         gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)
       ) {
-        nextTimeout = setTimeout(() => MainStore.nextPlayerTurn(), 1000 * 20);
+        nextTimeout = setTimeout(() => MainStore.nextPlayerTurn(), 1000 * 40);
       }
       if (gameState === GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL) {
         answerJailTimeout = setTimeout(
