@@ -892,7 +892,7 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (
-      this.currentPlayer.position <= 36 * 3 + 1 &&
+      this.currentPlayer.position <= 36 * 2 + 1 &&
       this.currentPlayer.id === this.myName
     ) {
       let luckyDices = [];
@@ -905,7 +905,7 @@ class MainStore {
           const block = BLOCKS[idx] || {};
           if (
             !this.ownedBlocks[block.name] &&
-            ["property"].includes(block.type)
+            ["property", "public"].includes(block.type)
           ) {
             luckyDices.push([x, y]);
           }
