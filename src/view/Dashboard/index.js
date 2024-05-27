@@ -414,6 +414,10 @@ const Dashboard = () => {
       return `Được chọn ô để ${
         CHOOSE_BUILDING_ACTIONS[MainStore.gameState.split("--")[1]]
       } nhưng chưa có ô nào`;
+
+    if (MainStore.gameState.startsWith(GAME_STATES.ALMOST_END))
+      return `${MainStore.gameState.split("--")[2]} sắp mua đủ ${MainStore.gameState.split("--")[1] === 'four-public' ? '4 ô công cộng' : '3 dãy nhà cùng màu'} và giành chiến thắng!`
+    
     return "";
   };
 
@@ -645,7 +649,7 @@ const Dashboard = () => {
               block={block}
               idx={index}
               active={
-                currentPlayer && (currentPlayer.position - 1) % 36 === index
+                currentPlayer && (currentPlayer.position - 1) % 36 === index && !MainStore.gameState.startsWith(GAME_STATES.ALMOST_END)
               }
             />
           ))}
@@ -874,6 +878,7 @@ const Dashboard = () => {
 
                   <Popover
                     placement={[0, 2].includes(index) ? "right" : "left"}
+                    getPopupContainer={() => document.querySelector('.container-page')}
                     content={
                       <div
                         style={{

@@ -17,6 +17,9 @@ const Block = ({ block, idx, active }) => {
   const checkNeedToHide = () => {
     if (MainStore.loans[MainStore.myName]?.status === "request") return true;
 
+    if (MainStore.gameState.startsWith(GAME_STATES.ALMOST_END) && !isNeedActive)
+      return true;
+
     if (
       MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
       MainStore.gameState.split("--")[2] !==
@@ -55,10 +58,20 @@ const Block = ({ block, idx, active }) => {
     return false;
   };
 
+  const isNeedActive =
+    MainStore.gameState.startsWith(GAME_STATES.ALMOST_END) &&
+    JSON.parse(MainStore.gameState.split("--")[3]).includes(block.row || block.type);
+
   return (
     <div
       style={{
-        backgroundColor: active ? "rgb(18, 48, 77)" : undefined,
+        backgroundColor: active || isNeedActive ? "rgb(18, 48, 77)" : undefined,
+        ...(isNeedActive && !MainStore.ownedBlocks[block.name]
+          ? {
+              borderColor:
+                COLORS[MainStore.getPlayerIndexById(MainStore.playingId)],
+            }
+          : {}),
         boxShadow: active
           ? `0 0 2px #fff, 0 0 20px ${
               COLORS[MainStore.getPlayerIndexById(MainStore.playingId)]
@@ -92,7 +105,9 @@ const Block = ({ block, idx, active }) => {
             ? 999
             : undefined,
       }}
-      className={"block block--" + block.type}
+      className={`block block--${block.type} ${
+        isNeedActive && !MainStore.ownedBlocks[block.name] ? "glow-anim" : ""
+      }`}
       id={`block-${idx}`}
       onClick={() =>
         MainStore.handleChooseBlock(block, checkNeedToHide(), true)

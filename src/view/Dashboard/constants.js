@@ -276,6 +276,7 @@ export const GAME_STATES = {
   ASK_TO_PAY_TO_OUT_JAIL: "ask_to_pay_to_out_jail",
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
   END: "end",
+  ALMOST_END: 'almost_end'
 };
 
 const createSound = (url, rate = 1.0, isMeme) => {

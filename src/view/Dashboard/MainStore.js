@@ -680,7 +680,7 @@ class MainStore {
     return;
   }
 
-  checkEndGame() {
+  checkEndGame(currentBlock, callback) {
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -701,16 +701,16 @@ class MainStore {
         const block = BLOCKS.find((b) => b.name === key);
         const rowKey = block.row || block.type;
         if (rows[rowKey]) {
-          rows[rowKey] += 1;
+          rows[rowKey].push(block.name);
         } else {
-          rows[rowKey] = 1;
+          rows[rowKey] = [block.name];
         }
       });
-      isFourPublic = Object.values(rows).some((value) => value === 4);
+      isFourPublic = rows["public"]?.length === 4;
       isThreeMonopoly =
         Object.keys(rows).filter(
           (key) =>
-            rows[key] === BLOCKS.filter((b) => b.row === key).length &&
+            rows[key].length === BLOCKS.filter((b) => b.row === key).length &&
             key !== "public"
         ).length === 3;
       if (isFourPublic || isThreeMonopoly) {
@@ -723,6 +723,50 @@ class MainStore {
         this.setEndGame(true);
         this.sendDataToChannel(["players", "endGame"]);
         return;
+      } else if (currentBlock && callback) {
+        if (
+          rows.public?.length === 3 &&
+          rows.public.includes(currentBlock.name)
+        ) {
+          this.updateGameState(
+            GAME_STATES.ALMOST_END +
+              "--four-public--" +
+              this.ownedBlocks[currentBlock.name].playerId +
+              '--["public"]'
+          );
+          delay(6000).then(() => callback());
+          return;
+        }
+        const allmostWinRows = Object.keys(rows).filter(
+          (key) =>
+            this.ownedBlocks[rows[key][0]].playerId ===
+              this.ownedBlocks[currentBlock.name].playerId &&
+            rows[key].length === BLOCKS.filter((b) => b.row === key).length &&
+            key !== "public"
+        );
+        const currentOwnedRow = BLOCKS.filter(
+          (b) => b.row === currentBlock.row && this.ownedBlocks[b.name]
+        );
+        const totalBlockRow = BLOCKS.filter((b) => b.row === currentBlock.row);
+        console.log(
+          allmostWinRows.length === 2,
+          currentOwnedRow.length + 1 === totalBlockRow
+        );
+        if (
+          allmostWinRows.length === 2 &&
+          currentOwnedRow.length + 1 === totalBlockRow.length
+        ) {
+          this.updateGameState(
+            GAME_STATES.ALMOST_END +
+              "--three-monopoly--" +
+              this.ownedBlocks[currentBlock.name].playerId +
+              "--" +
+              JSON.stringify([...allmostWinRows, currentBlock.row])
+          );
+          delay(6000).then(() => callback());
+          return;
+        }
+        callback();
       }
     });
   }
@@ -773,17 +817,22 @@ class MainStore {
     }
 
     yield delay(2000);
-    this.checkEndGame();
-
-    if (
-      (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
-      this.buyingPropertyInfo.type === "property" &&
-      !currentPlayer.broke
-    ) {
-      this.updateGameState(GAME_STATES.UPDATING);
-      this.sendDataToChannel(["gameState"]);
+    const callback = () => {
+      if (
+        (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
+        this.buyingPropertyInfo.type === "property" &&
+        !currentPlayer.broke
+      ) {
+        this.updateGameState(GAME_STATES.UPDATING);
+        this.sendDataToChannel(["gameState"]);
+      } else {
+        this.nextPlayerTurn();
+      }
+    };
+    if (this.gameState !== GAME_STATES.UPDATING) {
+      this.checkEndGame(this.buyingPropertyInfo, callback);
     } else {
-      this.nextPlayerTurn();
+      callback();
     }
   }
 
