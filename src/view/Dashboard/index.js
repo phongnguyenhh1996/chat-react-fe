@@ -12,6 +12,7 @@ import {
   message,
   Popconfirm,
   Table,
+  Tooltip,
 } from "antd";
 import { observer } from "mobx-react-lite";
 import MainStore, { SYNC_KEY } from "./MainStore";
@@ -33,6 +34,7 @@ import { createClient } from "@supabase/supabase-js";
 import moment from "moment";
 import packageJson from "../../../package.json";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import CountDown from "./CountDown";
 
 const supabase = createClient(
   "https://vqjkcypfolcemvcxpgdw.supabase.co",
@@ -52,7 +54,7 @@ const Dashboard = () => {
     let answerJailTimeout;
     if (isMyTurn) {
       if (gameState === GAME_STATES.ROLL_DICE) {
-        rollTimeout = setTimeout(() => MainStore.rollDice(), 1000 * 20);
+        rollTimeout = setTimeout(() => MainStore.rollDice(), 1000 * 10);
       }
       if (
         gameState === GAME_STATES.BUYING ||
@@ -757,6 +759,65 @@ const Dashboard = () => {
                     className="player-action"
                   >
                     {contextHolder}
+                    {player.id === MainStore.playingId &&
+                      [
+                        GAME_STATES.ROLL_DICE,
+                        GAME_STATES.CHOOSE_BUILDING,
+                        GAME_STATES.BUYING,
+                        GAME_STATES.UPDATING,
+                        GAME_STATES.REBUYING,
+                        GAME_STATES.ASK_TO_PAY_TO_OUT_JAIL,
+                      ].includes(
+                        MainStore.gameState?.split("--")[0] ||
+                          MainStore.gameState
+                      ) && (
+                        <Button
+                          key={
+                            MainStore.gameState?.split("--")[0] ||
+                            MainStore.gameState
+                          }
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
+                        >
+                          <CountDown
+                            time={
+                              MainStore.gameState === GAME_STATES.ROLL_DICE
+                                ? 10
+                                : 40
+                            }
+                          />
+                        </Button>
+                      )}
+                    {player.haveFreeCard && (
+                      <Tooltip
+                        trigger="click"
+                        title="Người chơi sẽ không bị đưa vào tù"
+                      >
+                        <Button
+                          key={
+                            MainStore.gameState?.split("--")[0] ||
+                            MainStore.gameState
+                          }
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
+                        >
+                          <Icon
+                            style={{ color: "white" }}
+                            symbol="card"
+                            width="20px"
+                            height="20px"
+                          />
+                        </Button>
+                      </Tooltip>
+                    )}
                     {!MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
                       player.id === MainStore.myName &&
                       MainStore.playingId === MainStore.myName && (
@@ -1246,17 +1307,6 @@ const Dashboard = () => {
                                   position: "relative",
                                 }}
                               >
-                                {player.haveFreeCard && (
-                                  <Icon
-                                    style={{
-                                      position: "absolute",
-                                      left: -20,
-                                    }}
-                                    symbol="card"
-                                    width="20px"
-                                    height="20px"
-                                  />
-                                )}
                                 {player.broke && (
                                   <Icon
                                     style={{ position: "absolute", left: -3 }}
