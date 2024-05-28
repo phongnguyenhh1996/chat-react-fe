@@ -47,8 +47,9 @@ const Dashboard = () => {
 
   const gameState = MainStore.gameState;
   const isMyTurn = MainStore.myName === MainStore.playingId;
-
+  console.log(MainStore.ownedBlocks);
   useEffect(() => {
+    if (gameState === GAME_STATES.END) return;
     let rollTimeout;
     let nextTimeout;
     let answerJailTimeout;
@@ -222,7 +223,7 @@ const Dashboard = () => {
               onClick={() =>
                 MainStore.buyProperty(
                   currentPlayer,
-                  MainStore.gameState === GAME_STATES.REBUYING
+                  MainStore.gameState
                 )
               }
             >
@@ -416,8 +417,12 @@ const Dashboard = () => {
       } nhưng chưa có ô nào`;
 
     if (MainStore.gameState.startsWith(GAME_STATES.ALMOST_END))
-      return `${MainStore.gameState.split("--")[2]} sắp mua đủ ${MainStore.gameState.split("--")[1] === 'four-public' ? '4 ô công cộng' : '3 dãy nhà cùng màu'} và giành chiến thắng!`
-    
+      return `${MainStore.gameState.split("--")[2]} sắp mua đủ ${
+        MainStore.gameState.split("--")[1] === "four-public"
+          ? "4 ô công cộng"
+          : "3 dãy nhà cùng màu"
+      } và giành chiến thắng!`;
+
     return "";
   };
 
@@ -649,7 +654,9 @@ const Dashboard = () => {
               block={block}
               idx={index}
               active={
-                currentPlayer && (currentPlayer.position - 1) % 36 === index && !MainStore.gameState.startsWith(GAME_STATES.ALMOST_END)
+                currentPlayer &&
+                (currentPlayer.position - 1) % 36 === index &&
+                !MainStore.gameState.startsWith(GAME_STATES.ALMOST_END)
               }
             />
           ))}
@@ -776,10 +783,7 @@ const Dashboard = () => {
                           MainStore.gameState
                       ) && (
                         <Button
-                          key={
-                            MainStore.gameState?.split("--")[0] ||
-                            MainStore.gameState
-                          }
+                          key={MainStore.gameState + MainStore.playingId}
                           ghost
                           size="middle"
                           shape="circle"
@@ -878,7 +882,9 @@ const Dashboard = () => {
 
                   <Popover
                     placement={[0, 2].includes(index) ? "right" : "left"}
-                    getPopupContainer={() => document.querySelector('.container-page')}
+                    getPopupContainer={() =>
+                      document.querySelector(".container-page")
+                    }
                     content={
                       <div
                         style={{

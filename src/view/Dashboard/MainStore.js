@@ -680,7 +680,7 @@ class MainStore {
     return;
   }
 
-  checkEndGame(currentBlock) {
+  checkEndGame(currentBlock, gameState) {
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -723,7 +723,7 @@ class MainStore {
         this.setEndGame(true);
         this.sendDataToChannel(["players", "endGame"]);
         return;
-      } else if (currentBlock && this.gameState !== GAME_STATES.UPDATING) {
+      } else if (currentBlock && gameState !== GAME_STATES.UPDATING) {
         if (
           rows.public?.length === 3 &&
           rows.public.includes(currentBlock.name)
@@ -768,7 +768,8 @@ class MainStore {
     });
   }
 
-  *buyProperty(player, isRebuy) {
+  *buyProperty(player, gameState) {
+    const isRebuy = gameState === GAME_STATES.REBUYING;
     const updatingPropertyInfo =
       this.ownedBlocks[this.buyingPropertyInfo.name] || {};
     const currentPlayer = player;
@@ -814,8 +815,9 @@ class MainStore {
     }
 
     yield delay(2000);
-    this.checkEndGame(this.buyingPropertyInfo);
+    this.checkEndGame(this.buyingPropertyInfo, gameState);
     if (this.gameState.startsWith(GAME_STATES.ALMOST_END)) {
+      this.sendDataToChannel(["gameState"]);
       yield delay(6000);
     }
     if (

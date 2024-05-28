@@ -64,9 +64,7 @@ const Block = ({ block, idx, active }) => {
     JSON.parse(MainStore.gameState.split("--")[3]).includes(
       block.row || block.type
     );
-  const showPropertyInfor =
-    !MainStore.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING) &&
-    !MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY);
+  const showPropertyInfor = false
   const Wrapper = showPropertyInfor ? Popover : Fragment;
   let wrapperProps = {};
   if (showPropertyInfor) {
