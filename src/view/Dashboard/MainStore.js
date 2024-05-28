@@ -680,7 +680,7 @@ class MainStore {
     return;
   }
 
-  checkEndGame(currentBlock, callback) {
+  checkEndGame(currentBlock) {
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -723,7 +723,7 @@ class MainStore {
         this.setEndGame(true);
         this.sendDataToChannel(["players", "endGame"]);
         return;
-      } else if (currentBlock && callback) {
+      } else if (currentBlock && this.gameState !== GAME_STATES.UPDATING) {
         if (
           rows.public?.length === 3 &&
           rows.public.includes(currentBlock.name)
@@ -734,7 +734,6 @@ class MainStore {
               this.ownedBlocks[currentBlock.name].playerId +
               '--["public"]'
           );
-          delay(6000).then(() => callback());
           return;
         }
         const allmostWinRows = Object.keys(rows).filter(
@@ -763,10 +762,8 @@ class MainStore {
               "--" +
               JSON.stringify([...allmostWinRows, currentBlock.row])
           );
-          delay(6000).then(() => callback());
           return;
         }
-        callback();
       }
     });
   }
@@ -817,22 +814,19 @@ class MainStore {
     }
 
     yield delay(2000);
-    const callback = () => {
-      if (
-        (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
-        this.buyingPropertyInfo.type === "property" &&
-        !currentPlayer.broke
-      ) {
-        this.updateGameState(GAME_STATES.UPDATING);
-        this.sendDataToChannel(["gameState"]);
-      } else {
-        this.nextPlayerTurn();
-      }
-    };
-    if (this.gameState !== GAME_STATES.UPDATING) {
-      this.checkEndGame(this.buyingPropertyInfo, callback);
+    this.checkEndGame(this.buyingPropertyInfo);
+    if (this.gameState.startsWith(GAME_STATES.ALMOST_END)) {
+      yield delay(6000);
+    }
+    if (
+      (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
+      this.buyingPropertyInfo.type === "property" &&
+      !currentPlayer.broke
+    ) {
+      this.updateGameState(GAME_STATES.UPDATING);
+      this.sendDataToChannel(["gameState"]);
     } else {
-      callback();
+      this.nextPlayerTurn();
     }
   }
 
@@ -954,7 +948,7 @@ class MainStore {
           const block = BLOCKS[idx] || {};
           if (
             !this.ownedBlocks[block.name] &&
-            ["property", "public"].includes(block.type)
+            ["property"].includes(block.type)
           ) {
             luckyDices.push([x, y]);
           }
@@ -1049,6 +1043,7 @@ class MainStore {
     const isOwnedAllPropertySameRow = allPropertySameRow.every(
       (b) =>
         b.row === block.row &&
+        this.ownedBlocks[block.name] &&
         this.ownedBlocks[b.name]?.playerId ===
           this.ownedBlocks[block.name].playerId
     );
@@ -1062,8 +1057,8 @@ class MainStore {
   getPrice(block = {}, level, isSelling) {
     if (!["public", "property"].includes(block.type)) return;
     const prices = block?.price;
-    level = level || this.ownedBlocks[block.name]?.level;
-    if (!this.ownedBlocks[block.name]) return;
+    level = level >= 0 ? level : this.ownedBlocks[block.name]?.level;
+    if (!this.ownedBlocks[block.name] && !isSelling) return;
 
     const rate = [0.2, 1, 2, 3, 3.5, 2.5];
     let totalPrice = parseInt(
@@ -1083,7 +1078,6 @@ class MainStore {
     }
 
     if (block.type === "property") {
-      if (isSelling) return totalPrice;
       if (this.isMonopolyBlock(block).value)
         return parseInt(
           totalPrice * (this.isMonopolyBlock(block).length === 2 ? 1.8 : 2)
