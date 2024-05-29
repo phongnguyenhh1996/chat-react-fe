@@ -680,7 +680,7 @@ class MainStore {
     return;
   }
 
-  checkEndGame() {
+  checkEndGame(needCheck) {
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -724,6 +724,7 @@ class MainStore {
         this.sendDataToChannel(["players", "endGame"]);
         return;
       }
+      if (!needCheck || p.id !== this.myName) return
       let state;
       if (
         rows.public?.length === 3 &&
@@ -754,6 +755,7 @@ class MainStore {
         this.updatePlayerData(p, "almostWin", state);
         return;
       }
+      this.updatePlayerData(p, "almostWin", state);
     });
   }
 
@@ -805,7 +807,7 @@ class MainStore {
 
     yield delay(2000);
     const prevPlayerState = this.currentPlayer.almostWin
-    this.checkEndGame();
+    this.checkEndGame(true);
     if (this.currentPlayer.almostWin && this.currentPlayer.almostWin !== prevPlayerState) {
       this.updateGameState(this.currentPlayer.almostWin)
       this.sendDataToChannel(["gameState"]);
