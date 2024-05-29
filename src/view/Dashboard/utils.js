@@ -9,8 +9,8 @@ export const getBlockPositionStyle = (idx) => {
     width: offset.width / ROWS,
     height: offset.height / COLUMNS,
   };
-  if (idx > 35) {
-    idx = idx % 36;
+  if (idx > BLOCKS.length - 1) {
+    idx = idx % BLOCKS.length;
   }
   const block = BLOCKS[idx];
   if (block.position === "bottom") {
@@ -21,7 +21,7 @@ export const getBlockPositionStyle = (idx) => {
       idx === ROWS - 1 || idx === 0 ? "transparent" : "black";
   } else if (block.position === "left") {
     style.left = 0;
-    style.top = offset.height - style.height * (idx - COLUMNS - 2);
+    style.top = offset.height - style.height * (idx - COLUMNS);
     style.borderTopColor = "transparent";
   } else if (block.position === "top") {
     style.top = 0;
@@ -30,7 +30,7 @@ export const getBlockPositionStyle = (idx) => {
       idx === ROWS + COLUMNS * 2 - 1 ? "black" : "transparent";
   } else if (block.position === "right") {
     style.left = offset.width - style.width;
-    style.top = style.height * (idx - (ROWS + COLUMNS * 2 + 1));
+    style.top = style.height * (idx - (ROWS + COLUMNS * 2 - 1));
     style.borderTopColor = "transparent";
   }
   return style;

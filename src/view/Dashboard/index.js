@@ -655,7 +655,7 @@ const Dashboard = () => {
               idx={index}
               active={
                 currentPlayer &&
-                (currentPlayer.position - 1) % 36 === index &&
+                (currentPlayer.position - 1) % BLOCKS.length === index &&
                 !MainStore.gameState.startsWith(GAME_STATES.ALMOST_END)
               }
             />

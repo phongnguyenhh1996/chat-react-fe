@@ -256,7 +256,7 @@ class MainStore {
 
   *checkNewRound() {
     const round = this.currentPlayer.round || 0;
-    const currentRound = Math.floor((this.currentPlayer.position - 1) / 36);
+    const currentRound = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
     if (currentRound > round) {
       this.updatePlayerData(
         this.currentPlayer,
@@ -274,7 +274,7 @@ class MainStore {
   *checkCurrentBlock() {
     let idx = this.currentPlayer.position - 1;
     if (idx > 35) {
-      idx = idx % 36;
+      idx = idx % BLOCKS.length;
     }
     const block = BLOCKS[idx] || {};
     if (block.type === "property" || block.type === "public") {
@@ -464,11 +464,11 @@ class MainStore {
 
   flight(destinationIndex, callback) {
     const noFunction = () => {};
-    const round = Math.floor((this.currentPlayer.position - 1) / 36);
-    const currentRoundDestination = round * 36 + (destinationIndex + 1);
+    const round = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
+    const currentRoundDestination = round * BLOCKS.length + (destinationIndex + 1);
     let position = currentRoundDestination;
     if (position <= this.currentPlayer.position) {
-      position += 36;
+      position += BLOCKS.length;
     }
 
     this.updateGameState(GAME_STATES.FLIGHT + "--" + destinationIndex);
@@ -507,11 +507,11 @@ class MainStore {
       const randomKey =
         allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
       const idx = BLOCKS.findIndex((b) => b.name === randomKey);
-      const round = Math.floor((this.currentPlayer.position - 1) / 36);
-      const currentRoundDestination = round * 36 + (idx + 1);
+      const round = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
+      const currentRoundDestination = round * BLOCKS.length + (idx + 1);
       let position = currentRoundDestination;
       if (position <= this.currentPlayer.position) {
-        position += 36;
+        position += BLOCKS.length;
       }
       this.movingPlayer(() => {}, position);
     } else {
@@ -581,7 +581,7 @@ class MainStore {
     this.nextPlayerTurn();
   }
   getJailPosition(player) {
-    return Math.floor(player.position / 36) * 36 + 12;
+    return Math.floor(player.position / BLOCKS.length) * BLOCKS.length + 12;
   }
   *goToJail() {
     this.updateGameState(GAME_STATES.GOING_JAIL);
@@ -607,7 +607,7 @@ class MainStore {
 
   *movingBack() {
     const round = this.currentPlayer.round || 0;
-    const position = random(this.currentPlayer.position - 1, round * 36 + 1);
+    const position = random(this.currentPlayer.position - 1, round * BLOCKS.length + 1);
     this.updateGameState(
       GAME_STATES.GOING_BACK + "--" + (this.currentPlayer.position - position)
     );
@@ -743,7 +743,7 @@ class MainStore {
       );
       const blockOrderByRow = keyBy(BLOCKS, "row");
       const rowAlmostDone = Object.keys(blockOrderByRow).find(
-        (key) => blockOrderByRow[key].length === rows[key].length + 1
+        (key) => rows[key] && blockOrderByRow[key].length === rows[key].length + 1
       );
       if (allmostWinRows.length === 2 && rowAlmostDone) {
         state =
@@ -930,15 +930,15 @@ class MainStore {
     console.log("total:", this.getTotalMoneyPlayers());
 
     if (
-      this.currentPlayer.position <= 36 * 2 + 1 &&
+      this.currentPlayer.position <= BLOCKS.length * 2 + 1 &&
       this.currentPlayer.id === this.myName
     ) {
       let luckyDices = [];
       for (let x = 1; x <= 6; x++) {
         for (let y = 1; y <= 6; y++) {
           let idx = this.currentPlayer.position + x + y - 1;
-          if (idx > 35) {
-            idx = idx % 36;
+          if (idx > BLOCKS.length - 1) {
+            idx = idx % BLOCKS.length;
           }
           const block = BLOCKS[idx] || {};
           if (
