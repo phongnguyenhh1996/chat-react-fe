@@ -643,7 +643,7 @@ const Dashboard = () => {
           style={{
             gridAutoRows: `minmax(${parseInt(window.innerHeight / 8)}px, 1fr)`,
             gridAutoColumns: `minmax(${
-              parseInt(window.innerWidth / 12) +
+              parseInt(window.innerWidth / 10) +
               (window.innerWidth > 950 ? 0 : 5)
             }px, 1fr)`,
           }}

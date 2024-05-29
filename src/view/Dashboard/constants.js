@@ -12,11 +12,6 @@ export const BLOCKS = [
     position: "bottom",
   },
   {
-    type: "chance",
-    name: "Cơ hội",
-    position: "bottom",
-  },
-  {
     type: "property",
     name: "Phú Quốc",
     price: [1500, 750, 750, 750, 1500, 4500],
@@ -45,6 +40,11 @@ export const BLOCKS = [
     position: "bottom",
   },
   {
+    type: "chance",
+    name: "Cơ hội",
+    position: "bottom",
+  },
+  {
     type: "property",
     name: "Hạ Long",
     price: [2500, 1250, 1250, 1250, 2500, 7500],
@@ -64,22 +64,22 @@ export const BLOCKS = [
     position: "bottom",
     price: [1000],
   },
-  {
-    type: "chance",
-    name: "Cơ hội",
-    position: "bottom",
-  },
-  {
-    type: "property",
-    name: "Hà Nội",
-    price: [3500, 1750, 1750, 1750, 3500, 10500],
-    row: "#EF62A4",
-    position: "bottom",
-  },
+  // {
+  //   type: "chance",
+  //   name: "Cơ hội",
+  //   position: "bottom",
+  // },
+  // {
+  //   type: "property",
+  //   name: "Hà Nội",
+  //   price: [3500, 1750, 1750, 1750, 3500, 10500],
+  //   row: "#EF62A4",
+  //   position: "bottom",
+  // },
   {
     type: "jail-visit",
     name: "Trại giam",
-    position: "left",
+    position: "bottom",
   },
   {
     type: "property",
@@ -125,18 +125,18 @@ export const BLOCKS = [
     name: "Sân bay",
     position: "top",
   },
-  {
-    type: "property",
-    name: "Hà Tĩnh",
-    price: [1500, 750, 750, 750, 1500, 4500],
-    row: "#ff6969",
-    position: "top",
-  },
-  {
-    type: "chance",
-    name: "Cơ hội",
-    position: "top",
-  },
+  // {
+  //   type: "property",
+  //   name: "Hà Tĩnh",
+  //   price: [1500, 750, 750, 750, 1500, 4500],
+  //   row: "#ff6969",
+  //   position: "top",
+  // },
+  // {
+  //   type: "chance",
+  //   name: "Cơ hội",
+  //   position: "top",
+  // },
   {
     type: "property",
     name: "Huế",
@@ -165,6 +165,11 @@ export const BLOCKS = [
     price: [1000],
   },
   {
+    type: "chance",
+    name: "Cơ hội",
+    position: "top",
+  },
+  {
     type: "property",
     name: "Kon Tum",
     price: [1400, 700, 700, 700, 1400, 4200],
@@ -185,11 +190,7 @@ export const BLOCKS = [
     row: "#F69733",
     position: "top",
   },
-  {
-    type: "chance",
-    name: "Cơ hội",
-    position: "top",
-  },
+
   {
     type: "jail",
     name: "Vô tù",
@@ -212,7 +213,7 @@ export const BLOCKS = [
   {
     type: "chance",
     name: "Cơ hội",
-    position: "top",
+    position: "right",
   },
   {
     type: "public",
@@ -369,17 +370,14 @@ export const CHOOSE_BUILDING_ACTIONS = {
 export const REBUY_RATE = 1.4;
 export const SELL_RATE = 1.5;
 
-export const randomPropertyIndex = () =>
-  [
-    random(2, 7),
-    10,
-    random(12, 13),
-    random(16, 17),
-    19,
-    random(21, 23),
-    random(25, 27),
-    random(30, 31),
-    random(34, 35),
-  ][random(0, 7)];
+export const randomPropertyIndex = () => {
+  const properties = BLOCKS.filter(b => b.type === 'property')
+  const property = properties[random(0, properties.length - 1)]
+  return BLOCKS.findIndex(b => b.name === property.name)
+}
+
+
+export const COLUMNS = 8
+export const ROWS = (BLOCKS.length - COLUMNS - 4)/2
 
 export const BEG_MONEY = 1000;

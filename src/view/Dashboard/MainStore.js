@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { random, range, get, orderBy, pick } from "lodash";
+import { random, range, get, orderBy, pick, keyBy } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -96,7 +96,7 @@ class MainStore {
     this.sendDataToChannel(["dice"]);
     yield delay(500);
     this.movingPlayer();
-    // this.movingPlayer(() => {}, [2, 10, 13, 15, 21, 23, 29, 33][random(0, 8)]);
+    // this.movingPlayer(() => {}, 36);
   }
 
   *movingPlayer(callback, planeDestinationPostion) {
@@ -680,7 +680,7 @@ class MainStore {
     return;
   }
 
-  checkEndGame(currentBlock, gameState) {
+  checkEndGame() {
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -723,47 +723,36 @@ class MainStore {
         this.setEndGame(true);
         this.sendDataToChannel(["players", "endGame"]);
         return;
-      } else if (currentBlock && gameState !== GAME_STATES.UPDATING) {
-        if (
-          rows.public?.length === 3 &&
-          rows.public.includes(currentBlock.name)
-        ) {
-          this.updateGameState(
-            GAME_STATES.ALMOST_END +
-              "--four-public--" +
-              this.ownedBlocks[currentBlock.name].playerId +
-              '--["public"]'
-          );
-          return;
-        }
-        const allmostWinRows = Object.keys(rows).filter(
-          (key) =>
-            this.ownedBlocks[rows[key][0]].playerId ===
-              this.ownedBlocks[currentBlock.name].playerId &&
-            rows[key].length === BLOCKS.filter((b) => b.row === key).length &&
-            key !== "public"
-        );
-        const currentOwnedRow = BLOCKS.filter(
-          (b) => b.row === currentBlock.row && this.ownedBlocks[b.name]
-        );
-        const totalBlockRow = BLOCKS.filter((b) => b.row === currentBlock.row);
-        console.log(
-          allmostWinRows.length === 2,
-          currentOwnedRow.length + 1 === totalBlockRow
-        );
-        if (
-          allmostWinRows.length === 2 &&
-          currentOwnedRow.length + 1 === totalBlockRow.length
-        ) {
-          this.updateGameState(
-            GAME_STATES.ALMOST_END +
-              "--three-monopoly--" +
-              this.ownedBlocks[currentBlock.name].playerId +
-              "--" +
-              JSON.stringify([...allmostWinRows, currentBlock.row])
-          );
-          return;
-        }
+      }
+      let state;
+      if (
+        rows.public?.length === 3 &&
+        p.id &&
+        (p.almostWin || "").split("--")[1] !== "four-public"
+      ) {
+        state =
+          GAME_STATES.ALMOST_END + "--four-public--" + p.id + '--["public"]';
+        this.updatePlayerData(p, "almostWin", state);
+        return;
+      }
+      const allmostWinRows = Object.keys(rows).filter(
+        (key) =>
+          rows[key].length === BLOCKS.filter((b) => b.row === key).length &&
+          key !== "public"
+      );
+      const blockOrderByRow = keyBy(BLOCKS, "row");
+      const rowAlmostDone = Object.keys(blockOrderByRow).find(
+        (key) => blockOrderByRow[key].length === rows[key].length + 1
+      );
+      if (allmostWinRows.length === 2 && rowAlmostDone) {
+        state =
+          GAME_STATES.ALMOST_END +
+          "--three-monopoly--" +
+          p.id +
+          "--" +
+          JSON.stringify([...allmostWinRows, rowAlmostDone]);
+        this.updatePlayerData(p, "almostWin", state);
+        return;
       }
     });
   }
@@ -815,8 +804,10 @@ class MainStore {
     }
 
     yield delay(2000);
-    this.checkEndGame(this.buyingPropertyInfo, gameState);
-    if (this.gameState.startsWith(GAME_STATES.ALMOST_END)) {
+    const prevPlayerState = this.currentPlayer.almostWin
+    this.checkEndGame();
+    if (this.currentPlayer.almostWin && this.currentPlayer.almostWin !== prevPlayerState) {
+      this.updateGameState(this.currentPlayer.almostWin)
       this.sendDataToChannel(["gameState"]);
       yield delay(6000);
     }
