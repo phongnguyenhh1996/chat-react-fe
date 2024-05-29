@@ -581,7 +581,7 @@ class MainStore {
     this.nextPlayerTurn();
   }
   getJailPosition(player) {
-    return Math.floor(player.position / BLOCKS.length) * BLOCKS.length + 12;
+    return Math.floor(player.position / BLOCKS.length) * BLOCKS.length + 10;
   }
   *goToJail() {
     this.updateGameState(GAME_STATES.GOING_JAIL);
