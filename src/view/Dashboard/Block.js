@@ -209,7 +209,7 @@ const Block = ({ block, idx, active }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: window.innerWidth > 950 ? 15 : 9,
+                fontSize: window.innerWidth > 950 ? 15 : 11,
               }}
             >
               {block?.name}

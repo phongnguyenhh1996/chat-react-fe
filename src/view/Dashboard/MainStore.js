@@ -1,5 +1,5 @@
 import { Button } from "antd";
-import { random, range, get, orderBy, pick, keyBy } from "lodash";
+import { random, range, get, orderBy, pick } from "lodash";
 import { makeAutoObservable } from "mobx";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -96,7 +96,7 @@ class MainStore {
     this.sendDataToChannel(["dice"]);
     yield delay(500);
     this.movingPlayer();
-    // this.movingPlayer(() => {}, 36);
+    // this.movingPlayer(() => {}, 8);
   }
 
   *movingPlayer(callback, planeDestinationPostion) {
@@ -680,7 +680,8 @@ class MainStore {
     return;
   }
 
-  checkEndGame(needCheck) {
+  checkEndGame(needCheck, player) {
+    let state;
     if (this.players.filter((p) => !p.broke).length < 2) {
       const playerNotBroke = this.players.find((p) => !p.broke);
       this.updatePlayerData(playerNotBroke, "winner", true);
@@ -724,24 +725,30 @@ class MainStore {
         this.sendDataToChannel(["players", "endGame"]);
         return;
       }
-      if (!needCheck || p.id !== this.myName) return
-      let state;
+      if (!needCheck || p.id !== player.id) return
+     
       if (
         rows.public?.length === 3 &&
-        p.id &&
         (p.almostWin || "").split("--")[1] !== "four-public"
       ) {
         state =
           GAME_STATES.ALMOST_END + "--four-public--" + p.id + '--["public"]';
         this.updatePlayerData(p, "almostWin", state);
-        return;
+        return ;
       }
       const allmostWinRows = Object.keys(rows).filter(
         (key) =>
           rows[key].length === BLOCKS.filter((b) => b.row === key).length &&
           key !== "public"
       );
-      const blockOrderByRow = keyBy(BLOCKS, "row");
+      const blockOrderByRow = BLOCKS.reduce((prev, current) => {
+        if (prev[current.row]) {
+          prev[current.row].push(current)
+        } else {
+          prev[current.row] = [current]
+        }
+        return prev
+      }, {});
       const rowAlmostDone = Object.keys(blockOrderByRow).find(
         (key) => rows[key] && blockOrderByRow[key].length === rows[key].length + 1
       );
@@ -752,11 +759,11 @@ class MainStore {
           p.id +
           "--" +
           JSON.stringify([...allmostWinRows, rowAlmostDone]);
-        this.updatePlayerData(p, "almostWin", state);
         return;
       }
-      this.updatePlayerData(p, "almostWin", state);
     });
+
+    return state
   }
 
   *buyProperty(player, gameState) {
@@ -806,13 +813,13 @@ class MainStore {
     }
 
     yield delay(2000);
-    const prevPlayerState = this.currentPlayer.almostWin
-    this.checkEndGame(true);
-    if (this.currentPlayer.almostWin && this.currentPlayer.almostWin !== prevPlayerState) {
-      this.updateGameState(this.currentPlayer.almostWin)
+    const state = this.checkEndGame(true, player);
+    if (state && state !== player.almostWin) {
+      this.updateGameState(state)
       this.sendDataToChannel(["gameState"]);
       yield delay(6000);
     }
+    this.updatePlayerData(player, 'almostWin', state)
     if (
       (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
       this.buyingPropertyInfo.type === "property" &&
@@ -927,8 +934,6 @@ class MainStore {
   }
 
   randomDice() {
-    console.log("total:", this.getTotalMoneyPlayers());
-
     if (
       this.currentPlayer.position <= BLOCKS.length * 2 + 1 &&
       this.currentPlayer.id === this.myName

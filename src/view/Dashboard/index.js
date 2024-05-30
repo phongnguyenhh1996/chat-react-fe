@@ -47,7 +47,6 @@ const Dashboard = () => {
 
   const gameState = MainStore.gameState;
   const isMyTurn = MainStore.myName === MainStore.playingId;
-  console.log(MainStore.ownedBlocks);
   useEffect(() => {
     if (gameState === GAME_STATES.END) return;
     let rollTimeout;
