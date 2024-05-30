@@ -275,7 +275,7 @@ class MainStore {
 
   *checkCurrentBlock() {
     let idx = this.currentPlayer.position - 1;
-    if (idx > 35) {
+    if (idx > BLOCKS.length - 1) {
       idx = idx % BLOCKS.length;
     }
     const block = BLOCKS[idx] || {};
@@ -830,7 +830,7 @@ class MainStore {
       this.sendDataToChannel(["gameState"]);
       yield delay(6000);
     }
-    this.updatePlayerData(player, "almostWin", state);
+    this.updatePlayerData(player, "almostWin", state || player.almostWin);
     if (
       (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
       this.buyingPropertyInfo.type === "property" &&
