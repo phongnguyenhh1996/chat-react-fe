@@ -96,7 +96,7 @@ class MainStore {
     this.sendDataToChannel(["dice"]);
     yield delay(500);
     this.movingPlayer();
-    // this.movingPlayer(() => {}, 8);
+    // this.movingPlayer(() => {}, 9);
   }
 
   *movingPlayer(callback, planeDestinationPostion) {
@@ -256,7 +256,9 @@ class MainStore {
 
   *checkNewRound() {
     const round = this.currentPlayer.round || 0;
-    const currentRound = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
+    const currentRound = Math.floor(
+      (this.currentPlayer.position - 1) / BLOCKS.length
+    );
     if (currentRound > round) {
       this.updatePlayerData(
         this.currentPlayer,
@@ -465,7 +467,8 @@ class MainStore {
   flight(destinationIndex, callback) {
     const noFunction = () => {};
     const round = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
-    const currentRoundDestination = round * BLOCKS.length + (destinationIndex + 1);
+    const currentRoundDestination =
+      round * BLOCKS.length + (destinationIndex + 1);
     let position = currentRoundDestination;
     if (position <= this.currentPlayer.position) {
       position += BLOCKS.length;
@@ -507,7 +510,9 @@ class MainStore {
       const randomKey =
         allOwnedBlockKeys[random(0, allOwnedBlockKeys.length - 1)];
       const idx = BLOCKS.findIndex((b) => b.name === randomKey);
-      const round = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
+      const round = Math.floor(
+        (this.currentPlayer.position - 1) / BLOCKS.length
+      );
       const currentRoundDestination = round * BLOCKS.length + (idx + 1);
       let position = currentRoundDestination;
       if (position <= this.currentPlayer.position) {
@@ -607,7 +612,10 @@ class MainStore {
 
   *movingBack() {
     const round = this.currentPlayer.round || 0;
-    const position = random(this.currentPlayer.position - 1, round * BLOCKS.length + 1);
+    const position = random(
+      this.currentPlayer.position - 1,
+      round * BLOCKS.length + 1
+    );
     this.updateGameState(
       GAME_STATES.GOING_BACK + "--" + (this.currentPlayer.position - position)
     );
@@ -725,16 +733,14 @@ class MainStore {
         this.sendDataToChannel(["players", "endGame"]);
         return;
       }
-      if (!needCheck || p.id !== player.id) return
-     
+      if (!needCheck || p.id !== player.id) return;
       if (
         rows.public?.length === 3 &&
-        (p.almostWin || "").split("--")[1] !== "four-public"
+        (player.almostWin || "").split("--")[1] !== "four-public"
       ) {
         state =
           GAME_STATES.ALMOST_END + "--four-public--" + p.id + '--["public"]';
-        this.updatePlayerData(p, "almostWin", state);
-        return ;
+        return state;
       }
       const allmostWinRows = Object.keys(rows).filter(
         (key) =>
@@ -743,16 +749,21 @@ class MainStore {
       );
       const blockOrderByRow = BLOCKS.reduce((prev, current) => {
         if (prev[current.row]) {
-          prev[current.row].push(current)
+          prev[current.row].push(current);
         } else {
-          prev[current.row] = [current]
+          prev[current.row] = [current];
         }
-        return prev
+        return prev;
       }, {});
       const rowAlmostDone = Object.keys(blockOrderByRow).find(
-        (key) => rows[key] && blockOrderByRow[key].length === rows[key].length + 1
+        (key) =>
+          rows[key] && blockOrderByRow[key].length === rows[key].length + 1
       );
-      if (allmostWinRows.length === 2 && rowAlmostDone) {
+      if (
+        allmostWinRows.length === 2 &&
+        rowAlmostDone &&
+        (player.almostWin || "").split("--")[1] !== "three-monopoly"
+      ) {
         state =
           GAME_STATES.ALMOST_END +
           "--three-monopoly--" +
@@ -763,7 +774,7 @@ class MainStore {
       }
     });
 
-    return state
+    return state;
   }
 
   *buyProperty(player, gameState) {
@@ -815,11 +826,11 @@ class MainStore {
     yield delay(2000);
     const state = this.checkEndGame(true, player);
     if (state && state !== player.almostWin) {
-      this.updateGameState(state)
+      this.updateGameState(state);
       this.sendDataToChannel(["gameState"]);
       yield delay(6000);
     }
-    this.updatePlayerData(player, 'almostWin', state)
+    this.updatePlayerData(player, "almostWin", state);
     if (
       (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
       this.buyingPropertyInfo.type === "property" &&
