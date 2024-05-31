@@ -53,7 +53,20 @@ class MainStore {
   gameState = "init";
   playingId = "";
   dice = [6, 6];
-  ownedBlocks = {};
+  ownedBlocks = {
+    "Bến xe": {
+      playerId: 'Player 1',
+      level: 1
+    },
+    "Nhà ga": {
+      playerId: 'Player 1',
+      level: 1
+    },
+    "Điện lực": {
+      playerId: 'Player 1',
+      level: 1
+    }
+  };
   buyingProperty = "";
   sellingProperty = "";
   targetedProperty = "";
@@ -734,6 +747,7 @@ class MainStore {
         return;
       }
       if (!needCheck || p.id !== player.id) return;
+      console.log(player.almostWin);
       if (
         rows.public?.length === 3 &&
         (player.almostWin || "").split("--")[1] !== "four-public"
@@ -770,7 +784,7 @@ class MainStore {
           p.id +
           "--" +
           JSON.stringify([...allmostWinRows, rowAlmostDone]);
-        return;
+        return state;
       }
     });
 
@@ -933,6 +947,7 @@ class MainStore {
   }
 
   updatePlayerData(data, key, value) {
+    if (key === 'almostWin') console.log(value);
     data[key] = value;
   }
 
