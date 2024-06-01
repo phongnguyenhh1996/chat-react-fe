@@ -44,12 +44,18 @@ export const BLOCKS = [
     name: "Cơ hội",
     position: "bottom",
   },
+  // {
+  //   type: "property",
+  //   name: "Hạ Long",
+  //   price: [2500, 1250, 1250, 1250, 2500, 7500],
+  //   row: "#EF62A4",
+  //   position: "bottom",
+  // },
   {
-    type: "property",
-    name: "Hạ Long",
-    price: [2500, 1250, 1250, 1250, 2500, 7500],
-    row: "#EF62A4",
+    type: "public",
+    name: "Nhà ga",
     position: "bottom",
+    price: [1000],
   },
   {
     type: "property",
@@ -58,24 +64,19 @@ export const BLOCKS = [
     row: "#EF62A4",
     position: "bottom",
   },
-  {
-    type: "public",
-    name: "Nhà ga",
-    position: "bottom",
-    price: [1000],
-  },
+
   // {
   //   type: "chance",
   //   name: "Cơ hội",
   //   position: "bottom",
   // },
-  // {
-  //   type: "property",
-  //   name: "Hà Nội",
-  //   price: [3500, 1750, 1750, 1750, 3500, 10500],
-  //   row: "#EF62A4",
-  //   position: "bottom",
-  // },
+  {
+    type: "property",
+    name: "Hà Nội",
+    price: [3500, 1750, 1750, 1750, 3500, 10500],
+    row: "#EF62A4",
+    position: "bottom",
+  },
   {
     type: "jail-visit",
     name: "Trại giam",
@@ -277,7 +278,7 @@ export const GAME_STATES = {
   ASK_TO_PAY_TO_OUT_JAIL: "ask_to_pay_to_out_jail",
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
   END: "end",
-  ALMOST_END: 'almost_end'
+  ALMOST_END: "almost_end",
 };
 
 const createSound = (url, rate = 1.0, isMeme) => {
@@ -371,13 +372,12 @@ export const REBUY_RATE = 1.4;
 export const SELL_RATE = 1.5;
 
 export const randomPropertyIndex = () => {
-  const properties = BLOCKS.filter(b => b.type === 'property')
-  const property = properties[random(0, properties.length - 1)]
-  return BLOCKS.findIndex(b => b.name === property.name)
-}
+  const properties = BLOCKS.filter((b) => b.type === "property");
+  const property = properties[random(0, properties.length - 1)];
+  return BLOCKS.findIndex((b) => b.name === property.name);
+};
 
-
-export const COLUMNS = 8
-export const ROWS = (BLOCKS.length - COLUMNS - 4)/2
+export const COLUMNS = 8;
+export const ROWS = (BLOCKS.length - COLUMNS - 4) / 2;
 
 export const BEG_MONEY = 1000;

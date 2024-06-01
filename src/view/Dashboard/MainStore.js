@@ -53,20 +53,7 @@ class MainStore {
   gameState = "init";
   playingId = "";
   dice = [6, 6];
-  ownedBlocks = {
-    "Bến xe": {
-      playerId: 'Player 1',
-      level: 1
-    },
-    "Nhà ga": {
-      playerId: 'Player 1',
-      level: 1
-    },
-    "Điện lực": {
-      playerId: 'Player 1',
-      level: 1
-    }
-  };
+  ownedBlocks = {};
   buyingProperty = "";
   sellingProperty = "";
   targetedProperty = "";
@@ -947,7 +934,7 @@ class MainStore {
   }
 
   updatePlayerData(data, key, value) {
-    if (key === 'almostWin') console.log(value);
+    if (key === "almostWin") console.log(value);
     data[key] = value;
   }
 
