@@ -571,7 +571,10 @@ class MainStore {
   }
 
   *payTax() {
-    let tax = [500, 1000][random(0, 1)];
+    let tax = parseInt(this.currentPlayer.money * 0.15);
+    if (tax < 500) {
+      tax = 500;
+    }
     if (this.currentPlayer.money - tax < 0) {
       tax = yield this.handleNotEnoughMoney(this.currentPlayer, tax);
     }
@@ -825,8 +828,14 @@ class MainStore {
     }
 
     yield delay(2000);
-    const state = this.checkEndGame(true, player);
-    if (state && state !== player.almostWin) {
+    const state = this.checkEndGame(gameState !== GAME_STATES.UPDATING, player);
+    if (
+      state &&
+      state !== player.almostWin &&
+      state.includes(
+        this.buyingPropertyInfo?.row || this.buyingPropertyInfo?.type
+      )
+    ) {
       this.updateGameState(state);
       this.sendDataToChannel(["gameState"]);
       yield delay(6000);

@@ -220,10 +220,7 @@ const Dashboard = () => {
             <Button
               type="primary"
               onClick={() =>
-                MainStore.buyProperty(
-                  currentPlayer,
-                  MainStore.gameState
-                )
+                MainStore.buyProperty(currentPlayer, MainStore.gameState)
               }
             >
               Có
@@ -300,7 +297,7 @@ const Dashboard = () => {
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[3] === "tax"
     )
-      return `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$`;
+      return `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$ (15%, tối thiểu 500$)`;
     if (
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[3] === "jail-visit"
@@ -517,10 +514,7 @@ const Dashboard = () => {
     }
   };
 
-  const currentPlayerIndex = MainStore.players.findIndex(
-    (p) => p.id === MainStore.playingId
-  );
-  const currentPlayer = MainStore.players[currentPlayerIndex];
+  const currentPlayer = MainStore.currentPlayer
 
   const buyingProperty = BLOCKS.find(
     (block) => block.name === MainStore.buyingProperty
@@ -852,7 +846,10 @@ const Dashboard = () => {
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
-                      !player.broke && (
+                      !player.broke &&
+                      !MainStore.gameState.startsWith(
+                        GAME_STATES.NEED_MONEY
+                      ) && (
                         <Popconfirm
                           title={"Xin tiền"}
                           description={`Bạn có muốn xin tiền ${player.id} không?`}
