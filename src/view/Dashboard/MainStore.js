@@ -843,7 +843,7 @@ class MainStore {
     this.updatePlayerData(player, "almostWin", state || player.almostWin);
     if (
       (this.ownedBlocks[this.buyingProperty]?.level < 2 || isRebuy) &&
-      this.buyingPropertyInfo.type === "property" &&
+      this.buyingPropertyInfo?.type === "property" &&
       !currentPlayer.broke
     ) {
       this.updateGameState(GAME_STATES.UPDATING);
@@ -1126,13 +1126,15 @@ class MainStore {
   }
 
   ensureMoneyIsEnough(checkFunction, playerId, price) {
-    return new Promise(function (resolve) {
-      (function waitForMoney() {
+    return new Promise((resolve) => {
+      const waitForMoney = () => {
         const enoughMoney = checkFunction(playerId, price);
-        if (enoughMoney) return resolve(true);
-        if (enoughMoney === false) return resolve(false);
+        if (enoughMoney !== undefined) {
+          return resolve(enoughMoney);
+        }
         setTimeout(waitForMoney, 30);
-      })();
+      };
+      waitForMoney();
     });
   }
 

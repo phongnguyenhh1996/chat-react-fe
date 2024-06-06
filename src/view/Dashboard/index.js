@@ -297,7 +297,9 @@ const Dashboard = () => {
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[3] === "tax"
     )
-      return `Phải nộp thuế ${MainStore.gameState.split("--")[1]}$ (15%, tối thiểu 500$)`;
+      return `Phải nộp thuế ${
+        MainStore.gameState.split("--")[1]
+      }$ (15%, tối thiểu 500$)`;
     if (
       MainStore.gameState.startsWith(GAME_STATES.DEC_MONEY) &&
       MainStore.gameState.split("--")[3] === "jail-visit"
@@ -498,23 +500,62 @@ const Dashboard = () => {
               );
             }
           })
-          .subscribe();
+          .on("presence", { event: "join" }, ({ key }) => {
+            if (key !== MainStore.myName) {
+              MainStore.messageApi.open({
+                type: "success",
+                content: `${key} đã tham gia phòng`,
+              });
+            }
+          })
+          .on("presence", { event: "leave" }, ({ key }) => {
+            if (key !== MainStore.myName) {
+              MainStore.messageApi.open({
+                type: "warning",
+                content: `${key} đã rời khỏi phòng`,
+              });
+            }
+          })
+          .subscribe((status) => {
+            if (status !== "SUBSCRIBED") {
+              return;
+            }
+
+            MainStore.channel.track({ online_at: new Date().toISOString() });
+          });
       } else {
         MainStore.channel
           .on("broadcast", { event: "updateStore" }, (payload) => {
             MainStore.updateStore(get(payload, ["payload", "data"], {}));
+          })
+          .on("presence", { event: "join" }, ({ key }) => {
+            if (key !== MainStore.myName) {
+              MainStore.messageApi.open({
+                type: "success",
+                content: `${key} đã tham gia phòng`,
+              });
+            }
+          })
+          .on("presence", { event: "leave" }, ({ key }) => {
+            if (key !== MainStore.myName) {
+              MainStore.messageApi.open({
+                type: "warning",
+                content: `${key} đã rời khỏi phòng`,
+              });
+            }
           })
           .subscribe((status) => {
             if (status !== "SUBSCRIBED") {
               return;
             }
             MainStore.sendJoinSignalToChannel(packageJson.version);
+            MainStore.channel.track({ online_at: new Date().toISOString() });
           });
       }
     }
   };
 
-  const currentPlayer = MainStore.currentPlayer
+  const currentPlayer = MainStore.currentPlayer;
 
   const buyingProperty = BLOCKS.find(
     (block) => block.name === MainStore.buyingProperty
@@ -846,10 +887,7 @@ const Dashboard = () => {
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
                       MainStore.loans[MainStore.myName]?.status !== "request" &&
-                      !player.broke &&
-                      !MainStore.gameState.startsWith(
-                        GAME_STATES.NEED_MONEY
-                      ) && (
+                      !player.broke && (
                         <Popconfirm
                           title={"Xin tiền"}
                           description={`Bạn có muốn xin tiền ${player.id} không?`}
