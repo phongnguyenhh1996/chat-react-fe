@@ -279,6 +279,7 @@ export const GAME_STATES = {
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
   END: "end",
   ALMOST_END: "almost_end",
+  LOST_PROTECT: 'lost_protect'
 };
 
 const createSound = (url, rate = 1.0, isMeme) => {
@@ -366,6 +367,7 @@ export const CHOOSE_BUILDING_ACTIONS = {
   fixElectricity: "sửa điện",
   upgradeFree: "nâng cấp miễn phí",
   travel: "đi du lịch",
+  protect: "bảo vệ"
 };
 
 export const REBUY_RATE = 1.4;

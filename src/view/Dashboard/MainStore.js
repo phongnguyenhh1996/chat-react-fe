@@ -100,7 +100,7 @@ class MainStore {
     this.sendDataToChannel(["dice"]);
     yield delay(500);
     this.movingPlayer();
-    // this.movingPlayer(() => {}, 9);
+    // this.movingPlayer(() => {}, random(5, 6));
   }
 
   *movingPlayer(callback, planeDestinationPostion) {
@@ -421,6 +421,12 @@ class MainStore {
           );
           this.sendDataToChannel(["gameState"]);
         });
+        chances.push(() => {
+          this.updateGameState(
+            GAME_STATES.CHOOSE_BUILDING + "--my-building--protect"
+          );
+          this.sendDataToChannel(["gameState"]);
+        });
       }
 
       const allMyBuildingLowerThan5 = Object.keys(this.ownedBlocks).filter(
@@ -666,7 +672,9 @@ class MainStore {
 
   *randomLostElectric() {
     const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
-      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+      (key) =>
+        this.ownedBlocks[key].playerId === this.currentPlayer.id &&
+        !this.ownedBlocks[key].protected
     );
     this.updateGameState(GAME_STATES.LOST_ELECTRIC_BUILDING);
     this.sendDataToChannel(["gameState"]);
@@ -1049,6 +1057,10 @@ class MainStore {
     this.ownedBlocks[name].lostElectricity = turn;
   }
 
+  updateOwnedBlockProtected(name, isProtected) {
+    this.ownedBlocks[name].protected = isProtected;
+  }
+
   getPlayerIndexById(id) {
     return this.players.findIndex((p) => p.id === id);
   }
@@ -1151,9 +1163,29 @@ class MainStore {
       return;
     }
     if (this.gameState.startsWith(GAME_STATES.CHOOSE_BUILDING)) {
+      if (
+        ["downgrade", "lostElectricity"].includes(
+          this.gameState.split("--")[2]
+        ) &&
+        this.ownedBlocks[block.name]?.protected
+      ) {
+        this.updateOwnedBlockProtected(block.name, false);
+        this.gameState = GAME_STATES.LOST_PROTECT + "--" + block.name;
+        this.sendDataToChannel(["gameState", "ownedBlocks"]);
+
+        delay(2000).then(() => {
+          if (goNext) this.nextPlayerTurn();
+        });
+        return;
+      }
+
       if (this.gameState.split("--")[2] === "festival") {
         this.festivalProperty.unshift(block.name);
         this.festivalProperty.length = 2;
+      }
+
+      if (this.gameState.split("--")[2] === "protect") {
+        this.updateOwnedBlockProtected(block.name, true);
       }
 
       if (this.gameState.split("--")[2] === "lostElectricity") {

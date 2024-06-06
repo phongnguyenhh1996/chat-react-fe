@@ -5,6 +5,7 @@ import Icon from "../../components/Icon";
 import { BLOCKS, COLORS, GAME_STATES } from "./constants";
 import MainStore from "./MainStore";
 import fettiSVG from "../../asset/img/confetti.svg";
+import shieldSVG from "../../asset/img/shield.svg";
 import lightningSVG from "../../asset/img/lightning.svg";
 import { Popover, Table } from "antd";
 
@@ -177,6 +178,22 @@ const Block = ({ block, idx, active }) => {
               : undefined,
           }}
         >
+          {MainStore.ownedBlocks[block.name]?.protected && (
+            <div
+              className="diag"
+              style={{
+                backgroundImage: `url(${shieldSVG})`,
+                position: "absolute",
+                right: 2,
+                top: 2,
+                width: "20px",
+                height: "20px",
+                borderRadius: '50%',
+                backgroundSize: '80%',
+                opacity: 0.7
+              }}
+            ></div>
+          )}
           {MainStore.festivalProperty.includes(block.name) && (
             <div
               className="diag"

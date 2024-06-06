@@ -421,6 +421,9 @@ const Dashboard = () => {
           : "3 dãy nhà cùng màu"
       } và giành chiến thắng!`;
 
+    if (MainStore.gameState.startsWith(GAME_STATES.LOST_PROTECT))
+      return `${MainStore.gameState.split("--")[1]} đã mất bảo vệ`;
+
     return "";
   };
 
