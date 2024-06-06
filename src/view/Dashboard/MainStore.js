@@ -13,6 +13,7 @@ import {
   SOUND,
 } from "./constants";
 import { delay } from "./utils";
+import packageJson from "../../../package.json";
 
 export const SYNC_KEY = [
   "roomId",
@@ -32,20 +33,23 @@ export const SYNC_KEY = [
   "festivalProperty",
   "cameraKey",
   "loans",
+  "hostName",
 ];
 
 class MainStore {
   online = true;
-  isHost = false;
+  host = false;
   myName = localStorage.getItem("myName") || "Player 1";
   roomId = random(1000, 9999).toString();
   channel = null;
+  waitingRoomChannel = null;
   showChat = false;
   cameraRef = null;
   messageApi = null;
   roomList = [];
   sync = false;
 
+  hostName = "";
   loans = {};
   chat = {};
   totalPlayers = 4;
@@ -1236,7 +1240,7 @@ class MainStore {
   }
 
   setHost(isHost) {
-    this.isHost = isHost;
+    this.host = isHost;
   }
 
   setMyName(name) {
@@ -1580,7 +1584,7 @@ class MainStore {
     this.sync = sync;
   }
 
-  addAndTrack(key, waitingRoomChannel, version) {
+  addAndTrack(key, version) {
     if (
       this.players.length + 1 <= this.totalPlayers &&
       this.players.findIndex((p) => p.name === key) === -1
@@ -1588,7 +1592,7 @@ class MainStore {
       this.addPlayer(key);
     }
     this.sendDataToChannel();
-    waitingRoomChannel.track({
+    this.waitingRoomChannel.track({
       data: {
         roomId: this.roomId,
         totalPlayers: this.players.length,
@@ -1597,6 +1601,117 @@ class MainStore {
         store: pick(this, SYNC_KEY),
       },
     });
+  }
+
+  setUpRoom(supabase) {
+    this.waitingRoomChannel = supabase.channel("waiting-room", {
+      config: {
+        presence: {
+          key: this.roomId,
+        },
+      },
+    });
+    if (this.isHost) {
+      this.updateGameState(GAME_STATES.WAITING);
+      this.setPlayers([]);
+      this.addPlayer(this.myName);
+      this.hostName = this.myName;
+      this.waitingRoomChannel.subscribe((status) => {
+        if (status !== "SUBSCRIBED") {
+          return;
+        }
+
+        this.waitingRoomChannel.track({
+          data: {
+            roomId: this.roomId,
+            totalPlayers: this.players.length,
+            hostName: this.myName,
+            version: packageJson.version,
+            store: pick(this, SYNC_KEY),
+          },
+        });
+      });
+    }
+
+    this.channel
+      .on("broadcast", { event: "updateStore" }, (payload) => {
+        this.updateStore(get(payload, ["payload", "data"], {}));
+        if (this.isHost) {
+          this.waitingRoomChannel.track({
+            data: {
+              roomId: this.roomId,
+              totalPlayers: this.players.length,
+              hostName: this.myName,
+              version: packageJson.version,
+              store: pick(MainStore, SYNC_KEY),
+            },
+          });
+        }
+      })
+      .on("broadcast", { event: "join" }, (payload) => {
+        const playerName = get(payload, ["payload", "data", "playerName"], {});
+        const playerVersion = get(payload, ["payload", "data", "version"], {});
+        if (playerVersion === packageJson.version) {
+          this.addAndTrack(playerName, packageJson.version);
+        }
+      })
+      .on("presence", { event: "join" }, ({ key }) => {
+        if (key !== this.myName) {
+          this.messageApi.open({
+            type: "success",
+            content: `${key} đã tham gia phòng`,
+          });
+        }
+      })
+      .on("presence", { event: "leave" }, ({ key }) => {
+        if (key !== this.myName) {
+          this.messageApi.open({
+            type: "warning",
+            content: `${key} đã rời khỏi phòng`,
+          });
+        }
+
+        if (key === this.hostName) {
+          let nextId = this.getPlayerIndexById(this.hostName) + 1;
+          if (nextId >= this.players.length) {
+            nextId = 0;
+          }
+          this.hostName = this.players[nextId].name;
+
+          if (this.isHost) {
+            this.waitingRoomChannel.subscribe((status) => {
+              if (status !== "SUBSCRIBED") {
+                return;
+              }
+
+              this.waitingRoomChannel.track({
+                data: {
+                  roomId: this.roomId,
+                  totalPlayers: this.players.length,
+                  hostName: this.myName,
+                  version: packageJson.version,
+                  store: pick(this, SYNC_KEY),
+                },
+              });
+            });
+          }
+        }
+      })
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") {
+          return;
+        }
+
+        if (!this.isHost) {
+          this.sendJoinSignalToChannel(packageJson.version);
+        }
+
+        this.channel.track({ online_at: new Date().toISOString() });
+      });
+  }
+
+  get isHost() {
+    return this.host || this.myName === this.hostName;
   }
 }
 

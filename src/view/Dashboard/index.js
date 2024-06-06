@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { debounce, get, pick, random, range } from "lodash";
+import { debounce, random, range } from "lodash";
 import {
   Button,
   Modal,
@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from "antd";
 import { observer } from "mobx-react-lite";
-import MainStore, { SYNC_KEY } from "./MainStore";
+import MainStore from "./MainStore";
 import {
   AVATARS,
   BLOCKS,
@@ -441,117 +441,7 @@ const Dashboard = () => {
           },
         })
       );
-
-      if (MainStore.isHost) {
-        MainStore.updateGameState(GAME_STATES.WAITING);
-        MainStore.setPlayers([]);
-        MainStore.addPlayer(MainStore.myName);
-        const waitingRoomChannel = supabase.channel("waiting-room", {
-          config: {
-            presence: {
-              key: MainStore.roomId,
-            },
-          },
-        });
-        waitingRoomChannel.subscribe((status) => {
-          if (status !== "SUBSCRIBED") {
-            return;
-          }
-
-          waitingRoomChannel.track({
-            data: {
-              roomId: MainStore.roomId,
-              totalPlayers: MainStore.players.length,
-              hostName: MainStore.myName,
-              version: packageJson.version,
-              store: pick(MainStore, SYNC_KEY),
-            },
-          });
-        });
-        MainStore.channel
-          .on("broadcast", { event: "updateStore" }, (payload) => {
-            MainStore.updateStore(get(payload, ["payload", "data"], {}));
-            waitingRoomChannel.track({
-              data: {
-                roomId: MainStore.roomId,
-                totalPlayers: MainStore.players.length,
-                hostName: MainStore.myName,
-                version: packageJson.version,
-                store: pick(MainStore, SYNC_KEY),
-              },
-            });
-          })
-          .on("broadcast", { event: "join" }, (payload) => {
-            const playerName = get(
-              payload,
-              ["payload", "data", "playerName"],
-              {}
-            );
-            const playerVersion = get(
-              payload,
-              ["payload", "data", "version"],
-              {}
-            );
-            if (playerVersion === packageJson.version) {
-              MainStore.addAndTrack(
-                playerName,
-                waitingRoomChannel,
-                packageJson.version
-              );
-            }
-          })
-          .on("presence", { event: "join" }, ({ key }) => {
-            if (key !== MainStore.myName) {
-              MainStore.messageApi.open({
-                type: "success",
-                content: `${key} đã tham gia phòng`,
-              });
-            }
-          })
-          .on("presence", { event: "leave" }, ({ key }) => {
-            if (key !== MainStore.myName) {
-              MainStore.messageApi.open({
-                type: "warning",
-                content: `${key} đã rời khỏi phòng`,
-              });
-            }
-          })
-          .subscribe((status) => {
-            if (status !== "SUBSCRIBED") {
-              return;
-            }
-
-            MainStore.channel.track({ online_at: new Date().toISOString() });
-          });
-      } else {
-        MainStore.channel
-          .on("broadcast", { event: "updateStore" }, (payload) => {
-            MainStore.updateStore(get(payload, ["payload", "data"], {}));
-          })
-          .on("presence", { event: "join" }, ({ key }) => {
-            if (key !== MainStore.myName) {
-              MainStore.messageApi.open({
-                type: "success",
-                content: `${key} đã tham gia phòng`,
-              });
-            }
-          })
-          .on("presence", { event: "leave" }, ({ key }) => {
-            if (key !== MainStore.myName) {
-              MainStore.messageApi.open({
-                type: "warning",
-                content: `${key} đã rời khỏi phòng`,
-              });
-            }
-          })
-          .subscribe((status) => {
-            if (status !== "SUBSCRIBED") {
-              return;
-            }
-            MainStore.sendJoinSignalToChannel(packageJson.version);
-            MainStore.channel.track({ online_at: new Date().toISOString() });
-          });
-      }
+      MainStore.setUpRoom(supabase);
     }
   };
 
@@ -840,10 +730,6 @@ const Dashboard = () => {
                         title="Người chơi sẽ không bị đưa vào tù"
                       >
                         <Button
-                          key={
-                            MainStore.gameState?.split("--")[0] ||
-                            MainStore.gameState
-                          }
                           ghost
                           size="middle"
                           shape="circle"
@@ -883,6 +769,28 @@ const Dashboard = () => {
                           />
                         </Popconfirm>
                       )}
+                    {player.name === MainStore.hostName && (
+                      <Tooltip
+                        trigger="click"
+                        title="Người chơi này là chủ phòng"
+                      >
+                        <Button
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
+                        >
+                          <Icon
+                            style={{ color: "white" }}
+                            symbol="star"
+                            width="20px"
+                            height="20px"
+                          />
+                        </Button>
+                      </Tooltip>
+                    )}
                     {player.id !== MainStore.myName &&
                       MainStore.playingId === MainStore.myName &&
                       player.money >= 1000 &&
