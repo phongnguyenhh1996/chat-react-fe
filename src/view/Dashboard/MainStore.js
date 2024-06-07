@@ -638,7 +638,7 @@ class MainStore {
   }
   *randomDowngrade() {
     const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
-      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id
+      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id && !this.ownedBlocks[key].protected
     );
     if (allOwnedBlockKeys.length === 0) {
       this.updateGameState(GAME_STATES.DOWN_GRADE_BUILDING + "--no-property");
