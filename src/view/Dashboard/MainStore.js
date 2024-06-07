@@ -1636,6 +1636,13 @@ class MainStore {
   }
 
   setUpRoom(supabase) {
+    this.channel = supabase.channel(this.roomId.trim(), {
+      config: {
+        presence: {
+          key: this.myName,
+        },
+      },
+    })
     this.waitingRoomChannel = supabase.channel("waiting-room", {
       config: {
         presence: {

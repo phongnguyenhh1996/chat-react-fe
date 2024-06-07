@@ -17,7 +17,6 @@ import {
 import { observer } from "mobx-react-lite";
 import MainStore from "./MainStore";
 import {
-  AVATARS,
   BLOCKS,
   CHOOSE_BUILDING_ACTIONS,
   COLORS,
@@ -435,15 +434,6 @@ const Dashboard = () => {
       MainStore.updatePlayingId(randomPlayerId);
       MainStore.setChannel(supabase.channel("nothing"));
     } else {
-      MainStore.setChannel(
-        supabase.channel(MainStore.roomId.trim(), {
-          config: {
-            presence: {
-              key: MainStore.myName,
-            },
-          },
-        })
-      );
       MainStore.setUpRoom(supabase);
     }
   };
@@ -608,8 +598,9 @@ const Dashboard = () => {
                   key={player.id}
                   id={"player--" + player.id}
                 >
-                  <img
+                  <Icon
                     style={{
+                      color: COLORS[index],
                       flex: window.innerWidth > 950 ? "0 0 25px" : "0 0 15px",
                       height: window.innerWidth > 950 ? 25 : 15,
                       position: "relative",
@@ -627,8 +618,8 @@ const Dashboard = () => {
                           ? -15
                           : undefined,
                     }}
-                    alt=""
-                    src={AVATARS[index]}
+                    height={window.innerWidth > 950 ? '25px' : '15px'}
+                    symbol={"avatar" + (player.avatar || 1)}
                   />
                 </div>
               )
@@ -885,15 +876,16 @@ const Dashboard = () => {
                       />
                     )}
 
-                    <img
+                    <Icon
                       style={{
                         flex: "0 0 25px",
                         height: 25,
                         marginRight: 10,
                         order: 0,
+                        color: COLORS[index]
                       }}
-                      alt=""
-                      src={AVATARS[index]}
+                      height="25px"
+                      symbol={"avatar" + (player.avatar || 1)}
                     />
 
                     <div
@@ -1015,6 +1007,7 @@ const Dashboard = () => {
                               (MainStore.players[idx]?.id || "noname-") + index
                             }
                             playerId={MainStore.players[idx]?.id}
+                            updateAvatar={MainStore.players[idx]?.name === MainStore.myName}
                           />
                         ))}
                       </>
@@ -1247,6 +1240,7 @@ const Dashboard = () => {
                             display: "flex",
                             flexDirection: "column",
                             rowGap: 5,
+                            maxWidth: 90
                           }}
                         >
                           {playerStats.map((playerStat) => {
@@ -1272,14 +1266,15 @@ const Dashboard = () => {
                                   />
                                 )}
 
-                                <img
+                                <Icon
                                   style={{
                                     flex: "0 0 25px",
                                     height: 25,
                                     marginRight: 10,
+                                    color: COLORS[index]
                                   }}
-                                  alt=""
-                                  src={AVATARS[index]}
+                                  height='25px'
+                                  symbol={"avatar" + (player.avatar || 1)}
                                 />
                                 <div
                                   style={{
@@ -1403,10 +1398,10 @@ const Dashboard = () => {
                     }}
                     key={numb}
                   >
-                    <img
-                      style={{ flex: "0 0 40px", height: 40 }}
-                      alt=""
-                      src={AVATARS[numb]}
+                    <Icon
+                      style={{ flex: "0 0 40px", height: 40, color: COLORS[numb] }}
+                      height="40px"
+                      symbol={"avatar" + (MainStore.players[numb]?.avatar || 1)}
                     />
                     <Input
                       value={MainStore.players[numb]?.name}

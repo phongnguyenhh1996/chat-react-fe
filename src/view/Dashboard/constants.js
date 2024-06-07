@@ -1,7 +1,3 @@
-import avatar1 from "../../asset/img/avatar1.svg";
-import avatar2 from "../../asset/img/avatar2.svg";
-import avatar3 from "../../asset/img/avatar3.svg";
-import avatar4 from "../../asset/img/avatar4.svg";
 import { Howl } from "howler";
 import { random } from "lodash";
 
@@ -240,8 +236,6 @@ export const BLOCKS = [
 
 export const COLORS = ["darkred", "darkblue", "darkgreen", "darkgoldenrod"];
 
-export const AVATARS = [avatar1, avatar2, avatar4, avatar3];
-
 export const GAME_STATES = {
   INIT: "init",
   WAITING: "waiting",
@@ -383,3 +377,5 @@ export const COLUMNS = 8;
 export const ROWS = (BLOCKS.length - COLUMNS - 4) / 2;
 
 export const BEG_MONEY = 1000;
+
+export const TOTAL_AVATARS = 4

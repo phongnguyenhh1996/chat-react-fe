@@ -162,6 +162,8 @@ img {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative;
+    align-items: center;
   }
   &__row {
     display: flex;
