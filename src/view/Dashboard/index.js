@@ -1371,7 +1371,7 @@ const Dashboard = () => {
                                 });
                                 return;
                               }
-                              MainStore.updateStore(value);
+                              MainStore.updateStore({data: value});
                               handleOk();
                             }}
                           >

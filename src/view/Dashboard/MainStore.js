@@ -1307,24 +1307,32 @@ class MainStore {
     this.players = players;
   }
 
-  updateStore(data) {
-    Object.keys(data).forEach((key) => {
-      if (key === "chat") {
-        Object.keys(data[key]).forEach((name) => {
-          const message = data[key][name];
-          if (message.startsWith("/mm")) {
-            SOUND["meme" + message.split("/mm ")[1]]?.play();
-          } else {
-            SOUND.chat.play();
-          }
-          this.chat[name] = data[key][name] + "--" + new Date().toISOString();
-        });
-      } else if (key === "loans") {
-        this.updateLoans(data[key]);
-      } else {
-        this[key] = data[key];
-      }
-    });
+  updateStore({data = {}, type}) {
+    if (!type) {
+      Object.keys(data).forEach((key) => {
+        if (key === "chat") {
+          Object.keys(data[key]).forEach((name) => {
+            const message = data[key][name];
+            if (message.startsWith("/mm")) {
+              SOUND["meme" + message.split("/mm ")[1]]?.play();
+            } else {
+              SOUND.chat.play();
+            }
+            this.chat[name] = data[key][name] + "--" + new Date().toISOString();
+          });
+        } else if (key === "loans") {
+          this.updateLoans(data[key]);
+        } else {
+          this[key] = data[key];
+        }
+      });
+      return
+    }
+    if (type === 'updateAvatar') {
+      const player = this.players[this.getPlayerIndexById(data.playerId)] 
+      this.updatePlayerData(player, 'avatar', data.avatar)
+      return
+    }
   }
 
   openChat() {
@@ -1361,6 +1369,20 @@ class MainStore {
       event: "updateStore",
       payload: {
         data,
+      },
+    });
+  }
+
+  sendAvatarToChannel(avatar) {
+    this.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        type: 'updateAvatar',
+        data: {
+          playerId: this.myName,
+          avatar
+        },
       },
     });
   }
@@ -1674,7 +1696,7 @@ class MainStore {
 
     this.channel
       .on("broadcast", { event: "updateStore" }, (payload) => {
-        this.updateStore(get(payload, ["payload", "data"], {}));
+        this.updateStore(get(payload, ["payload"], {}));
         if (this.isHost) {
           this.waitingRoomChannel.track({
             data: {

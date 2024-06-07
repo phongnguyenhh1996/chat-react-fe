@@ -28,12 +28,13 @@ const PlayerInfor = ({ playerId, rightSide, updateAvatar }) => {
               left: -25,
             }}
             onClick={() => {
+              const newAvatar = avatar - 1 < 1 ? TOTAL_AVATARS : avatar - 1
               MainStore.updatePlayerData(
                 currentPlayer,
                 "avatar",
-                avatar - 1 < 1 ? TOTAL_AVATARS : avatar - 1
+                newAvatar
               );
-              MainStore.sendDataToChannel(["players"]);
+              MainStore.sendAvatarToChannel(newAvatar)
             }}
           >
             ◂
@@ -49,12 +50,13 @@ const PlayerInfor = ({ playerId, rightSide, updateAvatar }) => {
               right: -25,
             }}
             onClick={() => {
+              const newAvatar = avatar + 1 > TOTAL_AVATARS ? 1 : avatar + 1
               MainStore.updatePlayerData(
                 currentPlayer,
                 "avatar",
-                avatar + 1 > TOTAL_AVATARS ? 1 : avatar + 1
+                newAvatar
               );
-              MainStore.sendDataToChannel(["players"]);
+              MainStore.sendAvatarToChannel(newAvatar)
             }}
           >
             ▸
