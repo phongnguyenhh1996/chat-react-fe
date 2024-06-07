@@ -133,7 +133,8 @@ class MainStore {
           this.updateGameState(
             GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
-          this.sendDataToChannel(["players", "gameState"]);
+          this.sendDataToChannel(["gameState"]);
+          this.sendMoneyToChannel(this.currentPlayer.id, price, false)
           yield delay(2000);
           this.nextPlayerTurn(true);
           return;
@@ -323,7 +324,9 @@ class MainStore {
               this.updateGameState(
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
-              this.sendDataToChannel(["gameState", "players"]);
+              this.sendDataToChannel(["gameState"]);
+              this.sendMoneyToChannel(this.currentPlayer.id, price, false)
+              this.sendMoneyToChannel(receivePlayer.id, price, true)
               if (
                 block.type === "property" &&
                 !this.currentPlayer.broke &&
@@ -385,7 +388,8 @@ class MainStore {
         this.updateGameState(
           GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
         );
-        this.sendDataToChannel(["gameState", "players"]);
+        this.sendDataToChannel(["gameState"]);
+        this.sendMoneyToChannel(this.currentPlayer.id, price, false)
         yield delay(2000);
       }
       this.nextPlayerTurn();
@@ -504,7 +508,8 @@ class MainStore {
       this.currentPlayer.money + gift
     );
     this.updateGameState(GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift");
-    this.sendDataToChannel(["gameState", "players"]);
+    this.sendDataToChannel(["gameState"]);
+    this.sendMoneyToChannel(this.currentPlayer.id, gift, true)
     yield delay(2000);
     this.nextPlayerTurn();
   }
@@ -638,7 +643,9 @@ class MainStore {
   }
   *randomDowngrade() {
     const allOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
-      (key) => this.ownedBlocks[key].playerId === this.currentPlayer.id && !this.ownedBlocks[key].protected
+      (key) =>
+        this.ownedBlocks[key].playerId === this.currentPlayer.id &&
+        !this.ownedBlocks[key].protected
     );
     if (allOwnedBlockKeys.length === 0) {
       this.updateGameState(GAME_STATES.DOWN_GRADE_BUILDING + "--no-property");
@@ -1307,7 +1314,7 @@ class MainStore {
     this.players = players;
   }
 
-  updateStore({data = {}, type}) {
+  updateStore({ data = {}, type }) {
     if (!type) {
       Object.keys(data).forEach((key) => {
         if (key === "chat") {
@@ -1326,12 +1333,22 @@ class MainStore {
           this[key] = data[key];
         }
       });
-      return
+      return;
     }
-    if (type === 'updateAvatar') {
-      const player = this.players[this.getPlayerIndexById(data.playerId)] 
-      this.updatePlayerData(player, 'avatar', data.avatar)
-      return
+    if (type === "updateAvatar") {
+      const player = this.players[this.getPlayerIndexById(data.playerId)];
+      this.updatePlayerData(player, "avatar", data.avatar);
+      return;
+    }
+
+    if (type === "updateMoney") {
+      const player = this.players[this.getPlayerIndexById(data.playerId)];
+      this.updatePlayerData(
+        player,
+        "money",
+        data.inc ? player.money + data.money : player.money - data.money
+      );
+      return;
     }
   }
 
@@ -1378,10 +1395,25 @@ class MainStore {
       type: "broadcast",
       event: "updateStore",
       payload: {
-        type: 'updateAvatar',
+        type: "updateAvatar",
         data: {
           playerId: this.myName,
-          avatar
+          avatar,
+        },
+      },
+    });
+  }
+
+  sendMoneyToChannel(playerId, money, isInc) {
+    this.channel.send({
+      type: "broadcast",
+      event: "updateStore",
+      payload: {
+        type: "updateMoney",
+        data: {
+          playerId,
+          money,
+          inc: isInc,
         },
       },
     });
@@ -1469,6 +1501,8 @@ class MainStore {
                       this.players[this.getPlayerIndexById(newLoan.from)]
                         .money + BEG_MONEY
                     );
+                    this.sendMoneyToChannel(newLoan.to, BEG_MONEY, false)
+                    this.sendMoneyToChannel(newLoan.from, BEG_MONEY, true)
                     this.channel
                       .send({
                         type: "broadcast",
@@ -1476,7 +1510,6 @@ class MainStore {
                         payload: {
                           data: {
                             loans: newLoan,
-                            players: this.players,
                           },
                         },
                       })
@@ -1664,7 +1697,7 @@ class MainStore {
           key: this.myName,
         },
       },
-    })
+    });
     this.waitingRoomChannel = supabase.channel("waiting-room", {
       config: {
         presence: {
