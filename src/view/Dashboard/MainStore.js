@@ -134,7 +134,7 @@ class MainStore {
             GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
           this.sendDataToChannel(["gameState"]);
-          this.sendMoneyToChannel(this.currentPlayer.id, price, false)
+          this.sendMoneyToChannel(this.currentPlayer.id, price, false);
           yield delay(2000);
           this.nextPlayerTurn(true);
           return;
@@ -325,8 +325,8 @@ class MainStore {
                 GAME_STATES.DEC_MONEY + "--" + price + "--" + receivePlayer.id
               );
               this.sendDataToChannel(["gameState"]);
-              this.sendMoneyToChannel(this.currentPlayer.id, price, false)
-              this.sendMoneyToChannel(receivePlayer.id, price, true)
+              this.sendMoneyToChannel(this.currentPlayer.id, price, false);
+              this.sendMoneyToChannel(receivePlayer.id, price, true);
               if (
                 block.type === "property" &&
                 !this.currentPlayer.broke &&
@@ -389,7 +389,7 @@ class MainStore {
           GAME_STATES.DEC_MONEY + "--" + price + "--bank--jail-visit"
         );
         this.sendDataToChannel(["gameState"]);
-        this.sendMoneyToChannel(this.currentPlayer.id, price, false)
+        this.sendMoneyToChannel(this.currentPlayer.id, price, false);
         yield delay(2000);
       }
       this.nextPlayerTurn();
@@ -509,7 +509,7 @@ class MainStore {
     );
     this.updateGameState(GAME_STATES.INC_MONEY + "--" + gift + "--bank--gift");
     this.sendDataToChannel(["gameState"]);
-    this.sendMoneyToChannel(this.currentPlayer.id, gift, true)
+    this.sendMoneyToChannel(this.currentPlayer.id, gift, true);
     yield delay(2000);
     this.nextPlayerTurn();
   }
@@ -1501,8 +1501,8 @@ class MainStore {
                       this.players[this.getPlayerIndexById(newLoan.from)]
                         .money + BEG_MONEY
                     );
-                    this.sendMoneyToChannel(newLoan.to, BEG_MONEY, false)
-                    this.sendMoneyToChannel(newLoan.from, BEG_MONEY, true)
+                    this.sendMoneyToChannel(newLoan.to, BEG_MONEY, false);
+                    this.sendMoneyToChannel(newLoan.from, BEG_MONEY, true);
                     this.channel
                       .send({
                         type: "broadcast",
@@ -1737,12 +1737,13 @@ class MainStore {
               totalPlayers: this.players.length,
               hostName: this.myName,
               version: packageJson.version,
-              store: pick(MainStore, SYNC_KEY),
+              store: pick(this, SYNC_KEY),
             },
           });
         }
       })
       .on("broadcast", { event: "join" }, (payload) => {
+        if (!this.isHost) return;
         const playerName = get(payload, ["payload", "data", "playerName"], {});
         const playerVersion = get(payload, ["payload", "data", "version"], {});
         if (playerVersion === packageJson.version) {
