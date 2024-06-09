@@ -133,8 +133,7 @@ class MainStore {
           this.updateGameState(
             GAME_STATES.DEC_MONEY + `--${price}--bank--pay-out-jail`
           );
-          this.sendDataToChannel(["gameState"]);
-          this.sendMoneyToChannel(this.currentPlayer.id, price, false);
+          this.sendDataToChannel(["gameState", "players"]);
           yield delay(2000);
           this.nextPlayerTurn(true);
           return;
