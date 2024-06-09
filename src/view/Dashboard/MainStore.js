@@ -599,7 +599,8 @@ class MainStore {
       this.currentPlayer.money - tax
     );
     this.updateGameState(GAME_STATES.DEC_MONEY + "--" + tax + "--bank--tax");
-    this.sendDataToChannel(["gameState", "players"]);
+    this.sendDataToChannel(["gameState"]);
+    this.sendMoneyToChannel(this.currentPlayer.id, tax, false);
     yield delay(2000);
     this.nextPlayerTurn();
   }
@@ -821,6 +822,7 @@ class MainStore {
         "money",
         currentPlayer.money - price
       );
+      this.sendMoneyToChannel(this.currentPlayer.id, price, false);
       if (isRebuy) {
         receivePlayer =
           this.players[this.getPlayerIndexById(updatingPropertyInfo.playerId)];
@@ -833,6 +835,7 @@ class MainStore {
           "money",
           receivePlayer.money + price
         );
+        this.sendMoneyToChannel(receivePlayer.id, price, true);
       } else {
         this.updateOwnedBlocks(this.buyingPropertyInfo.name, price);
       }
@@ -843,7 +846,7 @@ class MainStore {
           "--" +
           (isRebuy ? receivePlayer.id : "bank")
       );
-      this.sendDataToChannel(["players", "ownedBlocks", "gameState"]);
+      this.sendDataToChannel(["ownedBlocks", "gameState"]);
     }
 
     yield delay(2000);
@@ -893,6 +896,7 @@ class MainStore {
       "money",
       parseInt(this.currentPlayer.money + price)
     );
+    this.sendMoneyToChannel(this.currentPlayer.id, price, true);
     this.updateOwnedBlockLevel(this.sellingProperty);
     this.updateGameState(
       GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + this.currentPlayer.id
@@ -900,7 +904,6 @@ class MainStore {
     this.sendDataToChannel([
       "gameState",
       "ownedBlocks",
-      "players",
       "sellingProperty",
     ]);
     yield delay(1000);
