@@ -815,6 +815,17 @@ class MainStore {
     if (currentPlayer.money - price < 0) {
       priceAfter = yield this.handleNotEnoughMoney(currentPlayer, price);
     }
+
+    if (isRebuy && updatingPropertyInfo?.protected) {
+      this.updateOwnedBlockProtected(this.buyingPropertyInfo?.name, false);
+      this.gameState =
+        GAME_STATES.LOST_PROTECT + "--" + this.buyingPropertyInfo?.name;
+      this.sendDataToChannel(["gameState", "ownedBlocks"]);
+      yield delay(2000);
+      this.nextPlayerTurn();
+      return
+    }
+
     if (priceBefore === priceAfter) {
       this.updatePlayerData(
         currentPlayer,
@@ -900,11 +911,7 @@ class MainStore {
     this.updateGameState(
       GAME_STATES.NEED_MONEY + "_inc--" + price + "--" + this.currentPlayer.id
     );
-    this.sendDataToChannel([
-      "gameState",
-      "ownedBlocks",
-      "sellingProperty",
-    ]);
+    this.sendDataToChannel(["gameState", "ownedBlocks", "sellingProperty"]);
     yield delay(1000);
   }
 
