@@ -467,6 +467,10 @@ const Dashboard = () => {
         </>
       );
 
+    if (MainStore.gameState === GAME_STATES.FESTIVAL_TRAVELING) {
+      return "Đi di lịch tới 1 ô lễ hội ngẫu nhiên"
+    }
+
     return "";
   };
 

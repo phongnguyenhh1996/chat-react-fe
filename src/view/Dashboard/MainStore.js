@@ -305,14 +305,14 @@ class MainStore {
               if (this.currentPlayer.double) {
                 price = price * 2;
                 this.updateGameState(GAME_STATES.PAY_DOUBLE);
-                this.updatePlayerData(this.currentPlayer, 'double', false)
+                this.updatePlayerData(this.currentPlayer, "double", false);
                 this.sendDataToChannel(["gameState", "players"]);
                 yield delay(3000);
               }
               if (this.currentPlayer.half) {
                 price = parseInt(price / 2);
                 this.updateGameState(GAME_STATES.PAY_HALF);
-                this.updatePlayerData(this.currentPlayer, 'half', false)
+                this.updatePlayerData(this.currentPlayer, "half", false);
                 this.sendDataToChannel(["gameState", "players"]);
                 yield delay(3000);
               }
@@ -421,6 +421,7 @@ class MainStore {
         this.randomDowngrade,
         this.randomLostElectric,
         this.chooseTravel,
+        this.festivalTravel
       ];
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -565,6 +566,24 @@ class MainStore {
     }
     return;
   }
+
+  *festivalTravel() {
+    this.updateGameState(GAME_STATES.FESTIVAL_TRAVELING);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    const randomKey =
+      this.festivalProperty[random(0, this.festivalProperty.length - 1)];
+    const idx = BLOCKS.findIndex((b) => b.name === randomKey);
+    const round = Math.floor((this.currentPlayer.position - 1) / BLOCKS.length);
+    const currentRoundDestination = round * BLOCKS.length + (idx + 1);
+    let position = currentRoundDestination;
+    if (position <= this.currentPlayer.position) {
+      position += BLOCKS.length;
+    }
+    this.movingPlayer(() => {}, position);
+    return;
+  }
+
   *chooseLostElectric() {
     const allOtherOwnedBlockKeys = Object.keys(this.ownedBlocks).filter(
       (key) => this.ownedBlocks[key].playerId !== this.currentPlayer.id

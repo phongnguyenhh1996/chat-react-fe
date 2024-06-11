@@ -277,7 +277,8 @@ export const GAME_STATES = {
   GET_PAY_DOULBE: 'get_pay_double',
   GET_PAY_HALF: 'get_pay_half',
   PAY_DOUBLE: 'pay_double',
-  PAY_HALF: 'pay_half'
+  PAY_HALF: 'pay_half',
+  FESTIVAL_TRAVELING: 'festival_traveling'
 };
 
 const createSound = (url, rate = 1.0, isMeme) => {
