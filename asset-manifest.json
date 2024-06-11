@@ -1,22 +1,23 @@
 {
   "files": {
-    "main.css": "/chat-react-fe/static/css/main.6a9ad0be.css",
-    "main.js": "/chat-react-fe/static/js/main.44bf9223.js",
+    "main.css": "/chat-react-fe/static/css/main.dcf8687f.css",
+    "main.js": "/chat-react-fe/static/js/main.a1af8c8f.js",
     "static/js/952.de6738b3.chunk.js": "/chat-react-fe/static/js/952.de6738b3.chunk.js",
     "static/js/453.29f272d8.chunk.js": "/chat-react-fe/static/js/453.29f272d8.chunk.js",
+    "static/media/Roboto-Medium.ttf": "/chat-react-fe/static/media/Roboto-Medium.7c8d04cd831df3033c8a.ttf",
     "static/media/icons.svg": "/chat-react-fe/static/media/icons.1e3ad67bb694dcdcffef7c7cc51b4144.svg",
     "service-worker.js": "/chat-react-fe/service-worker.js",
     "static/media/confetti.svg": "/chat-react-fe/static/media/confetti.f99e4e4d9adffc0b6cf8be9320398931.svg",
     "static/media/shield.svg": "/chat-react-fe/static/media/shield.e479bdca20a47a37de78915b1cfbdc09.svg",
     "static/media/lightning.svg": "/chat-react-fe/static/media/lightning.d4d4dbd578d7935ca28902e5ea80bb4d.svg",
     "index.html": "/chat-react-fe/index.html",
-    "main.6a9ad0be.css.map": "/chat-react-fe/static/css/main.6a9ad0be.css.map",
-    "main.44bf9223.js.map": "/chat-react-fe/static/js/main.44bf9223.js.map",
+    "main.dcf8687f.css.map": "/chat-react-fe/static/css/main.dcf8687f.css.map",
+    "main.a1af8c8f.js.map": "/chat-react-fe/static/js/main.a1af8c8f.js.map",
     "952.de6738b3.chunk.js.map": "/chat-react-fe/static/js/952.de6738b3.chunk.js.map",
     "453.29f272d8.chunk.js.map": "/chat-react-fe/static/js/453.29f272d8.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6a9ad0be.css",
-    "static/js/main.44bf9223.js"
+    "static/css/main.dcf8687f.css",
+    "static/js/main.a1af8c8f.js"
   ]
 }
