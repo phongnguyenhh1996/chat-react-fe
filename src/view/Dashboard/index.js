@@ -423,6 +423,50 @@ const Dashboard = () => {
     if (MainStore.gameState.startsWith(GAME_STATES.LOST_PROTECT))
       return `${MainStore.gameState.split("--")[1]} đã mất bảo vệ`;
 
+    if (
+      MainStore.gameState === GAME_STATES.PAY_DOUBLE ||
+      MainStore.gameState === GAME_STATES.GET_PAY_DOULBE
+    )
+      return (
+        <>
+          <span
+            style={{
+              color: COLORS[MainStore.getPlayerIndexById(MainStore.playingId)],
+              filter: "brightness(2)",
+            }}
+          >
+            {MainStore.currentPlayer?.name}
+          </span>
+          {` phải trả gấp đôi ${
+            MainStore.gameState === GAME_STATES.GET_PAY_DOULBE
+              ? "nếu đi vào ô đất người khác"
+              : ""
+          }`}
+        </>
+      );
+
+    if (
+      MainStore.gameState === GAME_STATES.PAY_HALF ||
+      MainStore.gameState === GAME_STATES.GET_PAY_HALF
+    )
+      return (
+        <>
+          <span
+            style={{
+              color: COLORS[MainStore.getPlayerIndexById(MainStore.playingId)],
+              filter: "brightness(2)",
+            }}
+          >
+            {MainStore.currentPlayer.name}
+          </span>
+          {` được giảm giá 50% ${
+            MainStore.gameState === GAME_STATES.GET_PAY_HALF
+              ? "nếu đi vào ô đất người khác"
+              : ""
+          }`}
+        </>
+      );
+
     return "";
   };
 
@@ -618,7 +662,7 @@ const Dashboard = () => {
                           ? -15
                           : undefined,
                     }}
-                    height={window.innerWidth > 950 ? '25px' : '15px'}
+                    height={window.innerWidth > 950 ? "25px" : "15px"}
                     symbol={"avatar" + (player.avatar || 1)}
                   />
                 </div>
@@ -740,6 +784,41 @@ const Dashboard = () => {
                         </Button>
                       </Tooltip>
                     )}
+                    {player.double && (
+                      <Tooltip
+                        trigger="click"
+                        title="Người chơi sẽ phải trả gấp đôi"
+                      >
+                        <Button
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
+                        >
+                          X2
+                        </Button>
+                      </Tooltip>
+                    )}
+                    {player.half && (
+                      <Tooltip
+                        trigger="click"
+                        title="Người chơi được giảm giá 50%"
+                      >
+                        <Button
+                          ghost
+                          size="middle"
+                          shape="circle"
+                          style={{
+                            marginRight: 5,
+                          }}
+                        >
+                          %
+                        </Button>
+                      </Tooltip>
+                    )}
+
                     {!MainStore.gameState.startsWith(GAME_STATES.NEED_MONEY) &&
                       player.id === MainStore.myName &&
                       MainStore.playingId === MainStore.myName && (
@@ -882,7 +961,7 @@ const Dashboard = () => {
                         height: 25,
                         marginRight: 10,
                         order: 0,
-                        color: COLORS[index]
+                        color: COLORS[index],
                       }}
                       height="25px"
                       symbol={"avatar" + (player.avatar || 1)}
@@ -1007,7 +1086,9 @@ const Dashboard = () => {
                               (MainStore.players[idx]?.id || "noname-") + index
                             }
                             playerId={MainStore.players[idx]?.id}
-                            updateAvatar={MainStore.players[idx]?.name === MainStore.myName}
+                            updateAvatar={
+                              MainStore.players[idx]?.name === MainStore.myName
+                            }
                           />
                         ))}
                       </>
@@ -1240,7 +1321,7 @@ const Dashboard = () => {
                             display: "flex",
                             flexDirection: "column",
                             rowGap: 5,
-                            maxWidth: 90
+                            maxWidth: 90,
                           }}
                         >
                           {playerStats.map((playerStat) => {
@@ -1271,9 +1352,9 @@ const Dashboard = () => {
                                     flex: "0 0 25px",
                                     height: 25,
                                     marginRight: 10,
-                                    color: COLORS[index]
+                                    color: COLORS[index],
                                   }}
-                                  height='25px'
+                                  height="25px"
                                   symbol={"avatar" + (player.avatar || 1)}
                                 />
                                 <div
@@ -1371,7 +1452,7 @@ const Dashboard = () => {
                                 });
                                 return;
                               }
-                              MainStore.updateStore({data: value});
+                              MainStore.updateStore({ data: value });
                               handleOk();
                             }}
                           >
@@ -1399,7 +1480,11 @@ const Dashboard = () => {
                     key={numb}
                   >
                     <Icon
-                      style={{ flex: "0 0 40px", height: 40, color: COLORS[numb] }}
+                      style={{
+                        flex: "0 0 40px",
+                        height: 40,
+                        color: COLORS[numb],
+                      }}
                       height="40px"
                       symbol={"avatar" + (MainStore.players[numb]?.avatar || 1)}
                     />

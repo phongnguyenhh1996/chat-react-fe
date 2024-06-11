@@ -100,7 +100,7 @@ class MainStore {
     this.sendDataToChannel(["dice"]);
     yield delay(500);
     this.movingPlayer();
-    // this.movingPlayer(() => {}, random(5, 6));
+    // this.movingPlayer(() => {}, random(4, 6));
   }
 
   *movingPlayer(callback, planeDestinationPostion) {
@@ -302,6 +302,20 @@ class MainStore {
               this.sendDataToChannel(["gameState", "ownedBlocks"]);
             } else {
               let price = this.getPrice(block);
+              if (this.currentPlayer.double) {
+                price = price * 2;
+                this.updateGameState(GAME_STATES.PAY_DOUBLE);
+                this.updatePlayerData(this.currentPlayer, 'double', false)
+                this.sendDataToChannel(["gameState", "players"]);
+                yield delay(3000);
+              }
+              if (this.currentPlayer.half) {
+                price = parseInt(price / 2);
+                this.updateGameState(GAME_STATES.PAY_HALF);
+                this.updatePlayerData(this.currentPlayer, 'half', false)
+                this.sendDataToChannel(["gameState", "players"]);
+                yield delay(3000);
+              }
               if (this.currentPlayer.money - price < 0) {
                 price = yield this.handleNotEnoughMoney(
                   this.currentPlayer,
@@ -411,6 +425,11 @@ class MainStore {
 
       if (!this.currentPlayer.haveFreeCard) {
         chances.push(this.giveFreeCard);
+      }
+
+      if (!this.currentPlayer.double && !this.currentPlayer.half) {
+        chances.push(this.doublePay);
+        chances.push(this.halfPay);
       }
 
       const allMyBuilding = Object.keys(this.ownedBlocks).filter(
@@ -710,6 +729,26 @@ class MainStore {
     return;
   }
 
+  *doublePay() {
+    this.updateGameState(GAME_STATES.GET_PAY_DOULBE);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    this.updatePlayerData(this.currentPlayer, "double", true);
+    this.sendDataToChannel(["players"]);
+    this.nextPlayerTurn();
+    return;
+  }
+
+  *halfPay() {
+    this.updateGameState(GAME_STATES.GET_PAY_HALF);
+    this.sendDataToChannel(["gameState"]);
+    yield delay(2000);
+    this.updatePlayerData(this.currentPlayer, "half", true);
+    this.sendDataToChannel(["players"]);
+    this.nextPlayerTurn();
+    return;
+  }
+
   checkEndGame(needCheck, player) {
     let state;
     if (this.players.filter((p) => !p.broke).length < 2) {
@@ -823,7 +862,7 @@ class MainStore {
       this.sendDataToChannel(["gameState", "ownedBlocks"]);
       yield delay(2000);
       this.nextPlayerTurn();
-      return
+      return;
     }
 
     if (priceBefore === priceAfter) {

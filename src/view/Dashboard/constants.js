@@ -273,7 +273,11 @@ export const GAME_STATES = {
   RESPONDED_PAY_OUT_JAIL: "responsed_pay_out_jail",
   END: "end",
   ALMOST_END: "almost_end",
-  LOST_PROTECT: 'lost_protect'
+  LOST_PROTECT: 'lost_protect',
+  GET_PAY_DOULBE: 'get_pay_double',
+  GET_PAY_HALF: 'get_pay_half',
+  PAY_DOUBLE: 'pay_double',
+  PAY_HALF: 'pay_half'
 };
 
 const createSound = (url, rate = 1.0, isMeme) => {
