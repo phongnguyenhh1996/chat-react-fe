@@ -291,15 +291,7 @@ img {
 
 .glow {
   color: #fff;
-  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--playerColor),
-    0 0 20px var(--playerColor), 0 0 25px var(--playerColor),
-    0 0 30px var(--playerColor), 0 0 35px var(--playerColor);
-
-  @media only screen and (max-width: 920px) {
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--playerColor),
-      0 0 20px var(--playerColor), 0 0 25px var(--playerColor),
-      0 0 30px var(--playerColor), 0 0 35px var(--playerColor);
-  }
+  text-shadow: -1px -1px 0 var(--playerColor), 1px -1px 0 var(--playerColor), -1px 1px 0 var(--playerColor), 1px 1px 0 var(--playerColor)
 }
 
 @keyframes glow-effect {
