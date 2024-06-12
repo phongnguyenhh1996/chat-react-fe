@@ -421,7 +421,7 @@ class MainStore {
         this.randomDowngrade,
         this.randomLostElectric,
         this.chooseTravel,
-        this.festivalTravel
+        this.festivalTravel,
       ];
 
       if (!this.currentPlayer.haveFreeCard) {
@@ -438,12 +438,26 @@ class MainStore {
       );
 
       if (allMyBuilding.length > 0) {
+        if (
+          allMyBuilding.every((key) => !this.festivalProperty.includes(key))
+        ) {
+          range(0, 2).forEach(() =>
+            chances.push(() => {
+              this.updateGameState(
+                GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
+              );
+              this.sendDataToChannel(["gameState"]);
+            })
+          );
+        }
+
         chances.push(() => {
           this.updateGameState(
             GAME_STATES.CHOOSE_BUILDING + "--my-building--festival"
           );
           this.sendDataToChannel(["gameState"]);
         });
+
         chances.push(() => {
           this.updateGameState(
             GAME_STATES.CHOOSE_BUILDING + "--my-building--protect"
