@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
+import { Grid, OrbitControls } from '@react-three/drei'
+import { range } from "lodash";
 
 function Box(props) {
   // This reference will give us direct access to the mesh
@@ -16,25 +17,29 @@ function Box(props) {
       {...props}
       ref={meshRef}
       scale={active ? 1.5 : 1}
-      onClick={(event) => setActive(!active)}
       onPointerOver={(event) => setHover(true)}
       onPointerOut={(event) => setHover(false)}
     >
-      <boxGeometry args={[2, 1, 1]} />
+      <boxGeometry args={[2,0.1,2]}/>
       <meshStandardMaterial color={hovered ? "hotpink" : "orange"} />
     </mesh>
   );
 }
 const ThreeJsGame = () => {
   return (
-    <div id="canvas-container">
+    <div style={{height: '100vh'}} id="canvas-container">
       <Canvas>
         <ambientLight intensity={0.1} />
-        <directionalLight color="red" position={[0, 0, 5]} />
-        <mesh>
-          <boxGeometry />
-          <meshStandardMaterial />
-        </mesh>
+        <directionalLight color="white" position={[0, 5, 0]} />
+        {range(0,9).map(x => {
+          return range(0,9).map(y => {
+            if (x === 0 || x=== 8 || y === 0 || y === 8)
+            return <Box key={`${x}${y}` } position={[x*2.1 - 2.1*4, 0, y*2.1 - 2.1*4]}/>
+          })
+        })}
+     
+        <OrbitControls />
+        <Grid />
       </Canvas>
     </div>
   );
